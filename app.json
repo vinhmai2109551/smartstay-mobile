@@ -1,5 +1,6 @@
 {
   "expo": {
+    "owner": "vika2",
     "name": "smartstay-mobile",
     "slug": "smartstay-mobile",
     "version": "1.0.0",
@@ -8,9 +9,11 @@
     "scheme": "smartstaymobile",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "bundleIdentifier": "com.smartstay.app"
     },
     "android": {
+      "package": "com.smartstay.app",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -39,6 +42,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "43d54187-f313-4ea2-b24e-c7d37d536513"
+      }
     }
   }
 }

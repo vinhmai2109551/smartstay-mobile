@@ -1,4 +1,5 @@
-import { ActivityIndicator, Pressable, StyleSheet, type PressableProps } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { ActivityIndicator, Pressable, StyleSheet, View, type PressableProps } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
@@ -10,9 +11,11 @@ type ButtonProps = Omit<PressableProps, 'style'> & {
   label: string;
   variant?: ButtonVariant;
   loading?: boolean;
+  icon?: keyof typeof Ionicons.glyphMap;
+  iconColor?: string;
 };
 
-export function Button({ label, variant = 'primary', loading, disabled, ...rest }: ButtonProps) {
+export function Button({ label, variant = 'primary', loading, disabled, icon, iconColor, ...rest }: ButtonProps) {
   const theme = useTheme();
   const isDisabled = disabled || loading;
 
@@ -31,6 +34,13 @@ export function Button({ label, variant = 'primary', loading, disabled, ...rest 
       {...rest}>
       {loading ? (
         <ActivityIndicator color={textColor} />
+      ) : icon ? (
+        <View style={styles.iconRow}>
+          <Ionicons name={icon} size={18} color={iconColor ?? textColor} />
+          <ThemedText type="smallBold" style={{ color: textColor }}>
+            {label}
+          </ThemedText>
+        </View>
       ) : (
         <ThemedText type="smallBold" style={{ color: textColor }}>
           {label}
@@ -48,5 +58,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.four,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  iconRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
   },
 });

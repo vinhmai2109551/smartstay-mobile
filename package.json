@@ -3,7 +3,6 @@
   "main": "expo-router/entry",
   "version": "1.0.0",
   "dependencies": {
-    "@expo/ui": "~0.2.0-beta.9",
     "@expo/vector-icons": "^15.0.2",
     "@hookform/resolvers": "^5.9.1",
     "@react-native-community/datetimepicker": "8.4.4",
@@ -13,6 +12,7 @@
     "expo": "^54.0.0",
     "expo-constants": "~18.0.14",
     "expo-crypto": "~15.0.9",
+    "expo-dev-client": "~6.0.21",
     "expo-device": "~8.0.10",
     "expo-font": "~14.0.12",
     "expo-glass-effect": "~0.1.10",
@@ -51,7 +51,11 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "eas:build:android:preview": "eas build --platform android --profile preview",
+    "eas:build:android:prod": "eas build --platform android --profile production",
+    "eas:build:ios:preview": "eas build --platform ios --profile preview",
+    "eas:build:ios:prod": "eas build --platform ios --profile production"
   },
   "private": true
 }

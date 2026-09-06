@@ -2,13 +2,15 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from 'expo-router';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { StyleSheet } from 'react-native';
+import { Alert, StyleSheet, View } from 'react-native';
 import { z } from 'zod';
 
 import { authApi } from '@/api/auth';
 import { getApiErrorMessage } from '@/api/client';
+import { BrandMark } from '@/components/BrandMark';
 import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/Button';
+import { OrDivider } from '@/components/ui/OrDivider';
 import { Screen } from '@/components/ui/Screen';
 import { TextField } from '@/components/ui/TextField';
 import { Spacing } from '@/constants/theme';
@@ -46,45 +48,59 @@ export default function LoginScreen() {
 
   return (
     <Screen contentContainerStyle={styles.content}>
-      <ThemedText type="title" style={styles.title}>
-        SmartStay
-      </ThemedText>
-      <ThemedText type="default" themeColor="textSecondary" style={styles.subtitle}>
-        Đăng nhập để tìm và đặt phòng
-      </ThemedText>
+      <BrandMark size={48} />
 
-      <Controller
-        control={control}
-        name="email"
-        render={({ field: { onChange, onBlur, value } }) => (
-          <TextField
-            label="Email"
-            placeholder="you@example.com"
-            autoCapitalize="none"
-            keyboardType="email-address"
-            value={value}
-            onChangeText={onChange}
-            onBlur={onBlur}
-            error={errors.email?.message}
-          />
-        )}
-      />
+      <View style={styles.hero}>
+        <ThemedText type="title" style={styles.heroTitle}>
+          Chào mừng trở lại
+        </ThemedText>
+        <ThemedText themeColor="textSecondary">
+          Đăng nhập để tiếp tục kỳ nghỉ của bạn tại SmartStay.
+        </ThemedText>
+      </View>
 
-      <Controller
-        control={control}
-        name="password"
-        render={({ field: { onChange, onBlur, value } }) => (
-          <TextField
-            label="Mật khẩu"
-            placeholder="••••••••"
-            secureTextEntry
-            value={value}
-            onChangeText={onChange}
-            onBlur={onBlur}
-            error={errors.password?.message}
-          />
-        )}
-      />
+      <View style={styles.fields}>
+        <Controller
+          control={control}
+          name="email"
+          render={({ field: { onChange, onBlur, value } }) => (
+            <TextField
+              label="Email"
+              placeholder="ban@email.com"
+              autoCapitalize="none"
+              keyboardType="email-address"
+              value={value}
+              onChangeText={onChange}
+              onBlur={onBlur}
+              error={errors.email?.message}
+            />
+          )}
+        />
+
+        <Controller
+          control={control}
+          name="password"
+          render={({ field: { onChange, onBlur, value } }) => (
+            <TextField
+              label="Mật khẩu"
+              placeholder="••••••••"
+              secureTextEntry
+              value={value}
+              onChangeText={onChange}
+              onBlur={onBlur}
+              error={errors.password?.message}
+            />
+          )}
+        />
+      </View>
+
+      <ThemedText
+        type="link"
+        themeColor="primary"
+        style={styles.forgotLink}
+        onPress={() => Alert.alert('Sắp ra mắt', 'Tính năng quên mật khẩu sẽ sớm được hỗ trợ.')}>
+        Quên mật khẩu?
+      </ThemedText>
 
       {serverError ? (
         <ThemedText type="small" themeColor="danger">
@@ -93,6 +109,17 @@ export default function LoginScreen() {
       ) : null}
 
       <Button label="Đăng nhập" onPress={handleSubmit(onSubmit)} loading={isSubmitting} />
+
+      <OrDivider />
+
+      <Button
+        label="Tiếp tục với Google"
+        variant="outline"
+        icon="logo-google"
+        onPress={() => Alert.alert('Sắp ra mắt', 'Đăng nhập bằng Google sẽ sớm được hỗ trợ.')}
+      />
+
+      <View style={styles.spacer} />
 
       <Link href="/(auth)/register" style={styles.link}>
         <ThemedText type="link" themeColor="primary">
@@ -104,8 +131,11 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  content: { flexGrow: 1, justifyContent: 'center', gap: Spacing.three },
-  title: { textAlign: 'center', fontSize: 34, lineHeight: 40 },
-  subtitle: { textAlign: 'center', marginBottom: Spacing.three },
-  link: { alignSelf: 'center', marginTop: Spacing.two },
+  content: { flexGrow: 1, gap: Spacing.three },
+  hero: { gap: Spacing.one },
+  heroTitle: { textAlign: 'left' },
+  fields: { gap: Spacing.three },
+  forgotLink: { alignSelf: 'flex-end' },
+  spacer: { flex: 1, minHeight: Spacing.three },
+  link: { alignSelf: 'center', paddingBottom: Spacing.three },
 });
