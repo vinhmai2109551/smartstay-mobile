@@ -2,7 +2,7 @@ import * as Google from 'expo-auth-session/providers/google';
 import { Link } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 
 import { authApi } from '@/api/auth';
 import { getApiErrorMessage } from '@/api/client';
@@ -11,10 +11,25 @@ import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/Button';
 import { Screen } from '@/components/ui/Screen';
 import { Spacing } from '@/constants/theme';
-import { GOOGLE_WEB_CLIENT_ID } from '@/config/env';
+import { GOOGLE_ANDROID_CLIENT_ID, GOOGLE_IOS_CLIENT_ID, GOOGLE_WEB_CLIENT_ID } from '@/config/env';
 import { useAuthStore } from '@/store/authStore';
 
 WebBrowser.maybeCompleteAuthSession();
+
+// Google.useAuthRequest throws when the current platform's client ID is
+// missing, so a placeholder keeps the screen rendering and the button is
+// disabled instead.
+const PLATFORM_GOOGLE_CLIENT_ID = Platform.select({
+  ios: GOOGLE_IOS_CLIENT_ID,
+  android: GOOGLE_ANDROID_CLIENT_ID,
+  default: GOOGLE_WEB_CLIENT_ID,
+});
+const GOOGLE_CLIENT_ID_ENV_NAME = Platform.select({
+  ios: 'EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID',
+  android: 'EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID',
+  default: 'EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID',
+});
+const GOOGLE_PLACEHOLDER_CLIENT_ID = 'not-configured';
 
 // Password login (POST /auth/login) requires a Cloudflare Turnstile token
 // that only the web widget can produce — there's no SDK for native apps
@@ -26,7 +41,9 @@ export default function LoginScreen() {
   const [signingIn, setSigningIn] = useState(false);
 
   const [request, response, promptAsync] = Google.useAuthRequest({
-    webClientId: GOOGLE_WEB_CLIENT_ID || undefined,
+    webClientId: GOOGLE_WEB_CLIENT_ID || GOOGLE_PLACEHOLDER_CLIENT_ID,
+    iosClientId: GOOGLE_IOS_CLIENT_ID || GOOGLE_PLACEHOLDER_CLIENT_ID,
+    androidClientId: GOOGLE_ANDROID_CLIENT_ID || GOOGLE_PLACEHOLDER_CLIENT_ID,
   });
 
   useEffect(() => {
@@ -52,7 +69,7 @@ export default function LoginScreen() {
     })();
   }, [response, setSession]);
 
-  const googleNotConfigured = !GOOGLE_WEB_CLIENT_ID;
+  const googleNotConfigured = !PLATFORM_GOOGLE_CLIENT_ID;
 
   return (
     <Screen contentContainerStyle={styles.content}>
@@ -74,7 +91,7 @@ export default function LoginScreen() {
 
       {googleNotConfigured ? (
         <ThemedText type="small" themeColor="danger">
-          Chưa cấu hình EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID trong file .env — xem hướng dẫn trong .env để bật đăng
+          Chưa cấu hình {GOOGLE_CLIENT_ID_ENV_NAME} trong file .env — xem hướng dẫn trong .env để bật đăng
           nhập Google.
         </ThemedText>
       ) : null}
