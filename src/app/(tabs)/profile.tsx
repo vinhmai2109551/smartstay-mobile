@@ -14,9 +14,11 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { CountBadge } from '@/components/ui/CountBadge';
 import { TextField } from '@/components/ui/TextField';
 import { MaxContentWidth, MinTouch, Radius, Space } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useUnreadNotifications } from '@/hooks/useUnreadNotifications';
 import { useAuthStore } from '@/store/authStore';
 
 type IconName = keyof typeof Ionicons.glyphMap;
@@ -28,6 +30,7 @@ function MenuRow({
   trailing,
   danger,
   last,
+  badge = 0,
 }: {
   icon: IconName;
   label: string;
@@ -35,6 +38,7 @@ function MenuRow({
   trailing?: IconName;
   danger?: boolean;
   last?: boolean;
+  badge?: number;
 }) {
   const theme = useTheme();
   const color = danger ? theme.danger : theme.text;
@@ -54,6 +58,7 @@ function MenuRow({
       <ThemedText type="body" style={[styles.menuLabel, { color }]}>
         {label}
       </ThemedText>
+      <CountBadge count={badge} />
       {trailing ? <Ionicons name={trailing} size={18} color={theme.textSecondary} /> : null}
     </Pressable>
   );
@@ -64,6 +69,7 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const user = useAuthStore((s) => s.user);
   const clearSession = useAuthStore((s) => s.clearSession);
+  const unreadCount = useUnreadNotifications();
 
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [oldPassword, setOldPassword] = useState('');
@@ -158,6 +164,7 @@ export default function ProfileScreen() {
             <MenuRow
               icon="notifications-outline"
               label="Thông báo"
+              badge={unreadCount}
               trailing="chevron-forward"
               onPress={() => router.push('/notifications')}
             />

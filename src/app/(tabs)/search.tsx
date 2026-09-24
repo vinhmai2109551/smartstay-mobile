@@ -2,11 +2,13 @@ import dayjs from 'dayjs';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { FlatList, StyleSheet, useWindowDimensions, View } from 'react-native';
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { roomsApi } from '@/api/rooms';
 import { getApiErrorMessage } from '@/api/client';
 import { DateField } from '@/components/DateField';
+import { HeroCarousel } from '@/components/HeroCarousel';
 import { RoomTypeCard } from '@/components/RoomTypeCard';
 import { Stepper } from '@/components/Stepper';
 import { ThemedText } from '@/components/themed-text';
@@ -15,17 +17,20 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { RoomCardSkeleton } from '@/components/ui/Skeleton';
+import { SearchHeroSlides } from '@/constants/demoImages';
 import { MaxContentWidth, Space } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { AvailableRoomType } from '@/types/room';
 import { nightsBetween, toIsoDate } from '@/utils/date';
 
 const GUTTER = Space.lg;
+const FORM_OVERLAP = 36;
 
 export default function SearchScreen() {
   const theme = useTheme();
   const { width } = useWindowDimensions();
   const contentWidth = Math.min(width, MaxContentWidth);
+  const heroHeight = Math.round(Math.min(Math.max((contentWidth - GUTTER * 2) * 0.58, 200), 300));
 
   const [checkIn, setCheckIn] = useState(dayjs().add(1, 'day').toDate());
   const [checkOut, setCheckOut] = useState(dayjs().add(2, 'day').toDate());
@@ -55,14 +60,11 @@ export default function SearchScreen() {
 
   const header = (
     <View style={styles.header}>
-      <View style={styles.titles}>
-        <ThemedText type="title">Tìm phòng trống</ThemedText>
-        <ThemedText type="body" themeColor="textSecondary">
-          Chọn ngày và số khách để xem phòng còn trống.
-        </ThemedText>
-      </View>
+      <Animated.View entering={FadeIn.duration(600)}>
+        <HeroCarousel slides={SearchHeroSlides} height={heroHeight} captionInset={FORM_OVERLAP} interval={4500} />
+      </Animated.View>
 
-      <Card style={styles.form}>
+      <Card elevation="floating" style={[styles.form, styles.formOverlap]}>
         <View style={styles.dates}>
           <DateField
             label="Nhận phòng"
@@ -133,8 +135,10 @@ export default function SearchScreen() {
               />
             )
           }
-          renderItem={({ item }) => (
-            <View style={styles.cardWrapper}>
+          renderItem={({ item, index }) => (
+            <Animated.View
+              entering={FadeInDown.duration(450).delay(Math.min(index, 5) * 80)}
+              style={styles.cardWrapper}>
               <RoomTypeCard
                 roomType={item}
                 onPress={() =>
@@ -149,7 +153,7 @@ export default function SearchScreen() {
                   })
                 }
               />
-            </View>
+            </Animated.View>
           )}
         />
       </SafeAreaView>
@@ -161,8 +165,9 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   list: { alignSelf: 'center', paddingBottom: Space['3xl'] },
   header: { paddingHorizontal: GUTTER, paddingTop: Space.sm, gap: Space.xl, marginBottom: Space.lg },
-  titles: { gap: Space.xs },
   form: { gap: Space.lg, padding: Space.lg },
+  // The form card rides up over the bottom of the hero photos.
+  formOverlap: { marginTop: -(FORM_OVERLAP + Space.xl), marginHorizontal: Space.sm },
   dates: { flexDirection: 'row', gap: Space.md },
   divider: { height: StyleSheet.hairlineWidth },
   resultTitle: { marginTop: Space.sm },

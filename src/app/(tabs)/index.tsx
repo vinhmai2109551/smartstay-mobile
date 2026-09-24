@@ -1,25 +1,29 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useCallback, useMemo } from 'react';
 import { FlatList, Pressable, RefreshControl, StyleSheet, useWindowDimensions, View } from 'react-native';
+import Animated, { FadeIn, FadeInDown, FadeInRight, ZoomIn } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { promotionsApi } from '@/api/promotions';
 import { roomTypesApi } from '@/api/roomTypes';
 import { Avatar } from '@/components/Avatar';
+import { ExperienceGallery } from '@/components/ExperienceGallery';
 import { FeaturedRoomCard } from '@/components/FeaturedRoomCard';
+import { HeroCarousel } from '@/components/HeroCarousel';
+import { PerkRow } from '@/components/PerkRow';
 import { PromoTicket } from '@/components/PromoTicket';
 import { RoomTypeCard } from '@/components/RoomTypeCard';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { CountBadge } from '@/components/ui/CountBadge';
 import { ErrorView } from '@/components/ui/ErrorView';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { RoomCardSkeleton, Skeleton } from '@/components/ui/Skeleton';
-import { HeroImage } from '@/constants/demoImages';
+import { HomeHeroSlides } from '@/constants/demoImages';
 import { MaxContentWidth, MinTouch, Radius, Space } from '@/constants/theme';
 import { useApi } from '@/hooks/useApi';
+import { useUnreadNotifications } from '@/hooks/useUnreadNotifications';
 import { useShadows, useTheme } from '@/hooks/use-theme';
 import { useAuthStore } from '@/store/authStore';
 import { RoomType } from '@/types/room';
@@ -29,11 +33,14 @@ const CAROUSEL_GAP = Space.md;
 const SEARCH_OVERLAP = 28;
 const FEATURED_COUNT = 5;
 
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
 export default function HomeScreen() {
   const theme = useTheme();
   const shadows = useShadows();
   const { width: windowWidth } = useWindowDimensions();
   const user = useAuthStore((s) => s.user);
+  const unreadCount = useUnreadNotifications();
 
   const fetchRoomTypes = useCallback(() => roomTypesApi.list(), []);
   const roomTypes = useApi(fetchRoomTypes);
@@ -78,13 +85,14 @@ export default function HomeScreen() {
         </View>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Thông báo"
+          accessibilityLabel={unreadCount > 0 ? `Thông báo, ${unreadCount} chưa đọc` : 'Thông báo'}
           onPress={() => router.push('/notifications')}
           style={({ pressed }) => [
             styles.iconButton,
             { backgroundColor: theme.backgroundElement, borderColor: theme.border, opacity: pressed ? 0.7 : 1 },
           ]}>
-          <Ionicons name="notifications-outline" size={22} color={theme.text} />
+          <Ionicons name={unreadCount > 0 ? 'notifications' : 'notifications-outline'} size={22} color={theme.text} />
+          <CountBadge count={unreadCount} style={styles.bellBadge} />
         </Pressable>
         <Pressable
           accessibilityRole="button"
@@ -95,29 +103,16 @@ export default function HomeScreen() {
         </Pressable>
       </View>
 
-      <View style={[styles.hero, { height: heroHeight }]}>
-        <Image source={HeroImage} style={StyleSheet.absoluteFill} contentFit="cover" />
-        <LinearGradient
-          colors={['rgba(0,0,0,0.05)', 'rgba(0,0,0,0.7)']}
-          locations={[0.3, 1]}
-          style={StyleSheet.absoluteFill}
-          pointerEvents="none"
-        />
-        <View style={[styles.heroText, { paddingBottom: SEARCH_OVERLAP + Space.lg }]}>
-          <ThemedText type="caption" style={styles.heroEyebrow}>
-            SMARTSTAY
-          </ThemedText>
-          <ThemedText type="display" style={styles.heroTitle}>
-            Kỳ nghỉ của bạn{'\n'}bắt đầu từ đây
-          </ThemedText>
-        </View>
-      </View>
+      <Animated.View entering={FadeIn.duration(600)}>
+        <HeroCarousel slides={HomeHeroSlides} height={heroHeight} captionInset={SEARCH_OVERLAP} />
+      </Animated.View>
 
-      <Pressable
+      <AnimatedPressable
+        entering={FadeInDown.duration(500).delay(200)}
         accessibilityRole="search"
         accessibilityLabel="Tìm phòng trống"
         onPress={goToSearch}
-        style={({ pressed }) => [
+        style={({ pressed }: { pressed: boolean }) => [
           styles.searchBar,
           shadows.floating,
           { backgroundColor: theme.backgroundElement, opacity: pressed ? 0.95 : 1 },
@@ -132,9 +127,15 @@ export default function HomeScreen() {
           </ThemedText>
         </View>
         <Ionicons name="options-outline" size={20} color={theme.textSecondary} />
-      </Pressable>
+      </AnimatedPressable>
 
-      {promotion ? <PromoTicket promotion={promotion} /> : null}
+      <PerkRow />
+
+      {promotion ? (
+        <Animated.View entering={FadeInDown.duration(500).delay(300)}>
+          <PromoTicket promotion={promotion} />
+        </Animated.View>
+      ) : null}
 
       <SectionHeader title="Loại phòng nổi bật" onAction={goToSearch} />
     </View>
@@ -150,8 +151,10 @@ export default function HomeScreen() {
       horizontal
       data={featured}
       keyExtractor={(item) => item.roomTypeId}
-      renderItem={({ item }) => (
-        <FeaturedRoomCard roomType={item} width={featuredCardWidth} onPress={() => openRoom(item)} />
+      renderItem={({ item, index }) => (
+        <Animated.View entering={FadeInRight.duration(500).delay(index * 90)}>
+          <FeaturedRoomCard roomType={item} width={featuredCardWidth} onPress={() => openRoom(item)} />
+        </Animated.View>
       )}
       showsHorizontalScrollIndicator={false}
       snapToInterval={featuredCardWidth + CAROUSEL_GAP}
@@ -184,6 +187,10 @@ export default function HomeScreen() {
             <>
               {header}
               {featuredCarousel}
+              <View style={styles.gallerySection}>
+                <SectionHeader title="Trải nghiệm tại SmartStay" subtitle="Không gian nghỉ dưỡng ven biển Đà Nẵng" />
+                <ExperienceGallery width={innerWidth} />
+              </View>
               <View style={styles.suggestHeader}>
                 <SectionHeader title="Gợi ý cho bạn" subtitle="Những lựa chọn được yêu thích tại SmartStay" />
               </View>
@@ -195,10 +202,12 @@ export default function HomeScreen() {
               ) : null}
             </>
           }
-          renderItem={({ item }) => (
-            <View style={styles.suggestItem}>
+          renderItem={({ item, index }) => (
+            <Animated.View
+              entering={FadeInDown.duration(500).delay(Math.min(index, 4) * 80)}
+              style={styles.suggestItem}>
               <RoomTypeCard roomType={item} onPress={() => openRoom(item)} />
-            </View>
+            </Animated.View>
           )}
           ListEmptyComponent={
             roomTypes.loading ? null : (
@@ -209,11 +218,12 @@ export default function HomeScreen() {
           }
         />
 
-        <Pressable
+        <AnimatedPressable
+          entering={ZoomIn.springify().damping(14).delay(600)}
           accessibilityRole="button"
           accessibilityLabel="Hỏi trợ lý AI"
           onPress={() => router.navigate('/(tabs)/chat')}
-          style={({ pressed }) => [
+          style={({ pressed }: { pressed: boolean }) => [
             styles.fab,
             shadows.floating,
             { backgroundColor: theme.primary, transform: [{ scale: pressed ? 0.96 : 1 }] },
@@ -222,7 +232,7 @@ export default function HomeScreen() {
           <ThemedText type="smallBold" style={{ color: theme.primaryText }}>
             Hỏi trợ lý AI
           </ThemedText>
-        </Pressable>
+        </AnimatedPressable>
       </SafeAreaView>
     </ThemedView>
   );
@@ -254,22 +264,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  hero: {
-    borderRadius: Radius.xl,
-    overflow: 'hidden',
-    justifyContent: 'flex-end',
-  },
-  heroText: {
-    paddingHorizontal: Space.xl,
-    gap: Space.xs,
-  },
-  heroEyebrow: {
-    color: 'rgba(255,255,255,0.9)',
-    letterSpacing: 2,
-  },
-  heroTitle: {
-    color: '#FFFFFF',
-  },
+  bellBadge: { position: 'absolute', top: -4, right: -4 },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -297,6 +292,11 @@ const styles = StyleSheet.create({
     paddingVertical: Space.sm,
   },
   row: { flexDirection: 'row', gap: CAROUSEL_GAP },
+  gallerySection: {
+    paddingHorizontal: GUTTER,
+    marginTop: Space['2xl'],
+    gap: Space.lg,
+  },
   suggestHeader: {
     paddingHorizontal: GUTTER,
     marginTop: Space['2xl'],

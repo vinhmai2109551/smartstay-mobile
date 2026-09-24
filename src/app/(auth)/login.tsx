@@ -6,6 +6,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { z } from 'zod';
 
 import { authApi } from '@/api/auth';
@@ -103,19 +104,19 @@ export default function LoginScreen() {
 
   return (
     <Screen contentContainerStyle={styles.content}>
-      <View style={styles.brandRow}>
+      <Animated.View entering={FadeInDown.duration(500)} style={styles.brandRow}>
         <BrandMark size={44} iconSize={20} />
         <ThemedText type="heading">SmartStay</ThemedText>
-      </View>
+      </Animated.View>
 
-      <View style={styles.hero}>
+      <Animated.View entering={FadeInDown.duration(500).delay(100)} style={styles.hero}>
         <ThemedText type="display">Chào mừng{'\n'}trở lại</ThemedText>
         <ThemedText type="body" themeColor="textSecondary">
           Đăng nhập để tiếp tục kỳ nghỉ của bạn tại SmartStay.
         </ThemedText>
-      </View>
+      </Animated.View>
 
-      <View style={styles.fields}>
+      <Animated.View entering={FadeInDown.duration(500).delay(200)} style={styles.fields}>
         <Controller
           control={control}
           name="email"
@@ -154,7 +155,7 @@ export default function LoginScreen() {
             />
           )}
         />
-      </View>
+      </Animated.View>
 
       {serverError ? (
         <View style={[styles.errorBox, { backgroundColor: `${theme.danger}14` }]}>

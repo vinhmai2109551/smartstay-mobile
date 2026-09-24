@@ -71,7 +71,11 @@ export function TextField({
             onPress={() => setRevealed((v) => !v)}
             hitSlop={8}
             style={styles.trailing}>
-            <Ionicons name={revealed ? 'eye-off-outline' : 'eye-outline'} size={20} color={theme.textSecondary} />
+            <Ionicons
+              name={revealed ? 'eye-off-outline' : 'eye-outline'}
+              size={22}
+              color={revealed ? theme.primary : theme.text}
+            />
           </Pressable>
         ) : null}
       </View>
@@ -111,8 +115,9 @@ const styles = StyleSheet.create({
     marginRight: Space.md,
   },
   trailing: {
-    minWidth: 36,
-    minHeight: 36,
+    minWidth: MinTouch,
+    minHeight: MinTouch,
+    marginRight: -Space.sm,
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: Space.sm,

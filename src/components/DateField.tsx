@@ -1,10 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useState } from 'react';
-import { Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Modal, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
+import { Button } from '@/components/ui/Button';
 import { Radius, Space } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useTheme } from '@/hooks/use-theme';
 import { formatDate } from '@/utils/date';
 
@@ -17,14 +20,23 @@ type DateFieldProps = {
 
 export function DateField({ label, value, onChange, minimumDate }: DateFieldProps) {
   const theme = useTheme();
+  const scheme = useColorScheme();
+  const insets = useSafeAreaInsets();
   const [show, setShow] = useState(false);
+  // iOS: the calendar edits a draft inside a bottom sheet and applies it on "Xong".
+  const [draft, setDraft] = useState(value);
+
+  const open = () => {
+    setDraft(value);
+    setShow(true);
+  };
 
   return (
     <View style={styles.container}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`${label}: ${formatDate(value)}`}
-        onPress={() => setShow(true)}
+        onPress={open}
         style={({ pressed }) => [
           styles.field,
           {
@@ -42,13 +54,53 @@ export function DateField({ label, value, onChange, minimumDate }: DateFieldProp
         </View>
       </Pressable>
 
-      {show ? (
+      {Platform.OS === 'ios' ? (
+        <Modal visible={show} transparent animationType="slide" onRequestClose={() => setShow(false)}>
+          <Pressable
+            accessibilityLabel="Đóng"
+            style={styles.backdrop}
+            onPress={() => setShow(false)}
+          />
+          <View
+            style={[
+              styles.sheet,
+              { backgroundColor: theme.backgroundElement, paddingBottom: Math.max(insets.bottom, Space.lg) },
+            ]}>
+            <View style={[styles.handle, { backgroundColor: theme.border }]} />
+            <View style={styles.sheetHeader}>
+              <ThemedText type="heading">{label}</ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                {formatDate(draft, 'dddd, DD/MM/YYYY')}
+              </ThemedText>
+            </View>
+            <DateTimePicker
+              value={draft}
+              mode="date"
+              display="inline"
+              minimumDate={minimumDate}
+              accentColor={theme.primary}
+              themeVariant={scheme === 'dark' ? 'dark' : 'light'}
+              locale="vi-VN"
+              onChange={(_event, selectedDate) => {
+                if (selectedDate) setDraft(selectedDate);
+              }}
+            />
+            <Button
+              label="Xong"
+              onPress={() => {
+                onChange(draft);
+                setShow(false);
+              }}
+            />
+          </View>
+        </Modal>
+      ) : show ? (
+        // Android shows its own modal date dialog.
         <DateTimePicker
           value={value}
           mode="date"
-          display={Platform.OS === 'ios' ? 'inline' : 'default'}
+          display="default"
           minimumDate={minimumDate}
-          accentColor={theme.primary}
           onChange={(_event, selectedDate) => {
             setShow(false);
             if (selectedDate) onChange(selectedDate);
@@ -60,7 +112,7 @@ export function DateField({ label, value, onChange, minimumDate }: DateFieldProp
 }
 
 const styles = StyleSheet.create({
-  container: { gap: Space.sm, flex: 1 },
+  container: { flex: 1 },
   field: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -71,4 +123,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: Space.md,
   },
   text: { flex: 1 },
+  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' },
+  sheet: {
+    borderTopLeftRadius: Radius.xl,
+    borderTopRightRadius: Radius.xl,
+    paddingHorizontal: Space.lg,
+    paddingTop: Space.sm,
+    gap: Space.md,
+  },
+  handle: { alignSelf: 'center', width: 40, height: 5, borderRadius: 3, marginBottom: Space.xs },
+  sheetHeader: { gap: 2 },
 });
