@@ -247,7 +247,7 @@ export default function BookingDetailScreen() {
             <View style={styles.reviewHeader}>
               <ThemedText type="heading">Kỳ nghỉ của bạn thế nào?</ThemedText>
               <ThemedText type="small" themeColor="textSecondary">
-                Đánh giá giúp SmartStay phục vụ bạn tốt hơn.
+                Đánh giá giúp Vika Hotel phục vụ bạn tốt hơn.
               </ThemedText>
             </View>
             <View style={styles.ratingRow}>

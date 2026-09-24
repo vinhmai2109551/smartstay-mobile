@@ -112,7 +112,7 @@ export default function CheckoutScreen() {
             Thanh toán thành công
           </ThemedText>
           <ThemedText type="body" themeColor="textSecondary" style={styles.center}>
-            Đơn đặt phòng của bạn đã được xác nhận. Hẹn gặp bạn tại SmartStay!
+            Đơn đặt phòng của bạn đã được xác nhận. Hẹn gặp bạn tại Vika Hotel!
           </ThemedText>
         </View>
         <Button label="Xem đơn đặt phòng" onPress={() => router.replace(`/booking/${bookingId}`)} />

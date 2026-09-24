@@ -67,7 +67,7 @@ export default function VerifyOtpScreen() {
 
   if (success) {
     return (
-      <Screen contentContainerStyle={styles.successContent}>
+      <Screen decorated contentContainerStyle={styles.successContent}>
         <View style={[styles.successBadge, { backgroundColor: theme.primarySoft }]}>
           <View style={[styles.successInner, { backgroundColor: theme.success }]}>
             <Ionicons name="checkmark" size={40} color="#FFFFFF" />
@@ -87,7 +87,7 @@ export default function VerifyOtpScreen() {
   }
 
   return (
-    <Screen contentContainerStyle={styles.content}>
+    <Screen decorated contentContainerStyle={styles.content}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="Quay lại"

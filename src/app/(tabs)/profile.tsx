@@ -233,7 +233,7 @@ export default function ProfileScreen() {
           </Card>
 
           <ThemedText type="caption" themeColor="textSecondary" style={styles.version}>
-            SmartStay · phiên bản {Constants.expoConfig?.version ?? '1.0.0'}
+            Vika Hotel · phiên bản {Constants.expoConfig?.version ?? '1.0.0'}
           </ThemedText>
         </View>
       </ScrollView>

@@ -3,11 +3,14 @@ import { Link, router } from 'expo-router';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { z } from 'zod';
 import { Ionicons } from '@expo/vector-icons';
 
 import { authApi } from '@/api/auth';
 import { getApiErrorMessage } from '@/api/client';
+import { BrandMark } from '@/components/BrandMark';
+import { GoogleLogo } from '@/components/GoogleLogo';
 import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/Button';
 import { Checkbox } from '@/components/ui/Checkbox';
@@ -54,7 +57,7 @@ export default function RegisterScreen() {
   };
 
   return (
-    <Screen contentContainerStyle={styles.content}>
+    <Screen decorated contentContainerStyle={styles.content}>
       <View style={styles.header}>
         <Pressable
           accessibilityRole="button"
@@ -69,12 +72,13 @@ export default function RegisterScreen() {
         <ThemedText type="bodyBold">Tạo tài khoản</ThemedText>
       </View>
 
-      <View style={styles.hero}>
-        <ThemedText type="display">Bắt đầu với{'\n'}SmartStay</ThemedText>
+      <Animated.View entering={FadeInDown.duration(500)} style={styles.hero}>
+        <BrandMark size={64} />
+        <ThemedText type="title">Bắt đầu kỳ nghỉ của bạn</ThemedText>
         <ThemedText type="body" themeColor="textSecondary">
-          Chỉ mất một phút để tạo tài khoản.
+          Chỉ mất một phút để tạo tài khoản và nhận ưu đãi dành riêng cho bạn.
         </ThemedText>
-      </View>
+      </Animated.View>
 
       <View style={styles.fields}>
         <Controller
@@ -174,7 +178,7 @@ export default function RegisterScreen() {
               </ThemedText>
               <ThemedText type="small" themeColor="textSecondary">
                 {' '}
-                của SmartStay.
+                của Vika Hotel.
               </ThemedText>
             </Text>
           </View>
@@ -203,7 +207,7 @@ export default function RegisterScreen() {
         label="Tiếp tục với Google"
         variant="outline"
         size="lg"
-        icon="logo-google"
+        leading={<GoogleLogo size={20} />}
         onPress={() =>
           Alert.alert(
             'Dùng Google ở màn Đăng nhập',

@@ -1,20 +1,31 @@
 import { ScrollView, StyleSheet, View, type ScrollViewProps } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { AuthBackground } from '@/components/AuthBackground';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Space } from '@/constants/theme';
 
 type ScreenProps = ScrollViewProps & {
   scroll?: boolean;
   padded?: boolean;
+  /** Brand backdrop (soft blue wash with illustrations) used on the auth screens. */
+  decorated?: boolean;
 };
 
-export function Screen({ scroll = true, padded = true, contentContainerStyle, children, ...rest }: ScreenProps) {
+export function Screen({
+  scroll = true,
+  padded = true,
+  decorated = false,
+  contentContainerStyle,
+  children,
+  ...rest
+}: ScreenProps) {
   const Container = scroll ? ScrollView : View;
   const containerStyle = [styles.centered, padded && styles.padded, scroll && contentContainerStyle];
 
   return (
     <ThemedView style={styles.flex}>
+      {decorated ? <AuthBackground /> : null}
       <SafeAreaView style={styles.flex} edges={['top']}>
         <Container
           style={scroll ? styles.flex : [styles.flex, styles.centered, padded && styles.padded]}

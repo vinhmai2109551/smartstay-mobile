@@ -188,11 +188,11 @@ export default function HomeScreen() {
               {header}
               {featuredCarousel}
               <View style={styles.gallerySection}>
-                <SectionHeader title="Trải nghiệm tại SmartStay" subtitle="Không gian nghỉ dưỡng ven biển Đà Nẵng" />
+                <SectionHeader title="Trải nghiệm tại Vika Hotel" subtitle="Không gian nghỉ dưỡng ven biển Đà Nẵng" />
                 <ExperienceGallery width={innerWidth} />
               </View>
               <View style={styles.suggestHeader}>
-                <SectionHeader title="Gợi ý cho bạn" subtitle="Những lựa chọn được yêu thích tại SmartStay" />
+                <SectionHeader title="Gợi ý cho bạn" subtitle="Những lựa chọn được yêu thích tại Vika Hotel" />
               </View>
               {roomTypes.loading ? (
                 <View style={styles.skeletonList}>

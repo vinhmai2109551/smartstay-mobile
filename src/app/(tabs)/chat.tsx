@@ -26,7 +26,7 @@ import { ChatMessage } from '@/types/chat';
 const WELCOME_MESSAGE: ChatMessage = {
   role: 'MODEL',
   content:
-    'Xin chào! Mình là trợ lý ảo của SmartStay. Bạn muốn tìm phòng theo ngày nào, cho bao nhiêu khách? Mình có thể tư vấn và đặt phòng giúp bạn ngay tại đây.',
+    'Xin chào! Mình là trợ lý ảo của Vika Hotel. Bạn muốn tìm phòng theo ngày nào, cho bao nhiêu khách? Mình có thể tư vấn và đặt phòng giúp bạn ngay tại đây.',
 };
 
 const QUICK_PROMPTS = [
@@ -110,7 +110,7 @@ export default function ChatScreen() {
           onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}>
           <BrandMark size={40} iconSize={18} />
           <View style={styles.headerText}>
-            <ThemedText type="bodyBold">Trợ lý SmartStay</ThemedText>
+            <ThemedText type="bodyBold">Trợ lý Vika Hotel</ThemedText>
             <View style={styles.statusRow}>
               <View style={[styles.statusDot, { backgroundColor: theme.success }]} />
               <ThemedText type="caption" themeColor="textSecondary">

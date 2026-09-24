@@ -9,7 +9,7 @@ export const DemoRoomImageByName: Record<string, number> = {
 
 /** Slides for the home-screen hero carousel. */
 export const HomeHeroSlides = [
-  { image: HeroImage, eyebrow: 'SMARTSTAY ĐÀ NẴNG', title: 'Kỳ nghỉ của bạn\nbắt đầu từ đây' },
+  { image: HeroImage, eyebrow: 'VIKA HOTEL ĐÀ NẴNG', title: 'Kỳ nghỉ của bạn\nbắt đầu từ đây' },
   { image: DemoRoomImageByName['Deluxe View Biển'], eyebrow: 'HƯỚNG BIỂN', title: 'Thức dậy cùng\nbình minh biển' },
   { image: DemoRoomImageByName['Bungalow Vườn'], eyebrow: 'XANH MÁT', title: 'Bình yên giữa\nkhu vườn nhiệt đới' },
   { image: DemoRoomImageByName['Suite Gia Đình'], eyebrow: 'CHO GIA ĐÌNH', title: 'Rộng rãi cho\ncả nhà sum vầy' },

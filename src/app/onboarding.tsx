@@ -31,7 +31,7 @@ type Slide = {
 const SLIDES: Slide[] = [
   {
     icon: 'bed-outline',
-    title: 'Chào mừng đến SmartStay',
+    title: 'Chào mừng đến Vika Hotel',
     subtitle: 'Không gian nghỉ dưỡng ven biển Đà Nẵng với phòng ấm cúng và dịch vụ tận tâm.',
     image: HeroImage,
   },
@@ -97,7 +97,7 @@ export default function OnboardingScreen() {
               <View style={styles.header}>
                 <BrandMark size={34} iconSize={16} />
                 <ThemedText type="bodyBold" style={styles.onImage}>
-                  SmartStay
+                  Vika Hotel
                 </ThemedText>
               </View>
 

@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import type { ReactNode } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View, type PressableProps } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 
@@ -16,6 +17,10 @@ type ButtonProps = Omit<PressableProps, 'style'> & {
   loading?: boolean;
   icon?: keyof typeof Ionicons.glyphMap;
   iconColor?: string;
+  /** Custom leading element (e.g. a brand logo) instead of an Ionicons glyph. */
+  leading?: ReactNode;
+  /** Icon after the label, e.g. an arrow. */
+  trailingIcon?: keyof typeof Ionicons.glyphMap;
   fullWidth?: boolean;
 };
 
@@ -38,6 +43,8 @@ export function Button({
   disabled,
   icon,
   iconColor,
+  leading,
+  trailingIcon,
   fullWidth = true,
   onPressIn,
   onPressOut,
@@ -86,10 +93,11 @@ export function Button({
         <ActivityIndicator color={colors.text} />
       ) : (
         <View style={styles.row}>
-          {icon ? <Ionicons name={icon} size={sizing.iconSize} color={iconColor ?? colors.text} /> : null}
+          {leading ?? (icon ? <Ionicons name={icon} size={sizing.iconSize} color={iconColor ?? colors.text} /> : null)}
           <ThemedText type={sizing.text} style={{ color: colors.text }}>
             {label}
           </ThemedText>
+          {trailingIcon ? <Ionicons name={trailingIcon} size={sizing.iconSize} color={colors.text} /> : null}
         </View>
       )}
     </AnimatedPressable>

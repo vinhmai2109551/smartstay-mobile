@@ -11,6 +11,8 @@ type TextFieldProps = TextInputProps & {
   error?: string;
   hint?: string;
   leftIcon?: keyof typeof Ionicons.glyphMap;
+  /** Label rendered inside the field above the text, with the icon in a round badge. */
+  inlineLabel?: boolean;
 };
 
 export function TextField({
@@ -18,6 +20,7 @@ export function TextField({
   error,
   hint,
   leftIcon,
+  inlineLabel = false,
   style,
   onFocus,
   onBlur,
@@ -33,12 +36,38 @@ export function TextField({
   const borderColor = error ? theme.danger : focused ? theme.primary : theme.border;
   const iconColor = error ? theme.danger : focused ? theme.primary : theme.textSecondary;
 
+  const input = (
+    <TextInput
+      placeholderTextColor={theme.textSecondary}
+      multiline={multiline}
+      secureTextEntry={secureTextEntry && !revealed}
+      accessibilityLabel={label}
+      style={[
+        styles.input,
+        inlineLabel && styles.inputInline,
+        multiline && styles.inputMultiline,
+        { color: theme.text },
+        style,
+      ]}
+      onFocus={(e) => {
+        setFocused(true);
+        onFocus?.(e);
+      }}
+      onBlur={(e) => {
+        setFocused(false);
+        onBlur?.(e);
+      }}
+      {...rest}
+    />
+  );
+
   return (
     <View style={styles.container}>
-      {label ? <ThemedText type="smallBold">{label}</ThemedText> : null}
+      {label && !inlineLabel ? <ThemedText type="smallBold">{label}</ThemedText> : null}
       <View
         style={[
           styles.field,
+          inlineLabel && styles.fieldInline,
           multiline && styles.fieldMultiline,
           {
             borderColor,
@@ -47,23 +76,31 @@ export function TextField({
             backgroundColor: theme.backgroundElement,
           },
         ]}>
-        {leftIcon ? <Ionicons name={leftIcon} size={20} color={iconColor} style={styles.icon} /> : null}
-        <TextInput
-          placeholderTextColor={theme.textSecondary}
-          multiline={multiline}
-          secureTextEntry={secureTextEntry && !revealed}
-          accessibilityLabel={label}
-          style={[styles.input, multiline && styles.inputMultiline, { color: theme.text }, style]}
-          onFocus={(e) => {
-            setFocused(true);
-            onFocus?.(e);
-          }}
-          onBlur={(e) => {
-            setFocused(false);
-            onBlur?.(e);
-          }}
-          {...rest}
-        />
+        {leftIcon && inlineLabel ? (
+          <View
+            style={[
+              styles.iconBadge,
+              { backgroundColor: focused ? theme.primarySoft : theme.backgroundSelected },
+            ]}>
+            <Ionicons name={leftIcon} size={20} color={error ? theme.danger : focused ? theme.primary : theme.text} />
+          </View>
+        ) : leftIcon ? (
+          <Ionicons name={leftIcon} size={20} color={iconColor} style={styles.icon} />
+        ) : null}
+
+        {inlineLabel ? (
+          <View style={styles.inlineColumn}>
+            {label ? (
+              <ThemedText type="caption" themeColor={error ? 'danger' : focused ? 'primary' : 'textSecondary'}>
+                {label}
+              </ThemedText>
+            ) : null}
+            {input}
+          </View>
+        ) : (
+          input
+        )}
+
         {secureTextEntry ? (
           <Pressable
             accessibilityRole="button"
@@ -106,6 +143,12 @@ const styles = StyleSheet.create({
     borderRadius: Radius.md,
     paddingHorizontal: Space.lg,
   },
+  fieldInline: {
+    minHeight: 66,
+    borderRadius: Radius.lg,
+    paddingLeft: Space.md,
+    paddingVertical: Space.sm,
+  },
   fieldMultiline: {
     alignItems: 'flex-start',
     minHeight: 110,
@@ -113,6 +156,18 @@ const styles = StyleSheet.create({
   },
   icon: {
     marginRight: Space.md,
+  },
+  iconBadge: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: Space.md,
+  },
+  inlineColumn: {
+    flex: 1,
+    justifyContent: 'center',
   },
   trailing: {
     minWidth: MinTouch,
@@ -128,6 +183,11 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.regular,
     fontSize: 16,
     paddingVertical: Space.md,
+  },
+  inputInline: {
+    flex: 0,
+    minHeight: 28,
+    paddingVertical: 2,
   },
   inputMultiline: {
     minHeight: 86,

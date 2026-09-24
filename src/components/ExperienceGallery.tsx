@@ -40,7 +40,7 @@ export function ExperienceGallery({ width }: { width: number }) {
   const small = (height - gap) / 2;
 
   return (
-    <View style={[styles.row, { height, gap }]} accessibilityLabel="Hình ảnh khách sạn SmartStay">
+    <View style={[styles.row, { height, gap }]} accessibilityLabel="Hình ảnh khách sạn Vika Hotel">
       <Tile index={0} style={{ flex: 1.1, height }} />
       <View style={[styles.grid, { gap }]}>
         <View style={[styles.gridRow, { gap }]}>

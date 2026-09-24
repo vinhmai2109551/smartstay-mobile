@@ -1,27 +1,12 @@
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { StyleSheet, View } from 'react-native';
+import { VikaEmblem } from '@/components/VikaBrand';
 
 type BrandMarkProps = {
   size?: number;
+  /** Kept for backwards compatibility; the emblem scales with `size`. */
   iconSize?: number;
 };
 
-export function BrandMark({ size = 40, iconSize }: BrandMarkProps) {
-  return (
-    <LinearGradient
-      colors={['#2563EB', '#1D4ED8']}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={[styles.badge, { width: size, height: size, borderRadius: size / 2 }]}>
-      <View style={styles.iconWrap}>
-        <Ionicons name="sparkles" size={iconSize ?? size * 0.5} color="#FFFFFF" />
-      </View>
-    </LinearGradient>
-  );
+/** Compact Vika Hotel emblem used in headers and small brand spots. */
+export function BrandMark({ size = 40 }: BrandMarkProps) {
+  return <VikaEmblem size={size} elevated={false} />;
 }
-
-const styles = StyleSheet.create({
-  badge: { alignItems: 'center', justifyContent: 'center' },
-  iconWrap: { alignItems: 'center', justifyContent: 'center' },
-});
