@@ -25,9 +25,10 @@ export const authApi = {
   resendOtp: (dto: ResendOtpDto) =>
     apiClient.post<{ message: string }>('/auth/resend-otp', dto).then((r) => r.data),
 
-  // Blocked on native today: backend requires a Cloudflare Turnstile token
-  // that only the web widget can produce (doc/API.md 0.1).
-  login: (dto: LoginDto) => apiClient.post<LoginResponse>('/auth/login', dto).then((r) => r.data),
+  // /auth/login requires a Cloudflare Turnstile token that only the web widget
+  // can produce, so native apps use the mobile-only endpoint instead.
+  login: (dto: LoginDto) =>
+    apiClient.post<LoginResponse>('/auth/mobile/login', dto).then((r) => r.data),
 
   google: (dto: GoogleLoginDto) => apiClient.post<LoginResponse>('/auth/google', dto).then((r) => r.data),
 

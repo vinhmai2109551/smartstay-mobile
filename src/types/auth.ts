@@ -24,10 +24,6 @@ export type LoginResponse = {
 export type LoginDto = {
   email: string;
   password: string;
-  // Required by the backend (Cloudflare Turnstile) — native apps cannot
-  // produce a valid token, see doc/API.md 0.1. Password login is disabled
-  // on mobile until the backend adds a native-friendly alternative.
-  turnstileToken: string;
 };
 
 export type GoogleLoginDto = {

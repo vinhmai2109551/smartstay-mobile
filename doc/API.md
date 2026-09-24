@@ -6,6 +6,8 @@ Tài liệu này mô tả toàn bộ REST API + WebSocket của backend NestJS (
 
 ### 0.1. Đăng nhập bằng mật khẩu đang yêu cầu Cloudflare Turnstile — có thể chặn mobile hoàn toàn
 
+> **Đã xử lý:** Turnstile chỉ dành cho web. Backend thêm `POST /auth/mobile/login` (body `{ email, password }`, không cần `turnstileToken`, cùng giới hạn 5 req/phút) — app mobile dùng endpoint này, xem mục 1.4a. Phần dưới giữ lại để giải thích lý do.
+
 `POST /auth/login` bắt buộc field `turnstileToken` (captcha invisible của Cloudflare, do widget JS chạy trên web tạo ra). Backend gọi thẳng API `siteverify` của Cloudflare để xác minh token, và còn kiểm tra `hostname` trả về từ Cloudflare có nằm trong danh sách `TURNSTILE_ALLOWED_HOSTNAMES` (cấu hình trong `.env`) hay không — danh sách này hiện chỉ có tên miền web, không có gì tương đương cho app native.
 
 **Hệ quả: app mobile (native, không phải WebView) hiện KHÔNG có cách nào tự tạo ra `turnstileToken` hợp lệ**, vì Turnstile không có SDK cho iOS/Android, chỉ có widget web. Nếu gọi thẳng `POST /auth/login` mà không có token, backend trả lỗi 400 ngay từ `ValidationPipe` (thiếu field bắt buộc).
@@ -113,8 +115,11 @@ Sai OTP quá 5 lần trong 90 giây → khoá luôn phiên đăng ký đó (`401
 ### 1.3. `POST /auth/resend-otp` — Gửi lại OTP đăng ký
 Giới hạn 5 req/phút. Body: `{ "email": "khach@example.com" }`. Phải đợi ít nhất 30 giây kể từ lần gửi trước, nếu không → `401`.
 
-### 1.4. `POST /auth/login` — Đăng nhập bằng mật khẩu
-⚠️ Xem mục 0.1 — hiện cần `turnstileToken`, mobile app native chưa tạo được token này.
+### 1.4a. `POST /auth/mobile/login` — Đăng nhập bằng mật khẩu (app mobile)
+Giống hệt 1.4 nhưng **không cần `turnstileToken`** (Turnstile chỉ dành cho web). Giới hạn 5 req/phút. Body: `{ "email": "khach@example.com", "password": "matkhau123" }`. Response giống 1.4.
+
+### 1.4. `POST /auth/login` — Đăng nhập bằng mật khẩu (web)
+⚠️ Chỉ dùng cho web — cần `turnstileToken`. App mobile dùng 1.4a.
 
 Giới hạn 5 req/phút. Body:
 ```json
