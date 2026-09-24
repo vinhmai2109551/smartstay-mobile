@@ -32,7 +32,7 @@ export default function NewBookingScreen() {
 
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
-  const [note, setNote] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'PAYOS'>('CASH');
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([]);
   const [promoCode, setPromoCode] = useState('');
   const [discountAmount, setDiscountAmount] = useState(0);
@@ -46,7 +46,7 @@ export default function NewBookingScreen() {
   const servicesTotal = useMemo(() => {
     if (!services.data) return 0;
     return services.data
-      .filter((s) => selectedServiceIds.includes(s.id))
+      .filter((s) => selectedServiceIds.includes(s.serviceId))
       .reduce((sum, s) => sum + s.price, 0);
   }, [services.data, selectedServiceIds]);
 
@@ -94,13 +94,16 @@ export default function NewBookingScreen() {
         guestInfo: {
           fullName: fullName.trim(),
           phone: phone.trim(),
-          guests: Number(params.guests) || 1,
-          note: note.trim() || undefined,
         },
         extraServiceIds: selectedServiceIds,
         promotionCode: discountAmount > 0 ? promoCode.trim() : undefined,
+        paymentMethod,
       });
-      router.replace(`/checkout/${booking.id}`);
+      if (paymentMethod === 'PAYOS') {
+        router.replace(`/checkout/${booking.bookingId}`);
+      } else {
+        router.replace(`/booking/${booking.bookingId}`);
+      }
     } catch (error) {
       setSubmitError(getApiErrorMessage(error, 'Không thể tạo đơn đặt phòng, phòng có thể đã được đặt.'));
     } finally {
@@ -127,7 +130,6 @@ export default function NewBookingScreen() {
       </ThemedText>
       <TextField label="Họ và tên" value={fullName} onChangeText={setFullName} />
       <TextField label="Số điện thoại" keyboardType="phone-pad" value={phone} onChangeText={setPhone} />
-      <TextField label="Ghi chú (tuỳ chọn)" value={note} onChangeText={setNote} multiline />
 
       {services.data && services.data.length > 0 ? (
         <View>
@@ -135,11 +137,11 @@ export default function NewBookingScreen() {
             Dịch vụ đi kèm
           </ThemedText>
           {services.data.map((service) => {
-            const selected = selectedServiceIds.includes(service.id);
+            const selected = selectedServiceIds.includes(service.serviceId);
             return (
               <Pressable
-                key={service.id}
-                onPress={() => toggleService(service.id)}
+                key={service.serviceId}
+                onPress={() => toggleService(service.serviceId)}
                 style={[
                   styles.serviceRow,
                   { borderColor: selected ? theme.primary : theme.border, backgroundColor: theme.backgroundElement },
@@ -206,6 +208,28 @@ export default function NewBookingScreen() {
         </View>
       </ThemedView>
 
+      <ThemedText type="smallBold" style={styles.sectionTitle}>
+        Phương thức thanh toán
+      </ThemedText>
+      <View style={styles.paymentRow}>
+        <Pressable
+          onPress={() => setPaymentMethod('CASH')}
+          style={[
+            styles.paymentOption,
+            { borderColor: paymentMethod === 'CASH' ? theme.primary : theme.border },
+          ]}>
+          <ThemedText type="small">Tiền mặt tại khách sạn</ThemedText>
+        </Pressable>
+        <Pressable
+          onPress={() => setPaymentMethod('PAYOS')}
+          style={[
+            styles.paymentOption,
+            { borderColor: paymentMethod === 'PAYOS' ? theme.primary : theme.border },
+          ]}>
+          <ThemedText type="small">Chuyển khoản QR (PayOS)</ThemedText>
+        </Pressable>
+      </View>
+
       {submitError ? (
         <ThemedText type="small" themeColor="danger">
           {submitError}
@@ -236,4 +260,6 @@ const styles = StyleSheet.create({
   promoInput: { flex: 1 },
   totalCard: { borderRadius: Spacing.three, padding: Spacing.three, gap: Spacing.one, marginTop: Spacing.two },
   totalRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  paymentRow: { gap: Spacing.two },
+  paymentOption: { borderWidth: 1, borderRadius: Spacing.two, padding: Spacing.three },
 });

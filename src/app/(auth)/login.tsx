@@ -1,50 +1,58 @@
-import { zodResolver } from '@hookform/resolvers/zod';
+import * as Google from 'expo-auth-session/providers/google';
 import { Link } from 'expo-router';
-import { useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
-import { Alert, StyleSheet, View } from 'react-native';
-import { z } from 'zod';
+import * as WebBrowser from 'expo-web-browser';
+import { useEffect, useState } from 'react';
+import { StyleSheet, View } from 'react-native';
 
 import { authApi } from '@/api/auth';
 import { getApiErrorMessage } from '@/api/client';
 import { BrandMark } from '@/components/BrandMark';
 import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/Button';
-import { OrDivider } from '@/components/ui/OrDivider';
 import { Screen } from '@/components/ui/Screen';
-import { TextField } from '@/components/ui/TextField';
 import { Spacing } from '@/constants/theme';
+import { GOOGLE_WEB_CLIENT_ID } from '@/config/env';
 import { useAuthStore } from '@/store/authStore';
 
-const schema = z.object({
-  email: z.string().min(1, 'Vui lòng nhập email').email('Email không hợp lệ'),
-  password: z.string().min(6, 'Mật khẩu tối thiểu 6 ký tự'),
-});
+WebBrowser.maybeCompleteAuthSession();
 
-type FormValues = z.infer<typeof schema>;
-
+// Password login (POST /auth/login) requires a Cloudflare Turnstile token
+// that only the web widget can produce — there's no SDK for native apps
+// (see doc/API.md 0.1). Until the backend adds a native-friendly path,
+// Google sign-in (POST /auth/google) is the only working login on mobile.
 export default function LoginScreen() {
   const setSession = useAuthStore((s) => s.setSession);
   const [serverError, setServerError] = useState<string | null>(null);
+  const [signingIn, setSigningIn] = useState(false);
 
-  const {
-    control,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<FormValues>({
-    resolver: zodResolver(schema),
-    defaultValues: { email: '', password: '' },
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    webClientId: GOOGLE_WEB_CLIENT_ID || undefined,
   });
 
-  const onSubmit = async (values: FormValues) => {
-    setServerError(null);
-    try {
-      const { accessToken, refreshToken, user } = await authApi.login(values);
-      setSession({ accessToken, refreshToken }, user);
-    } catch (error) {
-      setServerError(getApiErrorMessage(error, 'Sai email hoặc mật khẩu.'));
+  useEffect(() => {
+    if (response?.type !== 'success') return;
+
+    const idToken = response.authentication?.idToken ?? (response.params as Record<string, string>)?.id_token;
+    if (!idToken) {
+      setServerError('Không lấy được token từ Google, vui lòng thử lại.');
+      return;
     }
-  };
+
+    (async () => {
+      setServerError(null);
+      setSigningIn(true);
+      try {
+        const { accessToken, user } = await authApi.google({ idToken });
+        setSession(accessToken, user);
+      } catch (error) {
+        setServerError(getApiErrorMessage(error, 'Đăng nhập Google thất bại.'));
+      } finally {
+        setSigningIn(false);
+      }
+    })();
+  }, [response, setSession]);
+
+  const googleNotConfigured = !GOOGLE_WEB_CLIENT_ID;
 
   return (
     <Screen contentContainerStyle={styles.content}>
@@ -59,48 +67,17 @@ export default function LoginScreen() {
         </ThemedText>
       </View>
 
-      <View style={styles.fields}>
-        <Controller
-          control={control}
-          name="email"
-          render={({ field: { onChange, onBlur, value } }) => (
-            <TextField
-              label="Email"
-              placeholder="ban@email.com"
-              autoCapitalize="none"
-              keyboardType="email-address"
-              value={value}
-              onChangeText={onChange}
-              onBlur={onBlur}
-              error={errors.email?.message}
-            />
-          )}
-        />
-
-        <Controller
-          control={control}
-          name="password"
-          render={({ field: { onChange, onBlur, value } }) => (
-            <TextField
-              label="Mật khẩu"
-              placeholder="••••••••"
-              secureTextEntry
-              value={value}
-              onChangeText={onChange}
-              onBlur={onBlur}
-              error={errors.password?.message}
-            />
-          )}
-        />
-      </View>
-
-      <ThemedText
-        type="link"
-        themeColor="primary"
-        style={styles.forgotLink}
-        onPress={() => Alert.alert('Sắp ra mắt', 'Tính năng quên mật khẩu sẽ sớm được hỗ trợ.')}>
-        Quên mật khẩu?
+      <ThemedText type="small" themeColor="textSecondary">
+        Đăng nhập bằng mật khẩu hiện chưa khả dụng trên mobile (backend yêu cầu xác minh Cloudflare Turnstile,
+        chỉ chạy được trên web). Vui lòng đăng nhập bằng Google trong lúc chờ bản cập nhật.
       </ThemedText>
+
+      {googleNotConfigured ? (
+        <ThemedText type="small" themeColor="danger">
+          Chưa cấu hình EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID trong file .env — xem hướng dẫn trong .env để bật đăng
+          nhập Google.
+        </ThemedText>
+      ) : null}
 
       {serverError ? (
         <ThemedText type="small" themeColor="danger">
@@ -108,15 +85,12 @@ export default function LoginScreen() {
         </ThemedText>
       ) : null}
 
-      <Button label="Đăng nhập" onPress={handleSubmit(onSubmit)} loading={isSubmitting} />
-
-      <OrDivider />
-
       <Button
         label="Tiếp tục với Google"
-        variant="outline"
         icon="logo-google"
-        onPress={() => Alert.alert('Sắp ra mắt', 'Đăng nhập bằng Google sẽ sớm được hỗ trợ.')}
+        disabled={!request || googleNotConfigured}
+        loading={signingIn}
+        onPress={() => promptAsync()}
       />
 
       <View style={styles.spacer} />
@@ -134,8 +108,6 @@ const styles = StyleSheet.create({
   content: { flexGrow: 1, gap: Spacing.three },
   hero: { gap: Spacing.one },
   heroTitle: { textAlign: 'left' },
-  fields: { gap: Spacing.three },
-  forgotLink: { alignSelf: 'flex-end' },
   spacer: { flex: 1, minHeight: Spacing.three },
   link: { alignSelf: 'center', paddingBottom: Spacing.three },
 });

@@ -1,5 +1,4 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
@@ -78,44 +77,42 @@ export default function BookingDetailScreen() {
     <Screen contentContainerStyle={styles.content}>
       <View style={styles.headerRow}>
         <ThemedText type="title" style={styles.title}>
-          {booking.roomTypeName ?? 'Đơn đặt phòng'}
+          {booking.roomType.name}
         </ThemedText>
         <StatusBadge status={booking.status} />
       </View>
 
       <ThemedView type="backgroundElement" style={styles.card}>
-        <Row icon="calendar-outline" label={`${formatDate(booking.checkIn)} → ${formatDate(booking.checkOut)}`} />
-        <Row icon="people-outline" label={`${booking.guestInfo.guests} khách · ${booking.guestInfo.fullName}`} />
+        <Row
+          icon="calendar-outline"
+          label={`${formatDate(booking.checkInDate)} → ${formatDate(booking.checkOutDate)}`}
+        />
+        <Row icon="people-outline" label={booking.guestInfo.fullName} />
         <Row icon="call-outline" label={booking.guestInfo.phone} />
-        {booking.totalAmount ? <Row icon="wallet-outline" label={formatVND(booking.totalAmount)} /> : null}
+        <Row icon="wallet-outline" label={formatVND(booking.totalAmount)} />
+        <Row
+          icon="card-outline"
+          label={
+            booking.paymentMethod === 'PAYOS'
+              ? `PayOS · ${booking.paymentStatus === 'PAID' ? 'Đã thanh toán' : 'Chưa thanh toán'}`
+              : `Tiền mặt · ${booking.paymentStatus === 'PAID' ? 'Đã thanh toán' : 'Thanh toán tại khách sạn'}`
+          }
+        />
       </ThemedView>
 
-      {booking.services && booking.services.length > 0 ? (
+      {booking.serviceItems.length > 0 ? (
         <View>
           <ThemedText type="smallBold" style={styles.sectionTitle}>
             Dịch vụ đã dùng
           </ThemedText>
-          {booking.services.map((service, index) => (
-            <View key={index} style={styles.serviceRow}>
+          {booking.serviceItems.map((item) => (
+            <View key={item.bookingServiceId} style={styles.serviceRow}>
               <ThemedText type="small">
-                {service.name ?? service.serviceId} × {service.quantity}
+                {item.service.name} × {item.quantity}
               </ThemedText>
-              {service.price ? <ThemedText type="small">{formatVND(service.price * service.quantity)}</ThemedText> : null}
+              <ThemedText type="small">{formatVND(item.unitPrice * item.quantity)}</ThemedText>
             </View>
           ))}
-        </View>
-      ) : null}
-
-      {booking.qrCode ? (
-        <View style={styles.qrSection}>
-          <ThemedText type="smallBold" style={styles.sectionTitle}>
-            Mã QR check-in
-          </ThemedText>
-          <Image
-            source={{ uri: booking.qrCode }}
-            style={styles.qrImage}
-            contentFit="contain"
-          />
         </View>
       ) : null}
 
@@ -125,15 +122,15 @@ export default function BookingDetailScreen() {
         </ThemedText>
       ) : null}
 
-      {booking.paymentInfo && booking.paymentInfo.status !== 'PAID' && booking.status !== 'CANCELLED' ? (
-        <Button label="Thanh toán ngay" onPress={() => router.push(`/checkout/${booking.id}`)} />
+      {booking.paymentMethod === 'PAYOS' && booking.paymentStatus === 'UNPAID' && booking.status !== 'CANCELLED' ? (
+        <Button label="Thanh toán ngay" onPress={() => router.push(`/checkout/${booking.bookingId}`)} />
       ) : null}
 
       {CANCELLABLE_STATUSES.has(booking.status) ? (
         <Button label="Huỷ đơn" variant="outline" onPress={handleCancel} loading={cancelling} />
       ) : null}
 
-      {booking.status === 'COMPLETED' && !reviewDone ? (
+      {booking.status === 'CHECKED_OUT' && !reviewDone ? (
         <ThemedView type="backgroundElement" style={styles.card}>
           <ThemedText type="smallBold">Đánh giá kỳ nghỉ của bạn</ThemedText>
           <View style={styles.ratingRow}>
@@ -179,7 +176,5 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   sectionTitle: { marginBottom: Spacing.one, fontSize: 16 },
   serviceRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 },
-  qrSection: { alignItems: 'center', gap: Spacing.two },
-  qrImage: { width: 200, height: 200 },
   ratingRow: { flexDirection: 'row', gap: Spacing.two },
 });

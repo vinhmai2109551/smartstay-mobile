@@ -1,10 +1,13 @@
 import { apiClient } from './client';
-import { CreatePaymentLinkDto, CreatePaymentLinkResponse, PaymentStatusResponse } from '@/types/payment';
+import { Booking } from '@/types/booking';
+import { CreatePayosLinkResponse } from '@/types/payment';
 
 export const paymentsApi = {
-  createLink: (dto: CreatePaymentLinkDto) =>
-    apiClient.post<CreatePaymentLinkResponse>('/payments/createlink', dto).then((r) => r.data),
+  createPayosLink: (bookingId: string) =>
+    apiClient.post<CreatePayosLinkResponse>(`/payments/payos/${bookingId}/link`).then((r) => r.data),
 
-  status: (bookingId: string) =>
-    apiClient.get<PaymentStatusResponse>(`/payments/${bookingId}/status`).then((r) => r.data),
+  // Actively asks PayOS for the latest status; returns the full (possibly
+  // updated) Booking, not a bare status field.
+  syncPayosStatus: (bookingId: string) =>
+    apiClient.get<Booking>(`/payments/payos/${bookingId}/sync`).then((r) => r.data),
 };

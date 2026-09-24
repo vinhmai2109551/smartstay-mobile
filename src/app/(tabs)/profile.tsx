@@ -5,6 +5,7 @@ import { Alert, Pressable, StyleSheet, View } from 'react-native';
 
 import { authApi } from '@/api/auth';
 import { getApiErrorMessage } from '@/api/client';
+import { usersApi } from '@/api/users';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Button } from '@/components/ui/Button';
@@ -49,7 +50,7 @@ export default function ProfileScreen() {
     setPasswordSuccess(false);
     setSubmitting(true);
     try {
-      await authApi.changePassword({ oldPassword, newPassword });
+      await usersApi.changePassword({ oldPassword, newPassword });
       setPasswordSuccess(true);
       setOldPassword('');
       setNewPassword('');
@@ -107,7 +108,12 @@ export default function ProfileScreen() {
             value={oldPassword}
             onChangeText={setOldPassword}
           />
-          <TextField label="Mật khẩu mới" secureTextEntry value={newPassword} onChangeText={setNewPassword} />
+          <TextField
+            label="Mật khẩu mới (tối thiểu 8 ký tự, có chữ và số)"
+            secureTextEntry
+            value={newPassword}
+            onChangeText={setNewPassword}
+          />
           {passwordError ? (
             <ThemedText type="small" themeColor="danger">
               {passwordError}
@@ -122,7 +128,7 @@ export default function ProfileScreen() {
             label="Cập nhật mật khẩu"
             onPress={handleChangePassword}
             loading={submitting}
-            disabled={!oldPassword || newPassword.length < 6}
+            disabled={!oldPassword || newPassword.length < 8}
           />
         </ThemedView>
       ) : null}

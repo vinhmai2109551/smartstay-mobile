@@ -6,9 +6,14 @@ import { ApiErrorBody } from '@/types/common';
 
 type RetryableRequestConfig = InternalAxiosRequestConfig & { _retry?: boolean };
 
+// withCredentials lets the (web) browser send/store the httpOnly refresh_token
+// cookie the backend sets on /auth/login, /auth/register, /auth/google and
+// /auth/refresh (see doc/API.md 0.2). On native, cookies are handled by the
+// OS network stack regardless of this flag.
 export const apiClient = axios.create({
   baseURL: API_URL,
   timeout: 15000,
+  withCredentials: true,
 });
 
 apiClient.interceptors.request.use((config) => {
@@ -22,13 +27,12 @@ apiClient.interceptors.request.use((config) => {
 let refreshPromise: Promise<string | null> | null = null;
 
 async function refreshAccessToken(): Promise<string | null> {
-  const { refreshToken } = useAuthStore.getState();
-  if (!refreshToken) return null;
-
   try {
-    const { data } = await axios.post<{ accessToken: string }>(`${API_URL}/auth/refreshtoken`, {
-      refreshToken,
-    });
+    const { data } = await axios.post<{ accessToken: string }>(
+      `${API_URL}/auth/refresh`,
+      undefined,
+      { withCredentials: true },
+    );
     useAuthStore.getState().setAccessToken(data.accessToken);
     return data.accessToken;
   } catch {

@@ -1,10 +1,9 @@
-import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useRef, useState } from 'react';
+import QRCode from 'react-native-qrcode-svg';
 import { StyleSheet, View } from 'react-native';
 
-import { bookingsApi } from '@/api/bookings';
 import { getApiErrorMessage } from '@/api/client';
 import { paymentsApi } from '@/api/payments';
 import { ThemedText } from '@/components/themed-text';
@@ -14,7 +13,7 @@ import { ErrorView } from '@/components/ui/ErrorView';
 import { LoadingView } from '@/components/ui/LoadingView';
 import { Screen } from '@/components/ui/Screen';
 import { Spacing } from '@/constants/theme';
-import { CreatePaymentLinkResponse, PaymentStatus } from '@/types/payment';
+import { CreatePayosLinkResponse } from '@/types/payment';
 import { formatVND } from '@/utils/currency';
 
 const POLL_INTERVAL_MS = 4000;
@@ -24,8 +23,9 @@ export default function CheckoutScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [amount, setAmount] = useState<number | null>(null);
-  const [payment, setPayment] = useState<CreatePaymentLinkResponse | null>(null);
-  const [status, setStatus] = useState<PaymentStatus>('PENDING');
+  const [link, setLink] = useState<CreatePayosLinkResponse | null>(null);
+  const [paid, setPaid] = useState(false);
+  const [expired, setExpired] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
@@ -35,14 +35,9 @@ export default function CheckoutScreen() {
       setLoading(true);
       setError(null);
       try {
-        const booking = await bookingsApi.detail(bookingId);
-        const bookingAmount = booking.totalAmount ?? 0;
+        const created = await paymentsApi.createPayosLink(bookingId);
         if (cancelled) return;
-        setAmount(bookingAmount);
-
-        const link = await paymentsApi.createLink({ bookingId, amount: bookingAmount });
-        if (cancelled) return;
-        setPayment(link);
+        setLink(created);
       } catch (err) {
         if (!cancelled) setError(getApiErrorMessage(err, 'Không thể khởi tạo thanh toán.'));
       } finally {
@@ -57,14 +52,18 @@ export default function CheckoutScreen() {
   }, [bookingId]);
 
   useEffect(() => {
-    if (!payment) return;
+    if (!link) return;
 
     pollRef.current = setInterval(async () => {
       try {
-        const result = await paymentsApi.status(bookingId);
-        setStatus(result.status);
-        if (result.status !== 'PENDING' && pollRef.current) {
-          clearInterval(pollRef.current);
+        const booking = await paymentsApi.syncPayosStatus(bookingId);
+        setAmount(booking.totalAmount);
+        if (booking.paymentStatus === 'PAID') {
+          setPaid(true);
+          if (pollRef.current) clearInterval(pollRef.current);
+        } else if (Date.now() / 1000 > link.expiredAt) {
+          setExpired(true);
+          if (pollRef.current) clearInterval(pollRef.current);
         }
       } catch {
         // ignore transient polling errors
@@ -74,12 +73,12 @@ export default function CheckoutScreen() {
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
     };
-  }, [payment, bookingId]);
+  }, [link, bookingId]);
 
   if (loading) return <LoadingView />;
-  if (error || !payment) return <ErrorView message={error ?? 'Không thể tạo link thanh toán.'} />;
+  if (error || !link) return <ErrorView message={error ?? 'Không thể tạo link thanh toán.'} />;
 
-  if (status === 'PAID') {
+  if (paid) {
     return (
       <Screen contentContainerStyle={styles.centerContent}>
         <ThemedText type="title" style={styles.successTitle}>
@@ -98,26 +97,30 @@ export default function CheckoutScreen() {
       <ThemedText type="title" style={styles.title}>
         Quét mã để thanh toán
       </ThemedText>
-      <ThemedText themeColor="textSecondary" style={styles.centerText}>
-        Số tiền cần thanh toán
-      </ThemedText>
-      <ThemedText type="title" themeColor="primary" style={styles.amount}>
-        {formatVND(amount)}
-      </ThemedText>
+      {amount != null ? (
+        <>
+          <ThemedText themeColor="textSecondary" style={styles.centerText}>
+            Số tiền cần thanh toán
+          </ThemedText>
+          <ThemedText type="title" themeColor="primary" style={styles.amount}>
+            {formatVND(amount)}
+          </ThemedText>
+        </>
+      ) : null}
 
       <ThemedView type="backgroundElement" style={styles.qrCard}>
-        <Image source={{ uri: payment.qrCode }} style={styles.qrImage} contentFit="contain" />
+        <QRCode value={link.qrCode} size={220} />
       </ThemedView>
 
       <View style={styles.statusRow}>
-        {status === 'FAILED' ? (
-          <ThemedText themeColor="danger">Thanh toán thất bại, vui lòng thử lại.</ThemedText>
+        {expired ? (
+          <ThemedText themeColor="danger">Mã QR đã hết hạn, vui lòng quay lại tạo đơn mới.</ThemedText>
         ) : (
           <ThemedText themeColor="textSecondary">Đang chờ xác nhận thanh toán…</ThemedText>
         )}
       </View>
 
-      <Button label="Mở trang thanh toán" variant="outline" onPress={() => WebBrowser.openBrowserAsync(payment.checkoutUrl)} />
+      <Button label="Mở trang thanh toán" variant="outline" onPress={() => WebBrowser.openBrowserAsync(link.checkoutUrl)} />
     </Screen>
   );
 }
@@ -130,6 +133,5 @@ const styles = StyleSheet.create({
   centerText: { textAlign: 'center' },
   amount: { fontSize: 28 },
   qrCard: { padding: Spacing.three, borderRadius: Spacing.three, marginVertical: Spacing.three },
-  qrImage: { width: 220, height: 220 },
   statusRow: { marginBottom: Spacing.two },
 });

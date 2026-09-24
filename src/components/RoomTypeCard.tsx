@@ -2,7 +2,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { RatingStars } from '@/components/RatingStars';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { DemoRoomImageByName } from '@/constants/demoImages';
@@ -49,7 +48,6 @@ export function RoomTypeCard({ roomType, onPress }: RoomTypeCardProps) {
               </ThemedText>
             ) : null}
           </View>
-          {roomType.avgRating ? <RatingStars rating={roomType.avgRating} /> : null}
           <ThemedText type="smallBold" themeColor="primary">
             {formatVND(roomType.basePrice)}
             <ThemedText type="small" themeColor="textSecondary">

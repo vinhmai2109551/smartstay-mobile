@@ -78,7 +78,7 @@ export default function SearchScreen() {
 
       <FlatList
         data={results ?? []}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item.roomTypeId}
         contentContainerStyle={styles.list}
         ListEmptyComponent={
           results !== null ? (
@@ -94,7 +94,12 @@ export default function SearchScreen() {
               onPress={() =>
                 router.push({
                   pathname: '/room/[id]',
-                  params: { id: item.id, checkIn: toIsoDate(checkIn), checkOut: toIsoDate(checkOut), guests: String(guests) },
+                  params: {
+                    id: item.roomTypeId,
+                    checkIn: toIsoDate(checkIn),
+                    checkOut: toIsoDate(checkOut),
+                    guests: String(guests),
+                  },
                 })
               }
             />

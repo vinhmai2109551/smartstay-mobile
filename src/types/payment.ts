@@ -1,16 +1,6 @@
-export type PaymentStatus = 'PAID' | 'PENDING' | 'FAILED';
-
-export type CreatePaymentLinkDto = {
-  bookingId: string;
-  amount: number;
-};
-
-export type CreatePaymentLinkResponse = {
+export type CreatePayosLinkResponse = {
   checkoutUrl: string;
+  // Raw VietQR payload string — render it as a QR code locally, it is not an image URL.
   qrCode: string;
-  paymentLinkId: string;
-};
-
-export type PaymentStatusResponse = {
-  status: PaymentStatus;
+  expiredAt: number;
 };

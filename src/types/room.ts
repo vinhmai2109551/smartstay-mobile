@@ -1,38 +1,23 @@
-export type Amenity = {
-  id: string;
-  name: string;
-  icon?: string;
-};
-
 export type RoomType = {
-  id: string;
+  roomTypeId: string;
   name: string;
-  description: string;
+  description?: string;
   basePrice: number;
   capacity: number;
-  amenities: Amenity[] | string[];
+  amenities: string[];
   images: string[];
   status?: 'ACTIVE' | 'INACTIVE';
-  avgRating?: number;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
-export type RoomTypeDetail = RoomType & {
-  roomTypeDetail?: Record<string, unknown>;
-};
+export type RoomTypeDetail = RoomType;
 
 export type AvailableRoomType = RoomType & {
-  availableCount?: number;
+  availableCount: number;
 };
 
-export type RoomStatus = 'AVAILABLE' | 'OCCUPIED' | 'BOOKED' | 'CLEANING' | 'MAINTENANCE';
-
-export type Room = {
-  id: string;
-  roomNumber: string;
-  floorId: string;
-  roomTypeId: string;
-  status: RoomStatus;
-};
+export type RoomStatus = 'AVAILABLE' | 'OCCUPIED' | 'RESERVED' | 'CLEANING' | 'MAINTENANCE';
 
 export type SearchAvailabilityParams = {
   checkIn: string;

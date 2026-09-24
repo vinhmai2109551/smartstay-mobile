@@ -1,9 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
-import * as Crypto from 'expo-crypto';
 import { useRef, useState } from 'react';
 import { FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from 'react-native';
 
-import { chatApi } from '@/api/chat';
+import { aiChatApi } from '@/api/chat';
 import { getApiErrorMessage } from '@/api/client';
 import { ChatBubble } from '@/components/ChatBubble';
 import { Screen } from '@/components/ui/Screen';
@@ -13,48 +12,69 @@ import { useTheme } from '@/hooks/use-theme';
 import { ChatMessage } from '@/types/chat';
 
 const WELCOME_MESSAGE: ChatMessage = {
-  role: 'assistant',
-  message:
+  role: 'MODEL',
+  content:
     'Xin chào! Mình là trợ lý ảo của SmartStay 👋 Bạn muốn tìm phòng theo ngày nào, cho bao nhiêu khách? Mình có thể tư vấn và đặt phòng giúp bạn ngay tại đây.',
 };
 
 export default function ChatScreen() {
   const theme = useTheme();
-  const sessionIdRef = useRef(Crypto.randomUUID());
+  const conversationIdRef = useRef<string | undefined>(undefined);
   const [messages, setMessages] = useState<ChatMessage[]>([WELCOME_MESSAGE]);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
+  const [confirmingProposalId, setConfirmingProposalId] = useState<string | null>(null);
   const listRef = useRef<FlatList>(null);
 
-  const handleSend = async () => {
-    const text = input.trim();
-    if (!text || sending) return;
+  const scrollToEnd = () => requestAnimationFrame(() => listRef.current?.scrollToEnd({ animated: true }));
 
-    const userMessage: ChatMessage = { role: 'user', message: text };
-    const nextMessages = [...messages, userMessage];
-    setMessages(nextMessages);
-    setInput('');
+  const send = async (text: string, confirmProposalId?: string) => {
     setSending(true);
-
     try {
-      const response = await chatApi.sendMessage({
-        sessionId: sessionIdRef.current,
+      const response = await aiChatApi.sendMessage({
+        conversationId: conversationIdRef.current,
         message: text,
-        conversationHistory: nextMessages.map(({ role, message }) => ({ role, message })),
+        confirmProposalId,
       });
+      conversationIdRef.current = response.conversationId;
       setMessages((prev) => [
         ...prev,
-        { role: 'assistant', message: response.reply, dataCard: response.dataCard },
+        {
+          role: 'MODEL',
+          content: response.reply,
+          rooms: response.rooms,
+          promotions: response.promotions,
+          pendingBooking: response.pendingBooking,
+          booking: response.booking,
+        },
       ]);
     } catch (error) {
       setMessages((prev) => [
         ...prev,
-        { role: 'assistant', message: getApiErrorMessage(error, 'Trợ lý AI hiện chưa phản hồi được, vui lòng thử lại.') },
+        { role: 'MODEL', content: getApiErrorMessage(error, 'Trợ lý AI hiện chưa phản hồi được, vui lòng thử lại.') },
       ]);
     } finally {
       setSending(false);
-      requestAnimationFrame(() => listRef.current?.scrollToEnd({ animated: true }));
+      setConfirmingProposalId(null);
+      scrollToEnd();
     }
+  };
+
+  const handleSend = () => {
+    const text = input.trim();
+    if (!text || sending) return;
+    setMessages((prev) => [...prev, { role: 'USER', content: text }]);
+    setInput('');
+    scrollToEnd();
+    send(text);
+  };
+
+  const handleConfirmBooking = (proposalId: string) => {
+    if (sending) return;
+    setConfirmingProposalId(proposalId);
+    setMessages((prev) => [...prev, { role: 'USER', content: 'Xác nhận đặt phòng' }]);
+    scrollToEnd();
+    send('Xác nhận đặt phòng', proposalId);
   };
 
   return (
@@ -68,8 +88,14 @@ export default function ChatScreen() {
           data={messages}
           keyExtractor={(_, index) => String(index)}
           contentContainerStyle={styles.list}
-          renderItem={({ item }) => <ChatBubble message={item} />}
-          onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
+          renderItem={({ item }) => (
+            <ChatBubble
+              message={item}
+              confirming={sending && item.pendingBooking?.proposalId === confirmingProposalId}
+              onConfirmBooking={handleConfirmBooking}
+            />
+          )}
+          onContentSizeChange={scrollToEnd}
           ItemSeparatorComponent={() => <View style={{ height: Spacing.three }} />}
         />
 

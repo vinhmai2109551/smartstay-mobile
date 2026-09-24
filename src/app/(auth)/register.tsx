@@ -1,10 +1,10 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Ionicons } from '@expo/vector-icons';
 import { Link, router } from 'expo-router';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { z } from 'zod';
+import { Ionicons } from '@expo/vector-icons';
 
 import { authApi } from '@/api/auth';
 import { getApiErrorMessage } from '@/api/client';
@@ -30,7 +30,6 @@ type FormValues = z.infer<typeof schema>;
 export default function RegisterScreen() {
   const theme = useTheme();
   const [serverError, setServerError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
 
   const {
     control,
@@ -45,29 +44,14 @@ export default function RegisterScreen() {
     setServerError(null);
     try {
       const { fullName, email, phone, password } = values;
+      // Step 1/2: this only sends an OTP to the email — the account is not
+      // created yet (doc/API.md 1.1). Verification happens on the next screen.
       await authApi.register({ fullName, email, phone, password });
-      setSuccess(true);
+      router.push({ pathname: '/(auth)/verify-otp', params: { email } });
     } catch (error) {
       setServerError(getApiErrorMessage(error, 'Đăng ký thất bại, vui lòng thử lại.'));
     }
   };
-
-  if (success) {
-    return (
-      <Screen contentContainerStyle={styles.successContent}>
-        <View style={[styles.successBadge, { backgroundColor: theme.backgroundSelected }]}>
-          <Ionicons name="checkmark-circle" size={48} color={theme.primary} />
-        </View>
-        <ThemedText type="title" style={styles.title}>
-          Đăng ký thành công
-        </ThemedText>
-        <ThemedText themeColor="textSecondary" style={styles.subtitle}>
-          Hãy đăng nhập bằng tài khoản vừa tạo.
-        </ThemedText>
-        <Button label="Đến trang đăng nhập" onPress={() => router.replace('/(auth)/login')} />
-      </Screen>
-    );
-  }
 
   return (
     <Screen contentContainerStyle={styles.content}>
@@ -202,7 +186,16 @@ export default function RegisterScreen() {
         label="Tiếp tục với Google"
         variant="outline"
         icon="logo-google"
-        onPress={() => Alert.alert('Sắp ra mắt', 'Đăng nhập bằng Google sẽ sớm được hỗ trợ.')}
+        onPress={() =>
+          Alert.alert(
+            'Dùng Google ở màn Đăng nhập',
+            'Google tự tạo tài khoản cho bạn nếu email chưa tồn tại — quay lại màn Đăng nhập và bấm "Tiếp tục với Google".',
+            [
+              { text: 'Để sau', style: 'cancel' },
+              { text: 'Đến Đăng nhập', onPress: () => router.replace('/(auth)/login') },
+            ],
+          )
+        }
       />
 
       <View style={styles.spacer} />
@@ -234,8 +227,4 @@ const styles = StyleSheet.create({
   agreeText: { flex: 1, flexShrink: 1 },
   spacer: { flex: 1, minHeight: Spacing.three },
   link: { alignSelf: 'center', paddingBottom: Spacing.three },
-  successContent: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', gap: Spacing.three },
-  successBadge: { width: 88, height: 88, borderRadius: 44, alignItems: 'center', justifyContent: 'center' },
-  title: { textAlign: 'center' },
-  subtitle: { textAlign: 'center' },
 });

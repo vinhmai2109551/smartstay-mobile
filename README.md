@@ -52,9 +52,8 @@ src/
 
 ## Trạng thái hiện tại
 
-Đã kết nối các API khách hàng theo tài liệu API backend: `/auth`, `/room-types`, `/rooms/availability`, `/bookings`, `/promotions`, `/services`, `/payments`, `/reviews`, `/chat`, `/notifications`. Phần Admin/Lễ tân (Smart Dashboard, quản lý phòng/ca trực...) chưa nằm trong phạm vi app mobile này.
+Đã khớp lại toàn bộ API khách hàng theo `doc/API.md` (tài liệu đọc trực tiếp từ source code backend): `/auth` (đăng ký 2 bước + OTP, `/auth/refresh` qua cookie), `/users/me`, `/room-types`, `/rooms/availability`, `/bookings`, `/promotions`, `/services`, `/payments/payos`, `/ai-agent/chat`. Phần Admin/Lễ tân (Smart Dashboard, quản lý phòng/ca trực...) không nằm trong phạm vi app mobile này.
 
-Một số điểm cần khớp lại với backend thật khi tích hợp:
+**Đăng nhập bằng mật khẩu tạm thời không dùng được trên mobile**: backend yêu cầu `turnstileToken` (Cloudflare Turnstile), chỉ chạy được trên web, chưa có SDK cho native app. Màn đăng nhập hiện chỉ có nút "Tiếp tục với Google" (`POST /auth/google`) — cần điền `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` trong `.env` (Google Cloud Console > OAuth 2.0 Client IDs, loại Web application) để bật được.
 
-- Field chính xác của `dataCard` trả về từ `POST /chat/message` (hiện đang giả định có thể chứa `roomTypes[]` và/hoặc `booking`) — chỉnh trong `src/types/chat.ts`.
-- Định dạng `qrCode` của booking và của link thanh toán PayOS (đang giả định là URL ảnh hoặc data URI dùng được trực tiếp với `<Image>`).
+`/reviews` và `/notifications` chưa tồn tại ở backend — 2 màn hình liên quan (đánh giá phòng, thông báo) vẫn còn trong code nhưng sẽ lỗi 404 khi gọi thật; để lại vì sẽ bổ sung endpoint sau.

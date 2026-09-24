@@ -22,7 +22,7 @@ export default function BookingsScreen() {
     <Screen scroll={false} padded={false}>
       <FlatList
         data={data?.data ?? []}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item.bookingId}
         contentContainerStyle={styles.list}
         onRefresh={refetch}
         refreshing={loading}
@@ -38,7 +38,7 @@ export default function BookingsScreen() {
         }
         renderItem={({ item }) => (
           <View style={styles.cardWrapper}>
-            <BookingCard booking={item} onPress={() => router.push(`/booking/${item.id}`)} />
+            <BookingCard booking={item} onPress={() => router.push(`/booking/${item.bookingId}`)} />
           </View>
         )}
       />

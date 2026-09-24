@@ -1,7 +1,10 @@
+export type ServiceCategory = 'MINIBAR' | 'SERVICE';
+
 export type Service = {
-  id: string;
+  serviceId: string;
   name: string;
-  description?: string;
+  description?: string | null;
+  category: ServiceCategory;
   price: number;
   unit: string;
   isActive?: boolean;

@@ -18,7 +18,7 @@ export function BookingCard({ booking, onPress }: { booking: Booking; onPress?: 
       <ThemedView type="backgroundElement" style={styles.card}>
         <View style={styles.header}>
           <ThemedText type="smallBold" numberOfLines={1} style={styles.title}>
-            {booking.roomTypeName ?? 'Đơn đặt phòng'}
+            {booking.roomType.name}
           </ThemedText>
           <StatusBadge status={booking.status} />
         </View>
@@ -26,15 +26,13 @@ export function BookingCard({ booking, onPress }: { booking: Booking; onPress?: 
         <View style={styles.row}>
           <Ionicons name="calendar-outline" size={14} color={theme.textSecondary} />
           <ThemedText type="small" themeColor="textSecondary">
-            {formatDate(booking.checkIn)} - {formatDate(booking.checkOut)}
+            {formatDate(booking.checkInDate)} - {formatDate(booking.checkOutDate)}
           </ThemedText>
         </View>
 
-        {booking.totalAmount ? (
-          <ThemedText type="smallBold" themeColor="primary">
-            {formatVND(booking.totalAmount)}
-          </ThemedText>
-        ) : null}
+        <ThemedText type="smallBold" themeColor="primary">
+          {formatVND(booking.totalAmount)}
+        </ThemedText>
       </ThemedView>
     </Pressable>
   );

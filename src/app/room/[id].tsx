@@ -68,7 +68,6 @@ export default function RoomTypeDetailScreen() {
         <ThemedText type="title" style={styles.name}>
           {roomType.name}
         </ThemedText>
-        {roomType.avgRating ? <RatingStars rating={roomType.avgRating} /> : null}
       </View>
 
       <View style={styles.metaRow}>
@@ -88,14 +87,11 @@ export default function RoomTypeDetailScreen() {
             Tiện ích
           </ThemedText>
           <View style={styles.amenityWrap}>
-            {roomType.amenities.map((amenity, index) => {
-              const label = typeof amenity === 'string' ? amenity : amenity.name;
-              return (
-                <View key={index} style={[styles.amenityChip, { borderColor: theme.border }]}>
-                  <ThemedText type="small">{label}</ThemedText>
-                </View>
-              );
-            })}
+            {roomType.amenities.map((amenity, index) => (
+              <View key={index} style={[styles.amenityChip, { borderColor: theme.border }]}>
+                <ThemedText type="small">{amenity}</ThemedText>
+              </View>
+            ))}
           </View>
         </View>
       ) : null}
@@ -128,7 +124,7 @@ export default function RoomTypeDetailScreen() {
         onPress={() =>
           router.push({
             pathname: '/booking/new',
-            params: { roomTypeId: roomType.id, checkIn, checkOut, guests },
+            params: { roomTypeId: roomType.roomTypeId, checkIn, checkOut, guests },
           })
         }
       />

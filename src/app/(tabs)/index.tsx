@@ -34,7 +34,7 @@ export default function HomeScreen() {
     <Screen scroll={false} padded={false}>
       <FlatList
         data={roomTypes.data ?? []}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item.roomTypeId}
         contentContainerStyle={styles.list}
         ListHeaderComponent={
           <View style={styles.header}>
@@ -61,7 +61,7 @@ export default function HomeScreen() {
         }
         renderItem={({ item }) => (
           <View style={styles.cardWrapper}>
-            <RoomTypeCard roomType={item} onPress={() => router.push(`/room/${item.id}`)} />
+            <RoomTypeCard roomType={item} onPress={() => router.push(`/room/${item.roomTypeId}`)} />
           </View>
         )}
       />

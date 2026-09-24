@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { RoomTypeCard } from '@/components/RoomTypeCard';
 import { ThemedText } from '@/components/themed-text';
+import { Button } from '@/components/ui/Button';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -10,9 +11,17 @@ import { ChatMessage } from '@/types/chat';
 import { formatVND } from '@/utils/currency';
 import { formatDate } from '@/utils/date';
 
-export function ChatBubble({ message }: { message: ChatMessage }) {
+export function ChatBubble({
+  message,
+  onConfirmBooking,
+  confirming,
+}: {
+  message: ChatMessage;
+  onConfirmBooking?: (proposalId: string) => void;
+  confirming?: boolean;
+}) {
   const theme = useTheme();
-  const isUser = message.role === 'user';
+  const isUser = message.role === 'USER';
 
   return (
     <View style={[styles.container, isUser ? styles.alignEnd : styles.alignStart]}>
@@ -22,39 +31,55 @@ export function ChatBubble({ message }: { message: ChatMessage }) {
           { backgroundColor: isUser ? theme.primary : theme.backgroundElement },
           isUser ? styles.bubbleUser : styles.bubbleAssistant,
         ]}>
-        <ThemedText style={{ color: isUser ? theme.primaryText : theme.text }}>{message.message}</ThemedText>
+        <ThemedText style={{ color: isUser ? theme.primaryText : theme.text }}>{message.content}</ThemedText>
       </View>
 
-      {message.dataCard?.roomTypes?.length ? (
+      {message.rooms?.length ? (
         <View style={styles.cards}>
-          {message.dataCard.roomTypes.map((roomType) => (
+          {message.rooms.map((roomType) => (
             <RoomTypeCard
-              key={roomType.id}
+              key={roomType.roomTypeId}
               roomType={roomType}
-              onPress={() => router.push(`/room/${roomType.id}`)}
+              onPress={() => router.push(`/room/${roomType.roomTypeId}`)}
             />
           ))}
         </View>
       ) : null}
 
-      {message.dataCard?.booking ? (
-        <View style={[styles.bookingCard, { borderColor: theme.border, backgroundColor: theme.backgroundElement }]}>
+      {message.pendingBooking ? (
+        <View style={[styles.card, { borderColor: theme.border, backgroundColor: theme.backgroundElement }]}>
+          <ThemedText type="smallBold">Xác nhận đặt phòng</ThemedText>
+          <ThemedText type="small" themeColor="textSecondary">
+            {message.pendingBooking.roomTypeName}
+          </ThemedText>
+          <ThemedText type="small" themeColor="textSecondary">
+            {formatDate(message.pendingBooking.checkIn)} - {formatDate(message.pendingBooking.checkOut)} ·{' '}
+            {message.pendingBooking.nights} đêm
+          </ThemedText>
+          <ThemedText type="smallBold" themeColor="primary">
+            {formatVND(message.pendingBooking.totalAmount)}
+          </ThemedText>
+          <Button
+            label="Xác nhận đặt phòng"
+            loading={confirming}
+            onPress={() => onConfirmBooking?.(message.pendingBooking!.proposalId)}
+          />
+        </View>
+      ) : null}
+
+      {message.booking ? (
+        <View style={[styles.card, { borderColor: theme.border, backgroundColor: theme.backgroundElement }]}>
           <View style={styles.bookingHeader}>
             <ThemedText type="smallBold">Đơn đặt phòng</ThemedText>
-            <StatusBadge status={message.dataCard.booking.status} />
+            <StatusBadge status={message.booking.status} />
           </View>
-          <ThemedText type="small" themeColor="textSecondary">
-            {formatDate(message.dataCard.booking.checkIn)} - {formatDate(message.dataCard.booking.checkOut)}
+          <ThemedText type="smallBold" themeColor="primary">
+            {formatVND(message.booking.totalAmount)}
           </ThemedText>
-          {message.dataCard.booking.totalAmount ? (
-            <ThemedText type="smallBold" themeColor="primary">
-              {formatVND(message.dataCard.booking.totalAmount)}
-            </ThemedText>
-          ) : null}
           <ThemedText
             type="link"
             themeColor="primary"
-            onPress={() => router.push(`/booking/${message.dataCard!.booking!.id}`)}>
+            onPress={() => router.push(`/booking/${message.booking!.bookingId}`)}>
             Xem chi tiết đơn →
           </ThemedText>
         </View>
@@ -75,7 +100,7 @@ const styles = StyleSheet.create({
   bubbleUser: { borderBottomRightRadius: 4 },
   bubbleAssistant: { borderBottomLeftRadius: 4 },
   cards: { gap: Spacing.two, width: 240 },
-  bookingCard: {
+  card: {
     width: 240,
     borderWidth: 1,
     borderRadius: Spacing.three,

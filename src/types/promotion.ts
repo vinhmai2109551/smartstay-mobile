@@ -1,12 +1,15 @@
+export type DiscountType = 'PERCENTAGE' | 'FIXED';
+
 export type Promotion = {
-  id: string;
+  promotionId: string;
   code: string;
-  description: string;
-  discountType: 'PERCENT' | 'AMOUNT';
+  description?: string;
+  discountType: DiscountType;
   discountValue: number;
   startDate: string;
   endDate: string;
   usageLimit?: number;
+  usedCount?: number;
   isActive?: boolean;
 };
 
