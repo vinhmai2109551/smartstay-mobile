@@ -1,36 +1,90 @@
-import { StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useState } from 'react';
+import { Pressable, StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { Spacing } from '@/constants/theme';
+import { FontFamily, MinTouch, Radius, Space } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 type TextFieldProps = TextInputProps & {
   label?: string;
   error?: string;
+  hint?: string;
+  leftIcon?: keyof typeof Ionicons.glyphMap;
 };
 
-export function TextField({ label, error, style, ...rest }: TextFieldProps) {
+export function TextField({
+  label,
+  error,
+  hint,
+  leftIcon,
+  style,
+  onFocus,
+  onBlur,
+  multiline,
+  secureTextEntry,
+  ...rest
+}: TextFieldProps) {
   const theme = useTheme();
+  const [focused, setFocused] = useState(false);
+  // Password fields get a show/hide toggle.
+  const [revealed, setRevealed] = useState(false);
+
+  const borderColor = error ? theme.danger : focused ? theme.primary : theme.border;
+  const iconColor = error ? theme.danger : focused ? theme.primary : theme.textSecondary;
 
   return (
     <View style={styles.container}>
       {label ? <ThemedText type="smallBold">{label}</ThemedText> : null}
-      <TextInput
-        placeholderTextColor={theme.textSecondary}
+      <View
         style={[
-          styles.input,
+          styles.field,
+          multiline && styles.fieldMultiline,
           {
-            color: theme.text,
-            borderColor: error ? theme.danger : theme.border,
+            borderColor,
+            // Thicker border on focus/error so the state isn't conveyed by colour alone.
+            borderWidth: focused || error ? 1.5 : 1,
             backgroundColor: theme.backgroundElement,
           },
-          style,
-        ]}
-        {...rest}
-      />
+        ]}>
+        {leftIcon ? <Ionicons name={leftIcon} size={20} color={iconColor} style={styles.icon} /> : null}
+        <TextInput
+          placeholderTextColor={theme.textSecondary}
+          multiline={multiline}
+          secureTextEntry={secureTextEntry && !revealed}
+          accessibilityLabel={label}
+          style={[styles.input, multiline && styles.inputMultiline, { color: theme.text }, style]}
+          onFocus={(e) => {
+            setFocused(true);
+            onFocus?.(e);
+          }}
+          onBlur={(e) => {
+            setFocused(false);
+            onBlur?.(e);
+          }}
+          {...rest}
+        />
+        {secureTextEntry ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={revealed ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+            onPress={() => setRevealed((v) => !v)}
+            hitSlop={8}
+            style={styles.trailing}>
+            <Ionicons name={revealed ? 'eye-off-outline' : 'eye-outline'} size={20} color={theme.textSecondary} />
+          </Pressable>
+        ) : null}
+      </View>
       {error ? (
-        <ThemedText type="small" themeColor="danger">
-          {error}
+        <View style={styles.messageRow}>
+          <Ionicons name="alert-circle" size={14} color={theme.danger} />
+          <ThemedText type="caption" themeColor="danger" style={styles.message}>
+            {error}
+          </ThemedText>
+        </View>
+      ) : hint ? (
+        <ThemedText type="caption" themeColor="textSecondary">
+          {hint}
         </ThemedText>
       ) : null}
     </View>
@@ -39,13 +93,48 @@ export function TextField({ label, error, style, ...rest }: TextFieldProps) {
 
 const styles = StyleSheet.create({
   container: {
-    gap: Spacing.one,
+    gap: Space.sm,
+  },
+  field: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 52,
+    borderRadius: Radius.md,
+    paddingHorizontal: Space.lg,
+  },
+  fieldMultiline: {
+    alignItems: 'flex-start',
+    minHeight: 110,
+    paddingVertical: Space.md,
+  },
+  icon: {
+    marginRight: Space.md,
+  },
+  trailing: {
+    minWidth: 36,
+    minHeight: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: Space.sm,
   },
   input: {
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two + 2,
+    flex: 1,
+    minHeight: MinTouch,
+    fontFamily: FontFamily.regular,
     fontSize: 16,
+    paddingVertical: Space.md,
+  },
+  inputMultiline: {
+    minHeight: 86,
+    paddingVertical: 0,
+    textAlignVertical: 'top',
+  },
+  messageRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Space.xs,
+  },
+  message: {
+    flex: 1,
   },
 });

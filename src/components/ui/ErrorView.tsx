@@ -1,9 +1,11 @@
-import { StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Button } from '@/components/ui/Button';
-import { Spacing } from '@/constants/theme';
+import { Space } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 
 type ErrorViewProps = {
   message: string;
@@ -11,17 +13,31 @@ type ErrorViewProps = {
 };
 
 export function ErrorView({ message, onRetry }: ErrorViewProps) {
+  const theme = useTheme();
+
   return (
     <ThemedView style={styles.container}>
-      <ThemedText type="default" style={styles.message}>
-        {message}
-      </ThemedText>
-      {onRetry ? <Button label="Thử lại" variant="outline" onPress={onRetry} /> : null}
+      <View style={[styles.iconCircle, { backgroundColor: theme.backgroundSelected }]}>
+        <Ionicons name="cloud-offline-outline" size={32} color={theme.textSecondary} />
+      </View>
+      <View style={styles.text}>
+        <ThemedText type="heading" style={styles.center}>
+          Đã có lỗi xảy ra
+        </ThemedText>
+        <ThemedText type="body" themeColor="textSecondary" style={styles.center}>
+          {message}
+        </ThemedText>
+      </View>
+      {onRetry ? (
+        <Button label="Thử lại" icon="refresh" variant="secondary" fullWidth={false} onPress={onRetry} />
+      ) : null}
     </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: Spacing.three, padding: Spacing.four },
-  message: { textAlign: 'center' },
+  container: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: Space.xl, padding: Space['3xl'] },
+  iconCircle: { width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center' },
+  text: { gap: Space.xs, maxWidth: 320 },
+  center: { textAlign: 'center' },
 });

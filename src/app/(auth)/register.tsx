@@ -14,7 +14,7 @@ import { Checkbox } from '@/components/ui/Checkbox';
 import { OrDivider } from '@/components/ui/OrDivider';
 import { Screen } from '@/components/ui/Screen';
 import { TextField } from '@/components/ui/TextField';
-import { Spacing } from '@/constants/theme';
+import { MinTouch, Radius, Space } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 const schema = z.object({
@@ -57,19 +57,23 @@ export default function RegisterScreen() {
     <Screen contentContainerStyle={styles.content}>
       <View style={styles.header}>
         <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Quay lại"
           onPress={() => router.back()}
-          hitSlop={8}
-          style={[styles.backButton, { borderColor: theme.border }]}>
-          <Ionicons name="chevron-back" size={20} color={theme.text} />
+          style={({ pressed }) => [
+            styles.backButton,
+            { borderColor: theme.border, backgroundColor: theme.backgroundElement, opacity: pressed ? 0.7 : 1 },
+          ]}>
+          <Ionicons name="chevron-back" size={22} color={theme.text} />
         </Pressable>
-        <ThemedText type="smallBold">Tạo tài khoản</ThemedText>
+        <ThemedText type="bodyBold">Tạo tài khoản</ThemedText>
       </View>
 
       <View style={styles.hero}>
-        <ThemedText type="title" style={styles.heroTitle}>
-          Bắt đầu với SmartStay
+        <ThemedText type="display">Bắt đầu với{'\n'}SmartStay</ThemedText>
+        <ThemedText type="body" themeColor="textSecondary">
+          Chỉ mất một phút để tạo tài khoản.
         </ThemedText>
-        <ThemedText themeColor="textSecondary">Chỉ mất một phút để tạo tài khoản.</ThemedText>
       </View>
 
       <View style={styles.fields}>
@@ -79,6 +83,8 @@ export default function RegisterScreen() {
           render={({ field: { onChange, onBlur, value } }) => (
             <TextField
               label="Họ và tên"
+              leftIcon="person-outline"
+              textContentType="name"
               placeholder="Nguyễn Văn A"
               value={value}
               onChangeText={onChange}
@@ -94,8 +100,11 @@ export default function RegisterScreen() {
           render={({ field: { onChange, onBlur, value } }) => (
             <TextField
               label="Email"
+              leftIcon="mail-outline"
               placeholder="ban@email.com"
               autoCapitalize="none"
+              autoComplete="email"
+              textContentType="emailAddress"
               keyboardType="email-address"
               value={value}
               onChangeText={onChange}
@@ -111,6 +120,8 @@ export default function RegisterScreen() {
           render={({ field: { onChange, onBlur, value } }) => (
             <TextField
               label="Số điện thoại"
+              leftIcon="call-outline"
+              textContentType="telephoneNumber"
               placeholder="09xx xxx xxx"
               keyboardType="phone-pad"
               value={value}
@@ -127,7 +138,10 @@ export default function RegisterScreen() {
           render={({ field: { onChange, onBlur, value } }) => (
             <TextField
               label="Mật khẩu"
+              leftIcon="lock-closed-outline"
               placeholder="Tối thiểu 6 ký tự"
+              autoComplete="new-password"
+              textContentType="newPassword"
               secureTextEntry
               value={value}
               onChangeText={onChange}
@@ -173,18 +187,22 @@ export default function RegisterScreen() {
       ) : null}
 
       {serverError ? (
-        <ThemedText type="small" themeColor="danger">
-          {serverError}
-        </ThemedText>
+        <View style={[styles.errorBox, { backgroundColor: `${theme.danger}14` }]}>
+          <Ionicons name="alert-circle" size={18} color={theme.danger} />
+          <ThemedText type="small" themeColor="danger" style={styles.agreeText}>
+            {serverError}
+          </ThemedText>
+        </View>
       ) : null}
 
-      <Button label="Đăng ký" onPress={handleSubmit(onSubmit)} loading={isSubmitting} />
+      <Button label="Đăng ký" size="lg" onPress={handleSubmit(onSubmit)} loading={isSubmitting} />
 
       <OrDivider />
 
       <Button
         label="Tiếp tục với Google"
         variant="outline"
+        size="lg"
         icon="logo-google"
         onPress={() =>
           Alert.alert(
@@ -200,31 +218,44 @@ export default function RegisterScreen() {
 
       <View style={styles.spacer} />
 
-      <Link href="/(auth)/login" style={styles.link}>
-        <ThemedText type="link" themeColor="primary">
-          Đã có tài khoản? Đăng nhập
+      <View style={styles.footer}>
+        <ThemedText type="small" themeColor="textSecondary">
+          Đã có tài khoản?
         </ThemedText>
-      </Link>
+        <Link href="/(auth)/login" asChild>
+          <Pressable accessibilityRole="link" hitSlop={10}>
+            <ThemedText type="smallBold" themeColor="primary">
+              Đăng nhập
+            </ThemedText>
+          </Pressable>
+        </Link>
+      </View>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { flexGrow: 1, gap: Spacing.three },
-  header: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
+  content: { flexGrow: 1, gap: Space.xl },
+  header: { flexDirection: 'row', alignItems: 'center', gap: Space.md },
   backButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    borderWidth: 1,
+    width: MinTouch,
+    height: MinTouch,
+    borderRadius: MinTouch / 2,
+    borderWidth: StyleSheet.hairlineWidth,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  hero: { gap: Spacing.one },
-  heroTitle: { textAlign: 'left' },
-  fields: { gap: Spacing.three },
-  agreeRow: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.two },
+  hero: { gap: Space.sm },
+  fields: { gap: Space.lg },
+  agreeRow: { flexDirection: 'row', alignItems: 'flex-start', gap: Space.md },
   agreeText: { flex: 1, flexShrink: 1 },
-  spacer: { flex: 1, minHeight: Spacing.three },
-  link: { alignSelf: 'center', paddingBottom: Spacing.three },
+  errorBox: { flexDirection: 'row', alignItems: 'center', gap: Space.sm, padding: Space.md, borderRadius: Radius.md },
+  spacer: { flex: 1, minHeight: Space.lg },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: Space.xs,
+    paddingBottom: Space.lg,
+  },
 });

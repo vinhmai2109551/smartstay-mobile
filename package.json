@@ -3,6 +3,8 @@
   "main": "expo-router/entry",
   "version": "1.0.0",
   "dependencies": {
+    "@expo-google-fonts/be-vietnam-pro": "^0.4.1",
+    "@expo-google-fonts/playfair-display": "^0.4.2",
     "@expo/vector-icons": "^15.0.2",
     "@hookform/resolvers": "^5.9.1",
     "@react-native-community/datetimepicker": "9.1.0",
@@ -10,6 +12,7 @@
     "dayjs": "^1.11.23",
     "expo": "^57.0.0",
     "expo-auth-session": "~57.0.12",
+    "expo-clipboard": "~57.0.2",
     "expo-constants": "~57.0.19",
     "expo-crypto": "~57.0.3",
     "expo-dev-client": "~57.0.19",

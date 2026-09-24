@@ -1,67 +1,111 @@
 import { Ionicons } from '@expo/vector-icons';
 import { ActivityIndicator, Pressable, StyleSheet, View, type PressableProps } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 
 import { ThemedText } from '@/components/themed-text';
-import { Spacing } from '@/constants/theme';
+import { MinTouch, Radius, Space } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
-type ButtonVariant = 'primary' | 'outline' | 'ghost';
+type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost';
+type ButtonSize = 'sm' | 'md' | 'lg';
 
 type ButtonProps = Omit<PressableProps, 'style'> & {
   label: string;
   variant?: ButtonVariant;
+  size?: ButtonSize;
   loading?: boolean;
   icon?: keyof typeof Ionicons.glyphMap;
   iconColor?: string;
+  fullWidth?: boolean;
 };
 
-export function Button({ label, variant = 'primary', loading, disabled, icon, iconColor, ...rest }: ButtonProps) {
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+const SIZES = {
+  // sm stays at the 44pt minimum touch target; the visual is compact via padding/text.
+  sm: { minHeight: MinTouch, paddingHorizontal: Space.lg, iconSize: 16, text: 'small' },
+  md: { minHeight: 52, paddingHorizontal: Space['2xl'], iconSize: 18, text: 'smallBold' },
+  lg: { minHeight: 58, paddingHorizontal: Space['3xl'], iconSize: 20, text: 'bodyBold' },
+} as const;
+
+const PRESS_SPRING = { damping: 18, stiffness: 320, mass: 0.6 };
+
+export function Button({
+  label,
+  variant = 'primary',
+  size = 'md',
+  loading,
+  disabled,
+  icon,
+  iconColor,
+  fullWidth = true,
+  onPressIn,
+  onPressOut,
+  ...rest
+}: ButtonProps) {
   const theme = useTheme();
   const isDisabled = disabled || loading;
+  const scale = useSharedValue(1);
+  const animatedStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.get() }] }));
 
-  const backgroundColor =
-    variant === 'primary' ? theme.primary : variant === 'outline' ? 'transparent' : 'transparent';
-  const borderColor = variant === 'outline' ? theme.border : 'transparent';
-  const textColor = variant === 'primary' ? theme.primaryText : theme.primary;
+  const colors = {
+    primary: { background: theme.primary, border: theme.primary, text: theme.primaryText },
+    secondary: { background: theme.primarySoft, border: theme.primarySoft, text: theme.primary },
+    outline: { background: 'transparent', border: theme.border, text: theme.primary },
+    ghost: { background: 'transparent', border: 'transparent', text: theme.primary },
+  }[variant];
+  const sizing = SIZES[size];
 
   return (
-    <Pressable
+    <AnimatedPressable
+      accessibilityRole="button"
+      accessibilityState={{ disabled: !!isDisabled, busy: !!loading }}
       disabled={isDisabled}
-      style={({ pressed }) => [
+      onPressIn={(e) => {
+        scale.set(withSpring(0.97, PRESS_SPRING));
+        onPressIn?.(e);
+      }}
+      onPressOut={(e) => {
+        scale.set(withSpring(1, PRESS_SPRING));
+        onPressOut?.(e);
+      }}
+      style={[
         styles.base,
-        { backgroundColor, borderColor, opacity: isDisabled ? 0.6 : pressed ? 0.85 : 1 },
+        {
+          minHeight: sizing.minHeight,
+          paddingHorizontal: sizing.paddingHorizontal,
+          backgroundColor: colors.background,
+          borderColor: colors.border,
+          opacity: isDisabled ? 0.55 : 1,
+          alignSelf: fullWidth ? 'stretch' : 'flex-start',
+        },
+        animatedStyle,
       ]}
       {...rest}>
       {loading ? (
-        <ActivityIndicator color={textColor} />
-      ) : icon ? (
-        <View style={styles.iconRow}>
-          <Ionicons name={icon} size={18} color={iconColor ?? textColor} />
-          <ThemedText type="smallBold" style={{ color: textColor }}>
+        <ActivityIndicator color={colors.text} />
+      ) : (
+        <View style={styles.row}>
+          {icon ? <Ionicons name={icon} size={sizing.iconSize} color={iconColor ?? colors.text} /> : null}
+          <ThemedText type={sizing.text} style={{ color: colors.text }}>
             {label}
           </ThemedText>
         </View>
-      ) : (
-        <ThemedText type="smallBold" style={{ color: textColor }}>
-          {label}
-        </ThemedText>
       )}
-    </Pressable>
+    </AnimatedPressable>
   );
 }
 
 const styles = StyleSheet.create({
   base: {
-    borderRadius: 999,
+    borderRadius: Radius.full,
     borderWidth: 1,
-    paddingVertical: Spacing.three,
-    paddingHorizontal: Spacing.four,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  iconRow: {
+  row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.two,
+    gap: Space.sm,
   },
 });

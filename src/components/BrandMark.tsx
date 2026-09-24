@@ -10,7 +10,7 @@ type BrandMarkProps = {
 export function BrandMark({ size = 40, iconSize }: BrandMarkProps) {
   return (
     <LinearGradient
-      colors={['#4C9A75', '#D97B4F']}
+      colors={['#2563EB', '#1D4ED8']}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={[styles.badge, { width: size, height: size, borderRadius: size / 2 }]}>

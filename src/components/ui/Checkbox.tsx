@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, StyleSheet, View, type PressableProps } from 'react-native';
+import { Pressable, StyleSheet, type PressableProps } from 'react-native';
 
 import { useTheme } from '@/hooks/use-theme';
 
@@ -13,35 +13,30 @@ export function Checkbox({ checked, onChange, ...rest }: CheckboxProps) {
 
   return (
     <Pressable
+      accessibilityRole="checkbox"
+      accessibilityState={{ checked }}
       onPress={() => onChange(!checked)}
-      hitSlop={8}
+      // 24pt box + 10pt hitSlop on each side = 44pt touch target.
+      hitSlop={10}
       style={[
         styles.box,
         {
-          borderColor: checked ? theme.primary : theme.border,
-          backgroundColor: checked ? theme.primary : 'transparent',
+          borderColor: checked ? theme.primary : theme.textSecondary,
+          backgroundColor: checked ? theme.primary : theme.backgroundElement,
         },
       ]}
       {...rest}>
-      {checked ? (
-        <View style={styles.iconWrap}>
-          <Ionicons name="checkmark" size={14} color={theme.primaryText} />
-        </View>
-      ) : null}
+      {checked ? <Ionicons name="checkmark" size={16} color={theme.primaryText} /> : null}
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   box: {
-    width: 22,
-    height: 22,
-    borderRadius: 6,
+    width: 24,
+    height: 24,
+    borderRadius: 7,
     borderWidth: 1.5,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconWrap: {
     alignItems: 'center',
     justifyContent: 'center',
   },

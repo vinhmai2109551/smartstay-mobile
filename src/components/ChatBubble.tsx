@@ -1,11 +1,13 @@
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { RoomTypeCard } from '@/components/RoomTypeCard';
 import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
 import { StatusBadge } from '@/components/ui/StatusBadge';
-import { Spacing } from '@/constants/theme';
+import { FontFamily, MaxContentWidth, Radius, Space } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { ChatMessage } from '@/types/chat';
 import { formatVND } from '@/utils/currency';
@@ -21,25 +23,32 @@ export function ChatBubble({
   confirming?: boolean;
 }) {
   const theme = useTheme();
+  const { width } = useWindowDimensions();
   const isUser = message.role === 'USER';
+  // Rich cards take ~3/4 of the screen, capped for tablets.
+  const cardWidth = Math.round(Math.min(Math.min(width, MaxContentWidth) * 0.74, 320));
 
   return (
     <View style={[styles.container, isUser ? styles.alignEnd : styles.alignStart]}>
       <View
         style={[
           styles.bubble,
-          { backgroundColor: isUser ? theme.primary : theme.backgroundElement },
-          isUser ? styles.bubbleUser : styles.bubbleAssistant,
+          isUser
+            ? [styles.bubbleUser, { backgroundColor: theme.primary }]
+            : [styles.bubbleAssistant, { backgroundColor: theme.backgroundElement, borderColor: theme.border }],
         ]}>
-        <ThemedText style={{ color: isUser ? theme.primaryText : theme.text }}>{message.content}</ThemedText>
+        <ThemedText type="body" style={{ color: isUser ? theme.primaryText : theme.text }}>
+          {message.content}
+        </ThemedText>
       </View>
 
       {message.rooms?.length ? (
-        <View style={styles.cards}>
+        <View style={[styles.cards, { width: cardWidth }]}>
           {message.rooms.map((roomType) => (
             <RoomTypeCard
               key={roomType.roomTypeId}
               roomType={roomType}
+              imageHeight={140}
               onPress={() => router.push(`/room/${roomType.roomTypeId}`)}
             />
           ))}
@@ -47,65 +56,80 @@ export function ChatBubble({
       ) : null}
 
       {message.pendingBooking ? (
-        <View style={[styles.card, { borderColor: theme.border, backgroundColor: theme.backgroundElement }]}>
-          <ThemedText type="smallBold">Xác nhận đặt phòng</ThemedText>
+        <Card style={[styles.card, { width: cardWidth }]}>
+          <View style={styles.cardHeader}>
+            <View style={[styles.cardIcon, { backgroundColor: theme.primarySoft }]}>
+              <Ionicons name="calendar" size={16} color={theme.primary} />
+            </View>
+            <ThemedText type="smallBold">Xác nhận đặt phòng</ThemedText>
+          </View>
+          <ThemedText type="bodyBold">{message.pendingBooking.roomTypeName}</ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
-            {message.pendingBooking.roomTypeName}
-          </ThemedText>
-          <ThemedText type="small" themeColor="textSecondary">
-            {formatDate(message.pendingBooking.checkIn)} - {formatDate(message.pendingBooking.checkOut)} ·{' '}
+            {formatDate(message.pendingBooking.checkIn)} – {formatDate(message.pendingBooking.checkOut)} ·{' '}
             {message.pendingBooking.nights} đêm
           </ThemedText>
-          <ThemedText type="smallBold" themeColor="primary">
-            {formatVND(message.pendingBooking.totalAmount)}
-          </ThemedText>
+          <View style={[styles.divider, { backgroundColor: theme.border }]} />
+          <View style={styles.totalRow}>
+            <ThemedText type="small" themeColor="textSecondary">
+              Tổng cộng
+            </ThemedText>
+            <ThemedText style={[styles.total, { color: theme.primary }]}>
+              {formatVND(message.pendingBooking.totalAmount)}
+            </ThemedText>
+          </View>
           <Button
             label="Xác nhận đặt phòng"
+            size="sm"
+            icon="checkmark"
             loading={confirming}
             onPress={() => onConfirmBooking?.(message.pendingBooking!.proposalId)}
           />
-        </View>
+        </Card>
       ) : null}
 
       {message.booking ? (
-        <View style={[styles.card, { borderColor: theme.border, backgroundColor: theme.backgroundElement }]}>
+        <Card style={[styles.card, { width: cardWidth }]}>
           <View style={styles.bookingHeader}>
             <ThemedText type="smallBold">Đơn đặt phòng</ThemedText>
             <StatusBadge status={message.booking.status} />
           </View>
-          <ThemedText type="smallBold" themeColor="primary">
+          <ThemedText style={[styles.total, { color: theme.primary }]}>
             {formatVND(message.booking.totalAmount)}
           </ThemedText>
-          <ThemedText
-            type="link"
-            themeColor="primary"
-            onPress={() => router.push(`/booking/${message.booking!.bookingId}`)}>
-            Xem chi tiết đơn →
-          </ThemedText>
-        </View>
+          <Pressable
+            accessibilityRole="link"
+            onPress={() => router.push(`/booking/${message.booking!.bookingId}`)}
+            hitSlop={8}
+            style={styles.link}>
+            <ThemedText type="smallBold" themeColor="primary">
+              Xem chi tiết đơn
+            </ThemedText>
+            <Ionicons name="arrow-forward" size={16} color={theme.primary} />
+          </Pressable>
+        </Card>
       ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { gap: Spacing.two, maxWidth: '90%' },
+  container: { gap: Space.sm, maxWidth: '86%' },
   alignEnd: { alignSelf: 'flex-end', alignItems: 'flex-end' },
   alignStart: { alignSelf: 'flex-start', alignItems: 'flex-start' },
   bubble: {
-    borderRadius: Spacing.three,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two,
+    borderRadius: Radius.lg,
+    paddingHorizontal: Space.lg,
+    paddingVertical: Space.md,
   },
-  bubbleUser: { borderBottomRightRadius: 4 },
-  bubbleAssistant: { borderBottomLeftRadius: 4 },
-  cards: { gap: Spacing.two, width: 240 },
-  card: {
-    width: 240,
-    borderWidth: 1,
-    borderRadius: Spacing.three,
-    padding: Spacing.three,
-    gap: Spacing.one,
-  },
-  bookingHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  bubbleUser: { borderBottomRightRadius: Space.xs },
+  bubbleAssistant: { borderBottomLeftRadius: Space.xs, borderWidth: StyleSheet.hairlineWidth },
+  cards: { gap: Space.md },
+  card: { gap: Space.sm },
+  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: Space.sm },
+  cardIcon: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  divider: { height: StyleSheet.hairlineWidth, marginVertical: Space.xs },
+  totalRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  total: { fontFamily: FontFamily.bold, fontSize: 17, lineHeight: 24 },
+  bookingHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: Space.sm },
+  link: { flexDirection: 'row', alignItems: 'center', gap: Space.xs, minHeight: 28 },
 });

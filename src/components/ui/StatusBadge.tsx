@@ -1,7 +1,7 @@
 import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { Spacing } from '@/constants/theme';
+import { Radius, Space } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 const BOOKING_STATUS_LABEL: Record<string, string> = {
@@ -12,11 +12,13 @@ const BOOKING_STATUS_LABEL: Record<string, string> = {
   COMPLETED: 'Hoàn tất',
   CANCELLED: 'Đã huỷ',
   PAID: 'Đã thanh toán',
+  UNPAID: 'Chưa thanh toán',
   FAILED: 'Thất bại',
 };
 
 const POSITIVE_STATUSES = new Set(['CONFIRMED', 'CHECKED_IN', 'COMPLETED', 'PAID']);
 const NEGATIVE_STATUSES = new Set(['CANCELLED', 'FAILED']);
+const NEUTRAL_STATUSES = new Set(['CHECKED_OUT']);
 
 export function StatusBadge({ status }: { status: string }) {
   const theme = useTheme();
@@ -24,11 +26,15 @@ export function StatusBadge({ status }: { status: string }) {
     ? theme.success
     : NEGATIVE_STATUSES.has(status)
       ? theme.danger
-      : theme.warning;
+      : NEUTRAL_STATUSES.has(status)
+        ? theme.textSecondary
+        : theme.warning;
 
   return (
-    <View style={[styles.badge, { backgroundColor: `${color}22`, borderColor: color }]}>
-      <ThemedText type="small" style={{ color }}>
+    // Tinted background (color + ~9% alpha) with full-strength text keeps AA contrast.
+    <View style={[styles.badge, { backgroundColor: `${color}18` }]}>
+      <View style={[styles.dot, { backgroundColor: color }]} />
+      <ThemedText type="caption" style={{ color }}>
         {BOOKING_STATUS_LABEL[status] ?? status}
       </ThemedText>
     </View>
@@ -38,9 +44,12 @@ export function StatusBadge({ status }: { status: string }) {
 const styles = StyleSheet.create({
   badge: {
     alignSelf: 'flex-start',
-    borderWidth: 1,
-    borderRadius: 999,
-    paddingHorizontal: Spacing.two,
-    paddingVertical: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Space.xs + 2,
+    borderRadius: Radius.full,
+    paddingHorizontal: Space.sm + 2,
+    paddingVertical: Space.xs,
   },
+  dot: { width: 6, height: 6, borderRadius: 3 },
 });

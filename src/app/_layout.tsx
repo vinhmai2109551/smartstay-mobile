@@ -1,11 +1,56 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router/react-navigation';
+// Per-weight imports: the package root bundles every weight and italic (~30 files).
+import { BeVietnamPro_400Regular } from '@expo-google-fonts/be-vietnam-pro/400Regular';
+import { BeVietnamPro_500Medium } from '@expo-google-fonts/be-vietnam-pro/500Medium';
+import { BeVietnamPro_600SemiBold } from '@expo-google-fonts/be-vietnam-pro/600SemiBold';
+import { BeVietnamPro_700Bold } from '@expo-google-fonts/be-vietnam-pro/700Bold';
+import { PlayfairDisplay_600SemiBold } from '@expo-google-fonts/playfair-display/600SemiBold';
+import { PlayfairDisplay_700Bold } from '@expo-google-fonts/playfair-display/700Bold';
+import { useFonts } from 'expo-font';
+import { DarkTheme, DefaultTheme, ThemeProvider, type Theme } from 'expo-router/react-navigation';
 import { Stack } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
 
 import { authApi } from '@/api/auth';
-import { LoadingView } from '@/components/ui/LoadingView';
+import { Colors, FontFamily } from '@/constants/theme';
 import { useAuthStore } from '@/store/authStore';
+
+// Keep the splash screen up until fonts and the persisted auth store are ready.
+SplashScreen.preventAutoHideAsync();
+
+const navigationFonts: Theme['fonts'] = {
+  regular: { fontFamily: FontFamily.regular, fontWeight: 'normal' },
+  medium: { fontFamily: FontFamily.medium, fontWeight: 'normal' },
+  bold: { fontFamily: FontFamily.semiBold, fontWeight: 'normal' },
+  heavy: { fontFamily: FontFamily.bold, fontWeight: 'normal' },
+};
+
+const LightNavigationTheme: Theme = {
+  ...DefaultTheme,
+  fonts: navigationFonts,
+  colors: {
+    ...DefaultTheme.colors,
+    primary: Colors.light.primary,
+    background: Colors.light.background,
+    card: Colors.light.background,
+    text: Colors.light.text,
+    border: Colors.light.border,
+  },
+};
+
+const DarkNavigationTheme: Theme = {
+  ...DarkTheme,
+  fonts: navigationFonts,
+  colors: {
+    ...DarkTheme.colors,
+    primary: Colors.dark.primary,
+    background: Colors.dark.background,
+    card: Colors.dark.background,
+    text: Colors.dark.text,
+    border: Colors.dark.border,
+  },
+};
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -14,6 +59,17 @@ export default function RootLayout() {
   const hasSeenOnboarding = useAuthStore((s) => s.hasSeenOnboarding);
   const updateUser = useAuthStore((s) => s.updateUser);
 
+  const [fontsLoaded, fontError] = useFonts({
+    PlayfairDisplay_600SemiBold,
+    PlayfairDisplay_700Bold,
+    BeVietnamPro_400Regular,
+    BeVietnamPro_500Medium,
+    BeVietnamPro_600SemiBold,
+    BeVietnamPro_700Bold,
+  });
+  // A font load failure falls back to system fonts rather than blocking the app.
+  const fontsReady = fontsLoaded || !!fontError;
+
   useEffect(() => {
     if (hasHydrated && accessToken) {
       authApi.me().then(updateUser).catch(() => {});
@@ -21,13 +77,26 @@ export default function RootLayout() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasHydrated]);
 
-  if (!hasHydrated) {
-    return <LoadingView />;
+  useEffect(() => {
+    if (hasHydrated && fontsReady) {
+      SplashScreen.hideAsync();
+    }
+  }, [hasHydrated, fontsReady]);
+
+  if (!hasHydrated || !fontsReady) {
+    return null;
   }
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack screenOptions={{ headerShown: false }}>
+    <ThemeProvider value={colorScheme === 'dark' ? DarkNavigationTheme : LightNavigationTheme}>
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          headerShadowVisible: false,
+          headerTintColor: Colors[colorScheme === 'dark' ? 'dark' : 'light'].primary,
+          headerTitleStyle: { fontFamily: FontFamily.semiBold, fontSize: 17 },
+          headerBackTitleStyle: { fontFamily: FontFamily.medium },
+        }}>
         <Stack.Protected guard={!!accessToken}>
           <Stack.Screen name="(tabs)" />
           <Stack.Screen

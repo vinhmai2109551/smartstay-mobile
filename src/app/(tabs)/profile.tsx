@@ -1,22 +1,67 @@
 import { Ionicons } from '@expo/vector-icons';
+import Constants from 'expo-constants';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Pressable, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { authApi } from '@/api/auth';
 import { getApiErrorMessage } from '@/api/client';
 import { usersApi } from '@/api/users';
+import { Avatar } from '@/components/Avatar';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Button } from '@/components/ui/Button';
-import { Screen } from '@/components/ui/Screen';
+import { Card } from '@/components/ui/Card';
 import { TextField } from '@/components/ui/TextField';
-import { Spacing } from '@/constants/theme';
+import { MaxContentWidth, MinTouch, Radius, Space } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuthStore } from '@/store/authStore';
 
+type IconName = keyof typeof Ionicons.glyphMap;
+
+function MenuRow({
+  icon,
+  label,
+  onPress,
+  trailing,
+  danger,
+  last,
+}: {
+  icon: IconName;
+  label: string;
+  onPress: () => void;
+  trailing?: IconName;
+  danger?: boolean;
+  last?: boolean;
+}) {
+  const theme = useTheme();
+  const color = danger ? theme.danger : theme.text;
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.menuRow,
+        !last && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.border },
+        { backgroundColor: pressed ? theme.backgroundSelected : 'transparent' },
+      ]}>
+      <View style={[styles.menuIcon, { backgroundColor: danger ? `${theme.danger}18` : theme.primarySoft }]}>
+        <Ionicons name={icon} size={18} color={danger ? theme.danger : theme.primary} />
+      </View>
+      <ThemedText type="body" style={[styles.menuLabel, { color }]}>
+        {label}
+      </ThemedText>
+      {trailing ? <Ionicons name={trailing} size={18} color={theme.textSecondary} /> : null}
+    </Pressable>
+  );
+}
+
 export default function ProfileScreen() {
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
   const user = useAuthStore((s) => s.user);
   const clearSession = useAuthStore((s) => s.clearSession);
 
@@ -62,102 +107,164 @@ export default function ProfileScreen() {
   };
 
   return (
-    <Screen>
-      <ThemedText type="title" style={styles.title}>
-        Tài khoản
-      </ThemedText>
+    <ThemedView style={styles.flex}>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <LinearGradient
+          colors={[theme.primary, theme.primarySoft]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+          style={[styles.hero, { paddingTop: insets.top + Space.xl }]}>
+          <ThemedText type="heading" style={{ color: theme.primaryText }}>
+            Tài khoản
+          </ThemedText>
+        </LinearGradient>
 
-      <ThemedView type="backgroundElement" style={styles.profileCard}>
-        <View style={[styles.avatar, { backgroundColor: theme.primary }]}>
-          <ThemedText type="title" style={{ color: theme.primaryText, fontSize: 24 }}>
-            {(user?.fullName ?? '?').charAt(0).toUpperCase()}
+        <View style={styles.content}>
+          <Card elevation="floating" style={styles.profileCard}>
+            <Avatar name={user?.fullName} size={64} />
+            <View style={styles.profileInfo}>
+              <ThemedText type="heading" numberOfLines={1}>
+                {user?.fullName ?? 'Khách hàng'}
+              </ThemedText>
+              {user?.email ? (
+                <View style={styles.infoRow}>
+                  <Ionicons name="mail-outline" size={14} color={theme.textSecondary} />
+                  <ThemedText type="small" themeColor="textSecondary" numberOfLines={1} style={styles.infoText}>
+                    {user.email}
+                  </ThemedText>
+                </View>
+              ) : null}
+              {user?.phone ? (
+                <View style={styles.infoRow}>
+                  <Ionicons name="call-outline" size={14} color={theme.textSecondary} />
+                  <ThemedText type="small" themeColor="textSecondary">
+                    {user.phone}
+                  </ThemedText>
+                </View>
+              ) : null}
+            </View>
+          </Card>
+
+          <ThemedText type="caption" themeColor="textSecondary" style={styles.groupLabel}>
+            HOẠT ĐỘNG
+          </ThemedText>
+          <Card padded={false} elevation="none" style={styles.group}>
+            <MenuRow
+              icon="receipt-outline"
+              label="Đơn đặt phòng"
+              trailing="chevron-forward"
+              onPress={() => router.navigate('/(tabs)/bookings')}
+            />
+            <MenuRow
+              icon="notifications-outline"
+              label="Thông báo"
+              trailing="chevron-forward"
+              onPress={() => router.push('/notifications')}
+            />
+            <MenuRow
+              icon="sparkles-outline"
+              label="Trợ lý AI"
+              trailing="chevron-forward"
+              onPress={() => router.navigate('/(tabs)/chat')}
+              last
+            />
+          </Card>
+
+          <ThemedText type="caption" themeColor="textSecondary" style={styles.groupLabel}>
+            BẢO MẬT
+          </ThemedText>
+          <Card padded={false} elevation="none" style={styles.group}>
+            <MenuRow
+              icon="lock-closed-outline"
+              label="Đổi mật khẩu"
+              trailing={showChangePassword ? 'chevron-up' : 'chevron-down'}
+              onPress={() => setShowChangePassword((v) => !v)}
+              last={!showChangePassword}
+            />
+            {showChangePassword ? (
+              <View style={styles.passwordForm}>
+                <TextField
+                  label="Mật khẩu hiện tại"
+                  leftIcon="key-outline"
+                  secureTextEntry
+                  value={oldPassword}
+                  onChangeText={setOldPassword}
+                />
+                <TextField
+                  label="Mật khẩu mới"
+                  leftIcon="lock-closed-outline"
+                  hint="Tối thiểu 8 ký tự, có cả chữ và số"
+                  secureTextEntry
+                  value={newPassword}
+                  onChangeText={setNewPassword}
+                />
+                {passwordError ? (
+                  <ThemedText type="small" themeColor="danger">
+                    {passwordError}
+                  </ThemedText>
+                ) : null}
+                {passwordSuccess ? (
+                  <View style={styles.infoRow}>
+                    <Ionicons name="checkmark-circle" size={16} color={theme.success} />
+                    <ThemedText type="small" themeColor="success">
+                      Đổi mật khẩu thành công.
+                    </ThemedText>
+                  </View>
+                ) : null}
+                <Button
+                  label="Cập nhật mật khẩu"
+                  onPress={handleChangePassword}
+                  loading={submitting}
+                  disabled={!oldPassword || newPassword.length < 8}
+                />
+              </View>
+            ) : null}
+          </Card>
+
+          <Card padded={false} elevation="none" style={[styles.group, styles.logoutGroup]}>
+            <MenuRow icon="log-out-outline" label="Đăng xuất" onPress={handleLogout} danger last />
+          </Card>
+
+          <ThemedText type="caption" themeColor="textSecondary" style={styles.version}>
+            SmartStay · phiên bản {Constants.expoConfig?.version ?? '1.0.0'}
           </ThemedText>
         </View>
-        <View style={styles.profileInfo}>
-          <ThemedText type="smallBold">{user?.fullName}</ThemedText>
-          <ThemedText type="small" themeColor="textSecondary">
-            {user?.email}
-          </ThemedText>
-          <ThemedText type="small" themeColor="textSecondary">
-            {user?.phone}
-          </ThemedText>
-        </View>
-      </ThemedView>
-
-      <Pressable
-        style={[styles.menuItem, { borderColor: theme.border }]}
-        onPress={() => router.push('/notifications')}>
-        <Ionicons name="notifications-outline" size={20} color={theme.text} />
-        <ThemedText style={styles.menuLabel}>Thông báo</ThemedText>
-        <Ionicons name="chevron-forward" size={18} color={theme.textSecondary} />
-      </Pressable>
-
-      <Pressable
-        style={[styles.menuItem, { borderColor: theme.border }]}
-        onPress={() => setShowChangePassword((v) => !v)}>
-        <Ionicons name="lock-closed-outline" size={20} color={theme.text} />
-        <ThemedText style={styles.menuLabel}>Đổi mật khẩu</ThemedText>
-        <Ionicons name={showChangePassword ? 'chevron-up' : 'chevron-down'} size={18} color={theme.textSecondary} />
-      </Pressable>
-
-      {showChangePassword ? (
-        <ThemedView type="backgroundElement" style={styles.passwordForm}>
-          <TextField
-            label="Mật khẩu hiện tại"
-            secureTextEntry
-            value={oldPassword}
-            onChangeText={setOldPassword}
-          />
-          <TextField
-            label="Mật khẩu mới (tối thiểu 8 ký tự, có chữ và số)"
-            secureTextEntry
-            value={newPassword}
-            onChangeText={setNewPassword}
-          />
-          {passwordError ? (
-            <ThemedText type="small" themeColor="danger">
-              {passwordError}
-            </ThemedText>
-          ) : null}
-          {passwordSuccess ? (
-            <ThemedText type="small" themeColor="success">
-              Đổi mật khẩu thành công.
-            </ThemedText>
-          ) : null}
-          <Button
-            label="Cập nhật mật khẩu"
-            onPress={handleChangePassword}
-            loading={submitting}
-            disabled={!oldPassword || newPassword.length < 8}
-          />
-        </ThemedView>
-      ) : null}
-
-      <Button label="Đăng xuất" variant="outline" onPress={handleLogout} />
-    </Screen>
+      </ScrollView>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  title: { fontSize: 26, lineHeight: 32 },
-  profileCard: {
+  flex: { flex: 1 },
+  scroll: { paddingBottom: Space['3xl'] },
+  hero: {
+    paddingHorizontal: Space.lg,
+    paddingBottom: Space['4xl'] + Space.xl,
+  },
+  content: {
+    width: '100%',
+    maxWidth: MaxContentWidth,
+    alignSelf: 'center',
+    paddingHorizontal: Space.lg,
+    marginTop: -(Space['4xl'] + Space.sm),
+  },
+  profileCard: { flexDirection: 'row', alignItems: 'center', gap: Space.lg, padding: Space.xl },
+  profileInfo: { flex: 1, gap: Space.xs },
+  infoRow: { flexDirection: 'row', alignItems: 'center', gap: Space.xs },
+  infoText: { flexShrink: 1 },
+  groupLabel: { marginTop: Space['2xl'], marginBottom: Space.sm, marginLeft: Space.xs, letterSpacing: 1 },
+  group: { overflow: 'hidden', borderRadius: Radius.lg },
+  logoutGroup: { marginTop: Space['2xl'] },
+  menuRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.three,
-    padding: Spacing.three,
-    borderRadius: Spacing.three,
+    gap: Space.md,
+    minHeight: MinTouch + Space.md,
+    paddingHorizontal: Space.lg,
+    paddingVertical: Space.sm,
   },
-  avatar: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
-  profileInfo: { gap: 2, flex: 1 },
-  menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.two,
-    borderWidth: 1,
-    borderRadius: Spacing.two,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.three,
-  },
+  menuIcon: { width: 34, height: 34, borderRadius: Radius.sm, alignItems: 'center', justifyContent: 'center' },
   menuLabel: { flex: 1 },
-  passwordForm: { gap: Spacing.two, padding: Spacing.three, borderRadius: Spacing.three },
+  passwordForm: { gap: Space.lg, padding: Space.lg, paddingTop: Space.sm },
+  version: { textAlign: 'center', marginTop: Space['2xl'] },
 });

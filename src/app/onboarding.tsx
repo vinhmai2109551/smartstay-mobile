@@ -1,13 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useRef, useState } from 'react';
 import {
-  Dimensions,
   FlatList,
-  ImageBackground,
   Pressable,
   StyleSheet,
+  useWindowDimensions,
   View,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
@@ -16,17 +16,16 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BrandMark } from '@/components/BrandMark';
 import { ThemedText } from '@/components/themed-text';
-import { HeroImage } from '@/constants/demoImages';
-import { Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { Button } from '@/components/ui/Button';
+import { DemoRoomImageByName, HeroImage } from '@/constants/demoImages';
+import { MinTouch, Radius, Space } from '@/constants/theme';
 import { useAuthStore } from '@/store/authStore';
-
-const { width } = Dimensions.get('window');
 
 type Slide = {
   icon: keyof typeof Ionicons.glyphMap;
   title: string;
   subtitle: string;
+  image: number;
 };
 
 const SLIDES: Slide[] = [
@@ -34,24 +33,28 @@ const SLIDES: Slide[] = [
     icon: 'bed-outline',
     title: 'Chào mừng đến SmartStay',
     subtitle: 'Không gian nghỉ dưỡng ven biển Đà Nẵng với phòng ấm cúng và dịch vụ tận tâm.',
+    image: HeroImage,
   },
   {
     icon: 'sparkles-outline',
     title: 'Đặt phòng bằng hội thoại',
     subtitle: 'Nhắn cho trợ lý AI như nhắn lễ tân: hỏi phòng trống, giá, chính sách và đặt ngay.',
+    image: DemoRoomImageByName['Suite Gia Đình'] ?? HeroImage,
   },
   {
     icon: 'shield-checkmark-outline',
     title: 'Thanh toán an toàn',
     subtitle: 'Quét VietQR qua PayOS, nhận mã đặt phòng và QR check-in ngay lập tức.',
+    image: DemoRoomImageByName['Bungalow Vườn'] ?? HeroImage,
   },
 ];
 
 export default function OnboardingScreen() {
-  const theme = useTheme();
+  const { width } = useWindowDimensions();
   const setHasSeenOnboarding = useAuthStore((s) => s.setHasSeenOnboarding);
   const listRef = useRef<FlatList<Slide>>(null);
   const [index, setIndex] = useState(0);
+  const isLast = index >= SLIDES.length - 1;
 
   const finish = () => {
     setHasSeenOnboarding(true);
@@ -59,7 +62,7 @@ export default function OnboardingScreen() {
   };
 
   const goNext = () => {
-    if (index >= SLIDES.length - 1) {
+    if (isLast) {
       finish();
       return;
     }
@@ -67,12 +70,11 @@ export default function OnboardingScreen() {
   };
 
   const onScrollEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const next = Math.round(event.nativeEvent.contentOffset.x / width);
-    setIndex(next);
+    setIndex(Math.round(event.nativeEvent.contentOffset.x / width));
   };
 
   return (
-    <View style={styles.flex}>
+    <View style={[styles.flex, styles.dark]}>
       <FlatList
         ref={listRef}
         data={SLIDES}
@@ -81,18 +83,20 @@ export default function OnboardingScreen() {
         pagingEnabled
         showsHorizontalScrollIndicator={false}
         onMomentumScrollEnd={onScrollEnd}
+        getItemLayout={(_, i) => ({ length: width, offset: width * i, index: i })}
         renderItem={({ item }) => (
-          <ImageBackground source={HeroImage} style={[styles.slide, { width }]} resizeMode="cover">
+          <View style={[styles.slide, { width }]}>
+            <Image source={item.image} style={StyleSheet.absoluteFill} contentFit="cover" transition={300} />
             <LinearGradient
-              colors={['rgba(0,0,0,0.15)', 'transparent', 'rgba(0,0,0,0.7)']}
-              locations={[0, 0.4, 1]}
+              colors={['rgba(0,0,0,0.35)', 'transparent', 'rgba(0,0,0,0.85)']}
+              locations={[0, 0.35, 0.8]}
               style={StyleSheet.absoluteFill}
               pointerEvents="none"
             />
             <SafeAreaView style={styles.flex} edges={['top']}>
               <View style={styles.header}>
-                <BrandMark size={32} />
-                <ThemedText type="smallBold" style={styles.brandText}>
+                <BrandMark size={34} iconSize={16} />
+                <ThemedText type="bodyBold" style={styles.onImage}>
                   SmartStay
                 </ThemedText>
               </View>
@@ -103,13 +107,15 @@ export default function OnboardingScreen() {
                 <View style={styles.iconBadge}>
                   <Ionicons name={item.icon} size={22} color="#FFFFFF" />
                 </View>
-                <ThemedText type="title" style={styles.title}>
+                <ThemedText type="display" style={styles.onImage}>
                   {item.title}
                 </ThemedText>
-                <ThemedText style={styles.subtitle}>{item.subtitle}</ThemedText>
+                <ThemedText type="body" style={styles.subtitle}>
+                  {item.subtitle}
+                </ThemedText>
               </View>
             </SafeAreaView>
-          </ImageBackground>
+          </View>
         )}
       />
 
@@ -120,75 +126,78 @@ export default function OnboardingScreen() {
               key={slide.title}
               style={[
                 styles.dot,
-                { backgroundColor: i === index ? theme.accent : 'rgba(255,255,255,0.4)' },
+                { backgroundColor: i === index ? '#FFFFFF' : 'rgba(255,255,255,0.4)' },
                 i === index && styles.dotActive,
               ]}
             />
           ))}
         </View>
 
-        <Pressable style={[styles.cta, { backgroundColor: theme.primary }]} onPress={goNext}>
-          <ThemedText type="smallBold" style={styles.ctaLabel}>
-            {index === SLIDES.length - 1 ? 'Bắt đầu' : 'Tiếp tục'}
-          </ThemedText>
-        </Pressable>
+        <Button
+          label={isLast ? 'Bắt đầu' : 'Tiếp tục'}
+          icon={isLast ? 'arrow-forward' : undefined}
+          size="lg"
+          onPress={goNext}
+        />
 
-        <Pressable onPress={finish} hitSlop={8}>
-          <ThemedText type="small" style={styles.skip}>
-            Bỏ qua, xem phòng trước
+        {/* Kept in the layout on the last slide (just hidden) so the button doesn't jump. */}
+        <Pressable
+          onPress={finish}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityElementsHidden={isLast}
+          disabled={isLast}
+          style={[styles.skip, isLast && styles.hidden]}>
+          <ThemedText type="small" style={styles.skipText}>
+            Bỏ qua
           </ThemedText>
         </Pressable>
       </SafeAreaView>
+
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  slide: { flex: 1 },
+  dark: { backgroundColor: '#000000' },
+  slide: { flex: 1, overflow: 'hidden' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.two,
-    paddingHorizontal: Spacing.four,
-    paddingTop: Spacing.two,
+    gap: Space.sm,
+    paddingHorizontal: Space['2xl'],
+    paddingTop: Space.sm,
   },
-  brandText: { color: '#FFFFFF', fontSize: 16 },
+  onImage: { color: '#FFFFFF' },
   spacer: { flex: 1 },
   content: {
-    paddingHorizontal: Spacing.four,
-    paddingBottom: 180,
-    gap: Spacing.two,
+    paddingHorizontal: Space['2xl'],
+    paddingBottom: 200,
+    gap: Space.md,
   },
   iconBadge: {
     width: 48,
     height: 48,
-    borderRadius: 24,
-    backgroundColor: 'rgba(255,255,255,0.22)',
+    borderRadius: Radius.md,
+    backgroundColor: 'rgba(255,255,255,0.2)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: Spacing.two,
+    marginBottom: Space.xs,
   },
-  title: { color: '#FFFFFF' },
-  subtitle: { color: 'rgba(255,255,255,0.85)', fontSize: 14, lineHeight: 21 },
+  subtitle: { color: 'rgba(255,255,255,0.9)' },
   footer: {
     position: 'absolute',
     left: 0,
     right: 0,
     bottom: 0,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.three,
-    alignItems: 'stretch',
+    paddingHorizontal: Space['2xl'],
+    gap: Space.lg,
   },
-  dots: { flexDirection: 'row', gap: 6, alignSelf: 'flex-start' },
+  dots: { flexDirection: 'row', gap: 6 },
   dot: { width: 8, height: 8, borderRadius: 4 },
-  dotActive: { width: 20 },
-  cta: {
-    borderRadius: 999,
-    paddingVertical: Spacing.three,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  ctaLabel: { color: '#FFFFFF' },
-  skip: { color: 'rgba(255,255,255,0.85)', textAlign: 'center', marginBottom: Spacing.two },
+  dotActive: { width: 24 },
+  skip: { minHeight: MinTouch, alignItems: 'center', justifyContent: 'center' },
+  skipText: { color: 'rgba(255,255,255,0.9)' },
+  hidden: { opacity: 0 },
 });

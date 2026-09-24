@@ -9,20 +9,45 @@ import { getApiErrorMessage } from '@/api/client';
 export function useApi<T>(fetcher: () => Promise<T>) {
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const run = useCallback(() => {
+  // Reset to the loading state when the fetcher changes — done during render
+  // rather than in the effect to avoid a cascading re-render.
+  const [prevFetcher, setPrevFetcher] = useState(() => fetcher);
+  if (fetcher !== prevFetcher) {
+    setPrevFetcher(() => fetcher);
     setLoading(true);
     setError(null);
-    fetcher()
-      .then(setData)
-      .catch((err) => setError(getApiErrorMessage(err)))
-      .finally(() => setLoading(false));
-  }, [fetcher]);
+  }
+
+  const load = useCallback(
+    () =>
+      fetcher()
+        .then((result) => {
+          setData(result);
+          setError(null);
+        })
+        .catch((err) => setError(getApiErrorMessage(err)))
+        .finally(() => setLoading(false)),
+    [fetcher],
+  );
 
   useEffect(() => {
-    run();
-  }, [run]);
+    load();
+  }, [load]);
 
-  return { data, loading, error, refetch: run };
+  const refetch = useCallback(() => {
+    setLoading(true);
+    setError(null);
+    load();
+  }, [load]);
+
+  // Pull-to-refresh: keeps the current data on screen instead of the loading state.
+  const refresh = useCallback(() => {
+    setRefreshing(true);
+    load().finally(() => setRefreshing(false));
+  }, [load]);
+
+  return { data, loading, error, refetch, refreshing, refresh };
 }

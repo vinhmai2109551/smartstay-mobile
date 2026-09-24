@@ -1,10 +1,11 @@
+import { Ionicons } from '@expo/vector-icons';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as Google from 'expo-auth-session/providers/google';
 import { Link } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { Platform, StyleSheet, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import { z } from 'zod';
 
 import { authApi } from '@/api/auth';
@@ -15,7 +16,8 @@ import { Button } from '@/components/ui/Button';
 import { OrDivider } from '@/components/ui/OrDivider';
 import { Screen } from '@/components/ui/Screen';
 import { TextField } from '@/components/ui/TextField';
-import { Spacing } from '@/constants/theme';
+import { Radius, Space } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 import { GOOGLE_ANDROID_CLIENT_ID, GOOGLE_IOS_CLIENT_ID, GOOGLE_WEB_CLIENT_ID } from '@/config/env';
 import { useAuthStore } from '@/store/authStore';
 
@@ -44,6 +46,7 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 export default function LoginScreen() {
+  const theme = useTheme();
   const setSession = useAuthStore((s) => s.setSession);
   const [serverError, setServerError] = useState<string | null>(null);
   const [signingIn, setSigningIn] = useState(false);
@@ -77,12 +80,12 @@ export default function LoginScreen() {
     if (response?.type !== 'success') return;
 
     const idToken = response.authentication?.idToken ?? (response.params as Record<string, string>)?.id_token;
-    if (!idToken) {
-      setServerError('Không lấy được token từ Google, vui lòng thử lại.');
-      return;
-    }
 
     (async () => {
+      if (!idToken) {
+        setServerError('Không lấy được token từ Google, vui lòng thử lại.');
+        return;
+      }
       setServerError(null);
       setSigningIn(true);
       try {
@@ -100,13 +103,14 @@ export default function LoginScreen() {
 
   return (
     <Screen contentContainerStyle={styles.content}>
-      <BrandMark size={48} />
+      <View style={styles.brandRow}>
+        <BrandMark size={44} iconSize={20} />
+        <ThemedText type="heading">SmartStay</ThemedText>
+      </View>
 
       <View style={styles.hero}>
-        <ThemedText type="title" style={styles.heroTitle}>
-          Chào mừng trở lại
-        </ThemedText>
-        <ThemedText themeColor="textSecondary">
+        <ThemedText type="display">Chào mừng{'\n'}trở lại</ThemedText>
+        <ThemedText type="body" themeColor="textSecondary">
           Đăng nhập để tiếp tục kỳ nghỉ của bạn tại SmartStay.
         </ThemedText>
       </View>
@@ -118,8 +122,11 @@ export default function LoginScreen() {
           render={({ field: { onChange, onBlur, value } }) => (
             <TextField
               label="Email"
+              leftIcon="mail-outline"
               placeholder="ban@email.com"
               autoCapitalize="none"
+              autoComplete="email"
+              textContentType="emailAddress"
               keyboardType="email-address"
               value={value}
               onChangeText={onChange}
@@ -135,7 +142,10 @@ export default function LoginScreen() {
           render={({ field: { onChange, onBlur, value } }) => (
             <TextField
               label="Mật khẩu"
+              leftIcon="lock-closed-outline"
               placeholder="Nhập mật khẩu"
+              autoComplete="current-password"
+              textContentType="password"
               secureTextEntry
               value={value}
               onChangeText={onChange}
@@ -147,13 +157,17 @@ export default function LoginScreen() {
       </View>
 
       {serverError ? (
-        <ThemedText type="small" themeColor="danger">
-          {serverError}
-        </ThemedText>
+        <View style={[styles.errorBox, { backgroundColor: `${theme.danger}14` }]}>
+          <Ionicons name="alert-circle" size={18} color={theme.danger} />
+          <ThemedText type="small" themeColor="danger" style={styles.flexShrink}>
+            {serverError}
+          </ThemedText>
+        </View>
       ) : null}
 
       <Button
         label="Đăng nhập"
+        size="lg"
         onPress={handleSubmit(onSubmit)}
         loading={isSubmitting}
         disabled={signingIn}
@@ -162,7 +176,7 @@ export default function LoginScreen() {
       <OrDivider />
 
       {googleNotConfigured ? (
-        <ThemedText type="small" themeColor="danger">
+        <ThemedText type="caption" themeColor="danger">
           Chưa cấu hình {GOOGLE_CLIENT_ID_ENV_NAME} trong file .env — xem hướng dẫn trong .env để bật đăng
           nhập Google.
         </ThemedText>
@@ -171,6 +185,7 @@ export default function LoginScreen() {
       <Button
         label="Tiếp tục với Google"
         variant="outline"
+        size="lg"
         icon="logo-google"
         disabled={!request || googleNotConfigured || isSubmitting}
         loading={signingIn}
@@ -179,20 +194,35 @@ export default function LoginScreen() {
 
       <View style={styles.spacer} />
 
-      <Link href="/(auth)/register" style={styles.link}>
-        <ThemedText type="link" themeColor="primary">
-          Chưa có tài khoản? Đăng ký ngay
+      <View style={styles.footer}>
+        <ThemedText type="small" themeColor="textSecondary">
+          Chưa có tài khoản?
         </ThemedText>
-      </Link>
+        <Link href="/(auth)/register" asChild>
+          <Pressable accessibilityRole="link" hitSlop={10}>
+            <ThemedText type="smallBold" themeColor="primary">
+              Đăng ký ngay
+            </ThemedText>
+          </Pressable>
+        </Link>
+      </View>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { flexGrow: 1, gap: Spacing.three },
-  hero: { gap: Spacing.one },
-  heroTitle: { textAlign: 'left' },
-  fields: { gap: Spacing.three },
-  spacer: { flex: 1, minHeight: Spacing.three },
-  link: { alignSelf: 'center', paddingBottom: Spacing.three },
+  content: { flexGrow: 1, gap: Space.xl },
+  flexShrink: { flexShrink: 1 },
+  brandRow: { flexDirection: 'row', alignItems: 'center', gap: Space.md, marginTop: Space.sm },
+  hero: { gap: Space.sm },
+  fields: { gap: Space.lg },
+  errorBox: { flexDirection: 'row', alignItems: 'center', gap: Space.sm, padding: Space.md, borderRadius: Radius.md },
+  spacer: { flex: 1, minHeight: Space.lg },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: Space.xs,
+    paddingBottom: Space.lg,
+  },
 });

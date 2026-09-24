@@ -1,27 +1,40 @@
 import dayjs from 'dayjs';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { FlatList, StyleSheet, View } from 'react-native';
+import { FlatList, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { roomsApi } from '@/api/rooms';
 import { getApiErrorMessage } from '@/api/client';
-import { RoomTypeCard } from '@/components/RoomTypeCard';
-import { ThemedText } from '@/components/themed-text';
 import { DateField } from '@/components/DateField';
+import { RoomTypeCard } from '@/components/RoomTypeCard';
 import { Stepper } from '@/components/Stepper';
+import { ThemedText } from '@/components/themed-text';
+import { ThemedView } from '@/components/themed-view';
 import { Button } from '@/components/ui/Button';
-import { Screen } from '@/components/ui/Screen';
-import { Spacing } from '@/constants/theme';
+import { Card } from '@/components/ui/Card';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { RoomCardSkeleton } from '@/components/ui/Skeleton';
+import { MaxContentWidth, Space } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 import { AvailableRoomType } from '@/types/room';
-import { toIsoDate } from '@/utils/date';
+import { nightsBetween, toIsoDate } from '@/utils/date';
+
+const GUTTER = Space.lg;
 
 export default function SearchScreen() {
+  const theme = useTheme();
+  const { width } = useWindowDimensions();
+  const contentWidth = Math.min(width, MaxContentWidth);
+
   const [checkIn, setCheckIn] = useState(dayjs().add(1, 'day').toDate());
   const [checkOut, setCheckOut] = useState(dayjs().add(2, 'day').toDate());
   const [guests, setGuests] = useState(2);
   const [results, setResults] = useState<AvailableRoomType[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const nights = nightsBetween(checkIn, checkOut);
 
   const handleSearch = async () => {
     setError(null);
@@ -40,14 +53,17 @@ export default function SearchScreen() {
     }
   };
 
-  return (
-    <Screen scroll={false} padded={false}>
-      <View style={styles.form}>
-        <ThemedText type="title" style={styles.title}>
-          Tìm phòng trống
+  const header = (
+    <View style={styles.header}>
+      <View style={styles.titles}>
+        <ThemedText type="title">Tìm phòng trống</ThemedText>
+        <ThemedText type="body" themeColor="textSecondary">
+          Chọn ngày và số khách để xem phòng còn trống.
         </ThemedText>
+      </View>
 
-        <View style={styles.row}>
+      <Card style={styles.form}>
+        <View style={styles.dates}>
           <DateField
             label="Nhận phòng"
             value={checkIn}
@@ -65,7 +81,9 @@ export default function SearchScreen() {
           />
         </View>
 
-        <Stepper label="Số khách" value={guests} onChange={setGuests} max={20} />
+        <View style={[styles.divider, { backgroundColor: theme.border }]} />
+
+        <Stepper label="Số khách" hint="Người lớn và trẻ em" value={guests} onChange={setGuests} max={20} />
 
         {error ? (
           <ThemedText type="small" themeColor="danger">
@@ -73,48 +91,81 @@ export default function SearchScreen() {
           </ThemedText>
         ) : null}
 
-        <Button label="Tìm phòng" onPress={handleSearch} loading={loading} />
-      </View>
+        <Button label={`Tìm phòng · ${nights} đêm`} icon="search" onPress={handleSearch} loading={loading} />
+      </Card>
 
-      <FlatList
-        data={results ?? []}
-        keyExtractor={(item) => item.roomTypeId}
-        contentContainerStyle={styles.list}
-        ListEmptyComponent={
-          results !== null ? (
-            <ThemedText themeColor="textSecondary" style={styles.empty}>
-              Không tìm thấy phòng trống phù hợp.
-            </ThemedText>
-          ) : null
-        }
-        renderItem={({ item }) => (
-          <View style={styles.cardWrapper}>
-            <RoomTypeCard
-              roomType={item}
-              onPress={() =>
-                router.push({
-                  pathname: '/room/[id]',
-                  params: {
-                    id: item.roomTypeId,
-                    checkIn: toIsoDate(checkIn),
-                    checkOut: toIsoDate(checkOut),
-                    guests: String(guests),
-                  },
-                })
-              }
-            />
-          </View>
-        )}
-      />
-    </Screen>
+      {results !== null && !loading ? (
+        <ThemedText type="heading" style={styles.resultTitle}>
+          {results.length > 0 ? `${results.length} loại phòng còn trống` : 'Kết quả'}
+        </ThemedText>
+      ) : null}
+
+      {loading ? (
+        <View style={styles.skeletons}>
+          <RoomCardSkeleton />
+          <RoomCardSkeleton />
+        </View>
+      ) : null}
+    </View>
+  );
+
+  return (
+    <ThemedView style={styles.flex}>
+      <SafeAreaView style={styles.flex} edges={['top']}>
+        <FlatList
+          data={loading ? [] : (results ?? [])}
+          keyExtractor={(item) => item.roomTypeId}
+          contentContainerStyle={[styles.list, { width: contentWidth }]}
+          keyboardShouldPersistTaps="handled"
+          ListHeaderComponent={header}
+          ListEmptyComponent={
+            loading ? null : results === null ? (
+              <EmptyState
+                icon="calendar-outline"
+                title="Sẵn sàng cho chuyến đi?"
+                description="Kết quả phòng trống sẽ hiện ở đây sau khi bạn bấm Tìm phòng."
+              />
+            ) : (
+              <EmptyState
+                icon="bed-outline"
+                title="Không còn phòng phù hợp"
+                description="Thử đổi ngày khác hoặc giảm số khách nhé."
+              />
+            )
+          }
+          renderItem={({ item }) => (
+            <View style={styles.cardWrapper}>
+              <RoomTypeCard
+                roomType={item}
+                onPress={() =>
+                  router.push({
+                    pathname: '/room/[id]',
+                    params: {
+                      id: item.roomTypeId,
+                      checkIn: toIsoDate(checkIn),
+                      checkOut: toIsoDate(checkOut),
+                      guests: String(guests),
+                    },
+                  })
+                }
+              />
+            </View>
+          )}
+        />
+      </SafeAreaView>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  form: { padding: Spacing.three, gap: Spacing.three },
-  title: { fontSize: 26, lineHeight: 32 },
-  row: { flexDirection: 'row', gap: Spacing.three },
-  list: { paddingHorizontal: Spacing.three, paddingBottom: Spacing.four },
-  cardWrapper: { marginBottom: Spacing.three },
-  empty: { textAlign: 'center', marginTop: Spacing.four },
+  flex: { flex: 1 },
+  list: { alignSelf: 'center', paddingBottom: Space['3xl'] },
+  header: { paddingHorizontal: GUTTER, paddingTop: Space.sm, gap: Space.xl, marginBottom: Space.lg },
+  titles: { gap: Space.xs },
+  form: { gap: Space.lg, padding: Space.lg },
+  dates: { flexDirection: 'row', gap: Space.md },
+  divider: { height: StyleSheet.hairlineWidth },
+  resultTitle: { marginTop: Space.sm },
+  skeletons: { gap: Space['2xl'] },
+  cardWrapper: { paddingHorizontal: GUTTER, marginBottom: Space.xl },
 });

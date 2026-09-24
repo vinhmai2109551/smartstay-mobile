@@ -1,24 +1,40 @@
+import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { bookingsApi } from '@/api/bookings';
 import { getApiErrorMessage } from '@/api/client';
 import { promotionsApi } from '@/api/promotions';
 import { roomTypesApi } from '@/api/roomTypes';
 import { servicesApi } from '@/api/services';
+import { roomImageSource } from '@/components/RoomTypeCard';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { BottomBar } from '@/components/ui/BottomBar';
 import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
 import { ErrorView } from '@/components/ui/ErrorView';
-import { LoadingView } from '@/components/ui/LoadingView';
-import { Screen } from '@/components/ui/Screen';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { TextField } from '@/components/ui/TextField';
-import { Spacing } from '@/constants/theme';
+import { FontFamily, MaxContentWidth, MinTouch, Radius, Space } from '@/constants/theme';
 import { useApi } from '@/hooks/useApi';
 import { useTheme } from '@/hooks/use-theme';
 import { formatVND } from '@/utils/currency';
-import { nightsBetween } from '@/utils/date';
+import { formatDate, nightsBetween } from '@/utils/date';
+
+type IconName = keyof typeof Ionicons.glyphMap;
+
+function SectionTitle({ icon, title }: { icon: IconName; title: string }) {
+  const theme = useTheme();
+  return (
+    <View style={styles.sectionTitle}>
+      <Ionicons name={icon} size={18} color={theme.primary} />
+      <ThemedText type="bodyBold">{title}</ThemedText>
+    </View>
+  );
+}
 
 export default function NewBookingScreen() {
   const theme = useTheme();
@@ -111,155 +127,293 @@ export default function NewBookingScreen() {
     }
   };
 
-  if (roomType.loading) return <LoadingView />;
+  if (roomType.loading) {
+    return (
+      <ThemedView style={styles.skeleton}>
+        <Skeleton height={96} radius={Radius.lg} />
+        <Skeleton height={180} radius={Radius.lg} />
+        <Skeleton height={140} radius={Radius.lg} />
+      </ThemedView>
+    );
+  }
   if (roomType.error || !roomType.data) {
     return <ErrorView message={roomType.error ?? 'Không tìm thấy loại phòng.'} onRetry={roomType.refetch} />;
   }
 
+  const image = roomImageSource(roomType.data);
+  const paymentOptions: { key: 'CASH' | 'PAYOS'; icon: IconName; title: string; description: string }[] = [
+    { key: 'CASH', icon: 'cash-outline', title: 'Tiền mặt tại khách sạn', description: 'Thanh toán khi nhận phòng' },
+    { key: 'PAYOS', icon: 'qr-code-outline', title: 'Chuyển khoản QR (PayOS)', description: 'Quét mã bằng app ngân hàng' },
+  ];
+
   return (
-    <Screen contentContainerStyle={styles.content}>
-      <ThemedView type="backgroundElement" style={styles.summaryCard}>
-        <ThemedText type="smallBold">{roomType.data.name}</ThemedText>
-        <ThemedText type="small" themeColor="textSecondary">
-          {params.checkIn} → {params.checkOut} · {nights} đêm · {params.guests} khách
-        </ThemedText>
-      </ThemedView>
+    <ThemedView style={styles.flex}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets
+        showsVerticalScrollIndicator={false}>
+        <Card style={styles.summary}>
+          <View style={[styles.thumb, { backgroundColor: theme.backgroundSelected }]}>
+            {image ? <Image source={image} style={StyleSheet.absoluteFill} contentFit="cover" /> : null}
+          </View>
+          <View style={styles.summaryInfo}>
+            <ThemedText type="bodyBold" numberOfLines={1}>
+              {roomType.data.name}
+            </ThemedText>
+            <View style={styles.inline}>
+              <Ionicons name="calendar-outline" size={14} color={theme.textSecondary} />
+              <ThemedText type="small" themeColor="textSecondary">
+                {formatDate(params.checkIn, 'DD/MM')} – {formatDate(params.checkOut, 'DD/MM/YYYY')}
+              </ThemedText>
+            </View>
+            <View style={styles.inline}>
+              <Ionicons name="moon-outline" size={14} color={theme.textSecondary} />
+              <ThemedText type="small" themeColor="textSecondary">
+                {nights} đêm · {params.guests} khách
+              </ThemedText>
+            </View>
+          </View>
+        </Card>
 
-      <ThemedText type="smallBold" style={styles.sectionTitle}>
-        Thông tin khách
-      </ThemedText>
-      <TextField label="Họ và tên" value={fullName} onChangeText={setFullName} />
-      <TextField label="Số điện thoại" keyboardType="phone-pad" value={phone} onChangeText={setPhone} />
+        <Card style={styles.section}>
+          <SectionTitle icon="person-outline" title="Thông tin khách" />
+          <TextField
+            label="Họ và tên"
+            leftIcon="person-outline"
+            placeholder="Nguyễn Văn A"
+            textContentType="name"
+            value={fullName}
+            onChangeText={setFullName}
+          />
+          <TextField
+            label="Số điện thoại"
+            leftIcon="call-outline"
+            placeholder="09xx xxx xxx"
+            keyboardType="phone-pad"
+            textContentType="telephoneNumber"
+            value={phone}
+            onChangeText={setPhone}
+          />
+        </Card>
 
-      {services.data && services.data.length > 0 ? (
-        <View>
-          <ThemedText type="smallBold" style={styles.sectionTitle}>
-            Dịch vụ đi kèm
-          </ThemedText>
-          {services.data.map((service) => {
-            const selected = selectedServiceIds.includes(service.serviceId);
+        {services.data && services.data.length > 0 ? (
+          <Card style={styles.section}>
+            <SectionTitle icon="sparkles-outline" title="Dịch vụ đi kèm" />
+            {services.data.map((service) => {
+              const selected = selectedServiceIds.includes(service.serviceId);
+              return (
+                <Pressable
+                  key={service.serviceId}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: selected }}
+                  onPress={() => toggleService(service.serviceId)}
+                  style={({ pressed }) => [
+                    styles.option,
+                    {
+                      borderColor: selected ? theme.primary : theme.border,
+                      backgroundColor: selected ? theme.primarySoft : theme.backgroundElement,
+                      opacity: pressed ? 0.85 : 1,
+                    },
+                  ]}>
+                  <View style={styles.optionText}>
+                    <ThemedText type="smallBold">{service.name}</ThemedText>
+                    <ThemedText type="caption" themeColor="textSecondary">
+                      {formatVND(service.price)} / {service.unit}
+                    </ThemedText>
+                  </View>
+                  <View
+                    style={[
+                      styles.checkbox,
+                      {
+                        borderColor: selected ? theme.primary : theme.textSecondary,
+                        backgroundColor: selected ? theme.primary : 'transparent',
+                      },
+                    ]}>
+                    {selected ? <Ionicons name="checkmark" size={16} color={theme.primaryText} /> : null}
+                  </View>
+                </Pressable>
+              );
+            })}
+          </Card>
+        ) : null}
+
+        <Card style={styles.section}>
+          <SectionTitle icon="pricetag-outline" title="Mã khuyến mãi" />
+          <View style={styles.promoRow}>
+            <View style={styles.promoInput}>
+              <TextField
+                placeholder="Nhập mã"
+                leftIcon="ticket-outline"
+                autoCapitalize="characters"
+                value={promoCode}
+                onChangeText={setPromoCode}
+              />
+            </View>
+            <Button
+              label="Áp dụng"
+              variant="secondary"
+              fullWidth={false}
+              onPress={handleValidatePromo}
+              loading={validatingPromo}
+              disabled={!promoCode.trim()}
+            />
+          </View>
+          {promoMessage ? (
+            <View style={styles.inline}>
+              <Ionicons
+                name={discountAmount > 0 ? 'checkmark-circle' : 'alert-circle'}
+                size={16}
+                color={discountAmount > 0 ? theme.success : theme.danger}
+              />
+              <ThemedText type="small" themeColor={discountAmount > 0 ? 'success' : 'danger'} style={styles.flexShrink}>
+                {promoMessage}
+              </ThemedText>
+            </View>
+          ) : null}
+        </Card>
+
+        <Card style={styles.section}>
+          <SectionTitle icon="wallet-outline" title="Phương thức thanh toán" />
+          {paymentOptions.map((option) => {
+            const selected = paymentMethod === option.key;
             return (
               <Pressable
-                key={service.serviceId}
-                onPress={() => toggleService(service.serviceId)}
-                style={[
-                  styles.serviceRow,
-                  { borderColor: selected ? theme.primary : theme.border, backgroundColor: theme.backgroundElement },
+                key={option.key}
+                accessibilityRole="radio"
+                accessibilityState={{ selected }}
+                onPress={() => setPaymentMethod(option.key)}
+                style={({ pressed }) => [
+                  styles.option,
+                  {
+                    borderColor: selected ? theme.primary : theme.border,
+                    backgroundColor: selected ? theme.primarySoft : theme.backgroundElement,
+                    opacity: pressed ? 0.85 : 1,
+                  },
                 ]}>
-                <View style={styles.serviceInfo}>
-                  <ThemedText type="small">{service.name}</ThemedText>
-                  <ThemedText type="small" themeColor="textSecondary">
-                    {formatVND(service.price)} / {service.unit}
+                <View style={[styles.optionIcon, { backgroundColor: theme.backgroundElement }]}>
+                  <Ionicons name={option.icon} size={20} color={theme.primary} />
+                </View>
+                <View style={styles.optionText}>
+                  <ThemedText type="smallBold">{option.title}</ThemedText>
+                  <ThemedText type="caption" themeColor="textSecondary">
+                    {option.description}
                   </ThemedText>
                 </View>
-                <View
-                  style={[
-                    styles.checkbox,
-                    { borderColor: theme.primary, backgroundColor: selected ? theme.primary : 'transparent' },
-                  ]}
-                />
+                <View style={[styles.radio, { borderColor: selected ? theme.primary : theme.textSecondary }]}>
+                  {selected ? <View style={[styles.radioDot, { backgroundColor: theme.primary }]} /> : null}
+                </View>
               </Pressable>
             );
           })}
-        </View>
-      ) : null}
+        </Card>
 
-      <ThemedText type="smallBold" style={styles.sectionTitle}>
-        Mã khuyến mãi
-      </ThemedText>
-      <View style={styles.promoRow}>
-        <View style={styles.promoInput}>
-          <TextField placeholder="Nhập mã khuyến mãi" autoCapitalize="characters" value={promoCode} onChangeText={setPromoCode} />
-        </View>
-        <Button label="Áp dụng" variant="outline" onPress={handleValidatePromo} loading={validatingPromo} />
-      </View>
-      {promoMessage ? (
-        <ThemedText type="small" themeColor={discountAmount > 0 ? 'success' : 'danger'}>
-          {promoMessage}
-        </ThemedText>
-      ) : null}
+        <Card style={styles.section}>
+          <SectionTitle icon="receipt-outline" title="Chi tiết giá" />
+          <View style={styles.priceRow}>
+            <ThemedText type="small" themeColor="textSecondary">
+              {formatVND(roomType.data.basePrice)} × {nights} đêm
+            </ThemedText>
+            <ThemedText type="small">{formatVND(roomTotal)}</ThemedText>
+          </View>
+          {servicesTotal > 0 ? (
+            <View style={styles.priceRow}>
+              <ThemedText type="small" themeColor="textSecondary">
+                Dịch vụ
+              </ThemedText>
+              <ThemedText type="small">{formatVND(servicesTotal)}</ThemedText>
+            </View>
+          ) : null}
+          {discountAmount > 0 ? (
+            <View style={styles.priceRow}>
+              <ThemedText type="small" themeColor="success">
+                Giảm giá
+              </ThemedText>
+              <ThemedText type="small" themeColor="success">
+                -{formatVND(discountAmount)}
+              </ThemedText>
+            </View>
+          ) : null}
+          <View style={[styles.divider, { backgroundColor: theme.border }]} />
+          <View style={styles.priceRow}>
+            <ThemedText type="bodyBold">Tổng cộng</ThemedText>
+            <ThemedText style={[styles.total, { color: theme.primary }]}>{formatVND(grandTotal)}</ThemedText>
+          </View>
+        </Card>
 
-      <ThemedView type="backgroundElement" style={styles.totalCard}>
-        <View style={styles.totalRow}>
-          <ThemedText type="small">Tiền phòng ({nights} đêm)</ThemedText>
-          <ThemedText type="small">{formatVND(roomTotal)}</ThemedText>
-        </View>
-        {servicesTotal > 0 ? (
-          <View style={styles.totalRow}>
-            <ThemedText type="small">Dịch vụ</ThemedText>
-            <ThemedText type="small">{formatVND(servicesTotal)}</ThemedText>
+        {submitError ? (
+          <View style={[styles.errorBox, { backgroundColor: `${theme.danger}14` }]}>
+            <Ionicons name="alert-circle" size={18} color={theme.danger} />
+            <ThemedText type="small" themeColor="danger" style={styles.flexShrink}>
+              {submitError}
+            </ThemedText>
           </View>
         ) : null}
-        {discountAmount > 0 ? (
-          <View style={styles.totalRow}>
-            <ThemedText type="small" themeColor="success">
-              Giảm giá
-            </ThemedText>
-            <ThemedText type="small" themeColor="success">
-              -{formatVND(discountAmount)}
-            </ThemedText>
-          </View>
-        ) : null}
-        <View style={styles.totalRow}>
-          <ThemedText type="smallBold">Tổng cộng</ThemedText>
-          <ThemedText type="smallBold" themeColor="primary">
-            {formatVND(grandTotal)}
+      </ScrollView>
+
+      <BottomBar>
+        <View style={styles.flex}>
+          <ThemedText type="caption" themeColor="textSecondary">
+            Tổng thanh toán
           </ThemedText>
+          <ThemedText style={[styles.total, { color: theme.primary }]}>{formatVND(grandTotal)}</ThemedText>
         </View>
-      </ThemedView>
-
-      <ThemedText type="smallBold" style={styles.sectionTitle}>
-        Phương thức thanh toán
-      </ThemedText>
-      <View style={styles.paymentRow}>
-        <Pressable
-          onPress={() => setPaymentMethod('CASH')}
-          style={[
-            styles.paymentOption,
-            { borderColor: paymentMethod === 'CASH' ? theme.primary : theme.border },
-          ]}>
-          <ThemedText type="small">Tiền mặt tại khách sạn</ThemedText>
-        </Pressable>
-        <Pressable
-          onPress={() => setPaymentMethod('PAYOS')}
-          style={[
-            styles.paymentOption,
-            { borderColor: paymentMethod === 'PAYOS' ? theme.primary : theme.border },
-          ]}>
-          <ThemedText type="small">Chuyển khoản QR (PayOS)</ThemedText>
-        </Pressable>
-      </View>
-
-      {submitError ? (
-        <ThemedText type="small" themeColor="danger">
-          {submitError}
-        </ThemedText>
-      ) : null}
-
-      <Button label="Xác nhận đặt phòng" onPress={handleSubmit} loading={submitting} />
-    </Screen>
+        <Button label="Xác nhận đặt phòng" fullWidth={false} onPress={handleSubmit} loading={submitting} />
+      </BottomBar>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { paddingBottom: Spacing.six, gap: Spacing.two },
-  summaryCard: { borderRadius: Spacing.three, padding: Spacing.three, gap: 4, marginBottom: Spacing.two },
-  sectionTitle: { marginTop: Spacing.three, marginBottom: Spacing.one, fontSize: 16 },
-  serviceRow: {
+  flex: { flex: 1 },
+  flexShrink: { flexShrink: 1 },
+  skeleton: { flex: 1, padding: Space.lg, gap: Space.lg },
+  content: {
+    width: '100%',
+    maxWidth: MaxContentWidth,
+    alignSelf: 'center',
+    padding: Space.lg,
+    gap: Space.lg,
+    paddingBottom: Space['2xl'],
+  },
+  summary: { flexDirection: 'row', gap: Space.md, alignItems: 'center' },
+  thumb: { width: 76, height: 76, borderRadius: Radius.md, overflow: 'hidden' },
+  summaryInfo: { flex: 1, gap: Space.xs },
+  inline: { flexDirection: 'row', alignItems: 'center', gap: Space.xs },
+  section: { gap: Space.md },
+  sectionTitle: { flexDirection: 'row', alignItems: 'center', gap: Space.sm },
+  option: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: Space.md,
+    minHeight: MinTouch + Space.lg,
     borderWidth: 1,
-    borderRadius: Spacing.two,
-    padding: Spacing.two,
-    marginBottom: Spacing.two,
+    borderRadius: Radius.md,
+    paddingHorizontal: Space.md,
+    paddingVertical: Space.sm,
   },
-  serviceInfo: { gap: 2 },
-  checkbox: { width: 20, height: 20, borderRadius: 4, borderWidth: 2 },
-  promoRow: { flexDirection: 'row', gap: Spacing.two, alignItems: 'flex-end' },
+  optionIcon: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  optionText: { flex: 1, gap: 2 },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 7,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
+  radioDot: { width: 10, height: 10, borderRadius: 5 },
+  promoRow: { flexDirection: 'row', gap: Space.sm, alignItems: 'center' },
   promoInput: { flex: 1 },
-  totalCard: { borderRadius: Spacing.three, padding: Spacing.three, gap: Spacing.one, marginTop: Spacing.two },
-  totalRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  paymentRow: { gap: Spacing.two },
-  paymentOption: { borderWidth: 1, borderRadius: Spacing.two, padding: Spacing.three },
+  priceRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: Space.sm },
+  divider: { height: StyleSheet.hairlineWidth, marginVertical: Space.xs },
+  total: { fontFamily: FontFamily.bold, fontSize: 18, lineHeight: 24 },
+  errorBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Space.sm,
+    padding: Space.md,
+    borderRadius: Radius.md,
+  },
 });
