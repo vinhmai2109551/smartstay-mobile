@@ -86,7 +86,7 @@ export default function OnboardingScreen() {
             <LinearGradient
               colors={['rgba(0,0,0,0.15)', 'transparent', 'rgba(0,0,0,0.7)']}
               locations={[0, 0.4, 1]}
-              style={StyleSheet.absoluteFillObject}
+              style={StyleSheet.absoluteFill}
               pointerEvents="none"
             />
             <SafeAreaView style={styles.flex} edges={['top']}>
