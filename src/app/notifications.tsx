@@ -3,6 +3,7 @@ import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { router } from 'expo-router';
 import { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FlatList, Pressable, RefreshControl, StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
@@ -42,6 +43,7 @@ function timeLabel(createdAt: string) {
 }
 
 export default function NotificationsScreen() {
+  const { t } = useTranslation();
   const theme = useTheme();
   const [onlyUnread, setOnlyUnread] = useState(false);
   const fetchNotifications = useCallback(() => notificationsApi.list(onlyUnread ? false : undefined), [onlyUnread]);
@@ -91,8 +93,8 @@ export default function NotificationsScreen() {
           <View style={styles.header}>
             <View style={styles.toolbar}>
               <View style={styles.filters}>
-                <Chip label="Tất cả" selected={!onlyUnread} onPress={() => setOnlyUnread(false)} />
-                <Chip label="Chưa đọc" selected={onlyUnread} onPress={() => setOnlyUnread(true)} />
+                <Chip label={t('notifications.filterAll')} selected={!onlyUnread} onPress={() => setOnlyUnread(false)} />
+                <Chip label={t('notifications.filterUnread')} selected={onlyUnread} onPress={() => setOnlyUnread(true)} />
               </View>
               {hasUnread ? (
                 <Pressable
@@ -103,7 +105,7 @@ export default function NotificationsScreen() {
                   style={({ pressed }) => [styles.markAll, { opacity: pressed || markingAll ? 0.6 : 1 }]}>
                   <Ionicons name="checkmark-done" size={18} color={theme.primary} />
                   <ThemedText type="smallBold" themeColor="primary">
-                    Đọc tất cả
+                    {t('notifications.markAllRead')}
                   </ThemedText>
                 </Pressable>
               ) : null}
@@ -121,11 +123,9 @@ export default function NotificationsScreen() {
           loading ? null : (
             <EmptyState
               icon={onlyUnread ? 'checkmark-done-outline' : 'notifications-off-outline'}
-              title={onlyUnread ? 'Bạn đã đọc hết' : 'Chưa có thông báo'}
+              title={onlyUnread ? t('notifications.emptyUnreadTitle') : t('notifications.emptyAllTitle')}
               description={
-                onlyUnread
-                  ? 'Không còn thông báo nào chưa đọc.'
-                  : 'Cập nhật về đơn đặt phòng và thanh toán sẽ xuất hiện ở đây.'
+                onlyUnread ? t('notifications.emptyUnreadDescription') : t('notifications.emptyAllDescription')
               }
             />
           )
@@ -139,7 +139,11 @@ export default function NotificationsScreen() {
             <Animated.View entering={FadeInDown.duration(400).delay(Math.min(index, 6) * 50)}>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={`${unread ? 'Chưa đọc. ' : ''}${notification.title}. ${notification.body}`}
+                accessibilityLabel={t('notifications.itemAccessibility', {
+                  prefix: unread ? t('notifications.unreadPrefix') : '',
+                  title: notification.title,
+                  body: notification.body,
+                })}
                 onPress={() => handlePress(notification)}
                 style={({ pressed }) => [
                   styles.item,
@@ -169,7 +173,7 @@ export default function NotificationsScreen() {
                     {notification.bookingId ? (
                       <View style={styles.link}>
                         <ThemedText type="caption" themeColor="primary">
-                          Xem đơn
+                          {t('notifications.viewBooking')}
                         </ThemedText>
                         <Ionicons name="chevron-forward" size={12} color={theme.primary} />
                       </View>

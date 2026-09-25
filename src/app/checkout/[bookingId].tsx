@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import Animated, { ZoomIn } from 'react-native-reanimated';
@@ -21,14 +22,10 @@ import { formatVND } from '@/utils/currency';
 
 const POLL_INTERVAL_MS = 4000;
 
-const STEPS = [
-  'Mở ứng dụng ngân hàng hoặc ví điện tử',
-  'Chọn quét mã QR và quét mã bên trên',
-  'Xác nhận chuyển khoản — đơn sẽ tự cập nhật',
-];
-
 export default function CheckoutScreen() {
+  const { t } = useTranslation();
   const theme = useTheme();
+  const steps = useMemo(() => [t('checkout.step1'), t('checkout.step2'), t('checkout.step3')], [t]);
   const shadows = useShadows();
   const { width } = useWindowDimensions();
   const { bookingId } = useLocalSearchParams<{ bookingId: string }>();
@@ -53,7 +50,7 @@ export default function CheckoutScreen() {
         if (cancelled) return;
         setLink(created);
       } catch (err) {
-        if (!cancelled) setError(getApiErrorMessage(err, 'Không thể khởi tạo thanh toán.'));
+        if (!cancelled) setError(getApiErrorMessage(err, t('checkout.createLinkFailed')));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -97,7 +94,7 @@ export default function CheckoutScreen() {
       </ThemedView>
     );
   }
-  if (error || !link) return <ErrorView message={error ?? 'Không thể tạo link thanh toán.'} />;
+  if (error || !link) return <ErrorView message={error ?? t('checkout.createLinkMissing')} />;
 
   if (paid) {
     return (
@@ -109,13 +106,13 @@ export default function CheckoutScreen() {
         </Animated.View>
         <View style={styles.successText}>
           <ThemedText type="title" style={styles.center}>
-            Thanh toán thành công
+            {t('checkout.successTitle')}
           </ThemedText>
           <ThemedText type="body" themeColor="textSecondary" style={styles.center}>
-            Đơn đặt phòng của bạn đã được xác nhận. Hẹn gặp bạn tại Vika Hotel!
+            {t('checkout.successSubtitle')}
           </ThemedText>
         </View>
-        <Button label="Xem đơn đặt phòng" onPress={() => router.replace(`/booking/${bookingId}`)} />
+        <Button label={t('checkout.viewBooking')} onPress={() => router.replace(`/booking/${bookingId}`)} />
       </ThemedView>
     );
   }
@@ -125,12 +122,12 @@ export default function CheckoutScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.header}>
           <ThemedText type="title" style={styles.center}>
-            Quét mã để thanh toán
+            {t('checkout.scanTitle')}
           </ThemedText>
           {amount != null ? (
             <View style={styles.amountBlock}>
               <ThemedText type="small" themeColor="textSecondary">
-                Số tiền cần thanh toán
+                {t('checkout.amountLabel')}
               </ThemedText>
               <ThemedText style={[styles.amount, { color: theme.primary }]}>{formatVND(amount)}</ThemedText>
             </View>
@@ -143,7 +140,7 @@ export default function CheckoutScreen() {
           <View style={styles.payosRow}>
             <Ionicons name="shield-checkmark" size={14} color="#047857" />
             <ThemedText type="caption" style={styles.payosText}>
-              Thanh toán an toàn qua PayOS
+              {t('checkout.payosSecure')}
             </ThemedText>
           </View>
         </View>
@@ -159,13 +156,13 @@ export default function CheckoutScreen() {
             <ActivityIndicator size="small" color={theme.primary} />
           )}
           <ThemedText type="small" themeColor={expired ? 'danger' : 'primary'} style={styles.flexShrink}>
-            {expired ? 'Mã QR đã hết hạn, vui lòng quay lại tạo đơn mới.' : 'Đang chờ xác nhận thanh toán…'}
+            {expired ? t('checkout.expired') : t('checkout.waiting')}
           </ThemedText>
         </View>
 
         <Card style={styles.steps}>
-          <ThemedText type="bodyBold">Hướng dẫn</ThemedText>
-          {STEPS.map((step, index) => (
+          <ThemedText type="bodyBold">{t('checkout.instructions')}</ThemedText>
+          {steps.map((step, index) => (
             <View key={step} style={styles.step}>
               <View style={[styles.stepNumber, { backgroundColor: theme.primary }]}>
                 <ThemedText type="caption" style={{ color: theme.primaryText }}>
@@ -180,7 +177,7 @@ export default function CheckoutScreen() {
         </Card>
 
         <Button
-          label="Mở trang thanh toán"
+          label={t('checkout.openCheckout')}
           icon="open-outline"
           variant="outline"
           onPress={() => WebBrowser.openBrowserAsync(link.checkoutUrl)}

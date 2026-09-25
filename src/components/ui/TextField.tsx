@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
@@ -28,6 +29,7 @@ export function TextField({
   secureTextEntry,
   ...rest
 }: TextFieldProps) {
+  const { t } = useTranslation();
   const theme = useTheme();
   const [focused, setFocused] = useState(false);
   // Password fields get a show/hide toggle.
@@ -104,7 +106,7 @@ export function TextField({
         {secureTextEntry ? (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={revealed ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+            accessibilityLabel={revealed ? t('common.hidePassword') : t('common.showPassword')}
             onPress={() => setRevealed((v) => !v)}
             hitSlop={8}
             style={styles.trailing}>

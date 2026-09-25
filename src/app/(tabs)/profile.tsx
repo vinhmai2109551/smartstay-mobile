@@ -3,7 +3,8 @@ import Constants from 'expo-constants';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { authApi } from '@/api/auth';
@@ -14,12 +15,15 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { Chip } from '@/components/ui/Chip';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { CountBadge } from '@/components/ui/CountBadge';
 import { TextField } from '@/components/ui/TextField';
 import { MaxContentWidth, MinTouch, Radius, Space } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useUnreadNotifications } from '@/hooks/useUnreadNotifications';
 import { useAuthStore } from '@/store/authStore';
+import { AppLanguage, ThemeMode, useSettingsStore } from '@/store/settingsStore';
 
 type IconName = keyof typeof Ionicons.glyphMap;
 
@@ -65,11 +69,16 @@ function MenuRow({
 }
 
 export default function ProfileScreen() {
+  const { t } = useTranslation();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const user = useAuthStore((s) => s.user);
   const clearSession = useAuthStore((s) => s.clearSession);
   const unreadCount = useUnreadNotifications();
+  const themeMode = useSettingsStore((s) => s.themeMode);
+  const setThemeMode = useSettingsStore((s) => s.setThemeMode);
+  const language = useSettingsStore((s) => s.language);
+  const setLanguage = useSettingsStore((s) => s.setLanguage);
 
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [oldPassword, setOldPassword] = useState('');
@@ -77,23 +86,30 @@ export default function ProfileScreen() {
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [passwordSuccess, setPasswordSuccess] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
 
-  const handleLogout = () => {
-    Alert.alert('Đăng xuất', 'Bạn có chắc muốn đăng xuất?', [
-      { text: 'Huỷ', style: 'cancel' },
-      {
-        text: 'Đăng xuất',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await authApi.logout();
-          } catch {
-            // ignore network errors on logout
-          }
-          clearSession();
-        },
-      },
-    ]);
+  const themeOptions: { key: ThemeMode; label: string; icon: IconName }[] = [
+    { key: 'light', label: t('profile.themeLight'), icon: 'sunny-outline' },
+    { key: 'dark', label: t('profile.themeDark'), icon: 'moon-outline' },
+    { key: 'system', label: t('profile.themeSystem'), icon: 'phone-portrait-outline' },
+  ];
+  const languageOptions: { key: AppLanguage; label: string }[] = [
+    { key: 'vi', label: t('profile.languageVi') },
+    { key: 'en', label: t('profile.languageEn') },
+  ];
+
+  const handleConfirmLogout = async () => {
+    setLoggingOut(true);
+    try {
+      await authApi.logout();
+    } catch {
+      // ignore network errors on logout
+    } finally {
+      setLoggingOut(false);
+      setShowLogoutConfirm(false);
+      clearSession();
+    }
   };
 
   const handleChangePassword = async () => {
@@ -106,7 +122,7 @@ export default function ProfileScreen() {
       setOldPassword('');
       setNewPassword('');
     } catch (error) {
-      setPasswordError(getApiErrorMessage(error, 'Đổi mật khẩu thất bại.'));
+      setPasswordError(getApiErrorMessage(error, t('profile.changePasswordFailed')));
     } finally {
       setSubmitting(false);
     }
@@ -121,7 +137,7 @@ export default function ProfileScreen() {
           end={{ x: 0, y: 1 }}
           style={[styles.hero, { paddingTop: insets.top + Space.xl }]}>
           <ThemedText type="heading" style={{ color: theme.primaryText }}>
-            Tài khoản
+            {t('profile.title')}
           </ThemedText>
         </LinearGradient>
 
@@ -130,7 +146,7 @@ export default function ProfileScreen() {
             <Avatar name={user?.fullName} size={64} />
             <View style={styles.profileInfo}>
               <ThemedText type="heading" numberOfLines={1}>
-                {user?.fullName ?? 'Khách hàng'}
+                {user?.fullName ?? t('profile.fallbackName')}
               </ThemedText>
               {user?.email ? (
                 <View style={styles.infoRow}>
@@ -152,25 +168,25 @@ export default function ProfileScreen() {
           </Card>
 
           <ThemedText type="caption" themeColor="textSecondary" style={styles.groupLabel}>
-            HOẠT ĐỘNG
+            {t('profile.sectionActivity')}
           </ThemedText>
           <Card padded={false} elevation="none" style={styles.group}>
             <MenuRow
               icon="receipt-outline"
-              label="Đơn đặt phòng"
+              label={t('profile.myBookings')}
               trailing="chevron-forward"
               onPress={() => router.navigate('/(tabs)/bookings')}
             />
             <MenuRow
               icon="notifications-outline"
-              label="Thông báo"
+              label={t('profile.notifications')}
               badge={unreadCount}
               trailing="chevron-forward"
               onPress={() => router.push('/notifications')}
             />
             <MenuRow
               icon="sparkles-outline"
-              label="Trợ lý AI"
+              label={t('profile.aiAssistant')}
               trailing="chevron-forward"
               onPress={() => router.navigate('/(tabs)/chat')}
               last
@@ -178,12 +194,41 @@ export default function ProfileScreen() {
           </Card>
 
           <ThemedText type="caption" themeColor="textSecondary" style={styles.groupLabel}>
-            BẢO MẬT
+            {t('profile.sectionAppearance')}
+          </ThemedText>
+          <Card style={styles.optionRow}>
+            {themeOptions.map((option) => (
+              <Chip
+                key={option.key}
+                label={option.label}
+                icon={option.icon}
+                selected={themeMode === option.key}
+                onPress={() => setThemeMode(option.key)}
+              />
+            ))}
+          </Card>
+
+          <ThemedText type="caption" themeColor="textSecondary" style={styles.groupLabel}>
+            {t('profile.sectionLanguage')}
+          </ThemedText>
+          <Card style={styles.optionRow}>
+            {languageOptions.map((option) => (
+              <Chip
+                key={option.key}
+                label={option.label}
+                selected={language === option.key}
+                onPress={() => setLanguage(option.key)}
+              />
+            ))}
+          </Card>
+
+          <ThemedText type="caption" themeColor="textSecondary" style={styles.groupLabel}>
+            {t('profile.sectionSecurity')}
           </ThemedText>
           <Card padded={false} elevation="none" style={styles.group}>
             <MenuRow
               icon="lock-closed-outline"
-              label="Đổi mật khẩu"
+              label={t('profile.changePassword')}
               trailing={showChangePassword ? 'chevron-up' : 'chevron-down'}
               onPress={() => setShowChangePassword((v) => !v)}
               last={!showChangePassword}
@@ -191,16 +236,16 @@ export default function ProfileScreen() {
             {showChangePassword ? (
               <View style={styles.passwordForm}>
                 <TextField
-                  label="Mật khẩu hiện tại"
+                  label={t('profile.currentPassword')}
                   leftIcon="key-outline"
                   secureTextEntry
                   value={oldPassword}
                   onChangeText={setOldPassword}
                 />
                 <TextField
-                  label="Mật khẩu mới"
+                  label={t('profile.newPassword')}
                   leftIcon="lock-closed-outline"
-                  hint="Tối thiểu 8 ký tự, có cả chữ và số"
+                  hint={t('profile.newPasswordHint')}
                   secureTextEntry
                   value={newPassword}
                   onChangeText={setNewPassword}
@@ -214,12 +259,12 @@ export default function ProfileScreen() {
                   <View style={styles.infoRow}>
                     <Ionicons name="checkmark-circle" size={16} color={theme.success} />
                     <ThemedText type="small" themeColor="success">
-                      Đổi mật khẩu thành công.
+                      {t('profile.changePasswordSuccess')}
                     </ThemedText>
                   </View>
                 ) : null}
                 <Button
-                  label="Cập nhật mật khẩu"
+                  label={t('profile.updatePassword')}
                   onPress={handleChangePassword}
                   loading={submitting}
                   disabled={!oldPassword || newPassword.length < 8}
@@ -229,14 +274,32 @@ export default function ProfileScreen() {
           </Card>
 
           <Card padded={false} elevation="none" style={[styles.group, styles.logoutGroup]}>
-            <MenuRow icon="log-out-outline" label="Đăng xuất" onPress={handleLogout} danger last />
+            <MenuRow
+              icon="log-out-outline"
+              label={t('profile.logout')}
+              onPress={() => setShowLogoutConfirm(true)}
+              danger
+              last
+            />
           </Card>
 
           <ThemedText type="caption" themeColor="textSecondary" style={styles.version}>
-            Vika Hotel · phiên bản {Constants.expoConfig?.version ?? '1.0.0'}
+            {t('profile.version', { version: Constants.expoConfig?.version ?? '1.0.0' })}
           </ThemedText>
         </View>
       </ScrollView>
+
+      <ConfirmDialog
+        visible={showLogoutConfirm}
+        title={t('profile.logout')}
+        message={t('profile.logoutMessage')}
+        confirmLabel={t('profile.logout')}
+        destructive
+        animated={false}
+        loading={loggingOut}
+        onConfirm={handleConfirmLogout}
+        onCancel={() => setShowLogoutConfirm(false)}
+      />
     </ThemedView>
   );
 }
@@ -261,6 +324,7 @@ const styles = StyleSheet.create({
   infoText: { flexShrink: 1 },
   groupLabel: { marginTop: Space['2xl'], marginBottom: Space.sm, marginLeft: Space.xs, letterSpacing: 1 },
   group: { overflow: 'hidden', borderRadius: Radius.lg },
+  optionRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Space.sm },
   logoutGroup: { marginTop: Space['2xl'] },
   menuRow: {
     flexDirection: 'row',

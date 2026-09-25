@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
+import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { roomImageSource } from '@/components/RoomTypeCard';
@@ -12,6 +13,7 @@ import { formatVND } from '@/utils/currency';
 import { formatDate, nightsBetween } from '@/utils/date';
 
 export function BookingCard({ booking, onPress }: { booking: Booking; onPress?: () => void }) {
+  const { t } = useTranslation();
   const theme = useTheme();
   const shadows = useShadows();
   const image = roomImageSource(booking.roomType);
@@ -20,7 +22,11 @@ export function BookingCard({ booking, onPress }: { booking: Booking; onPress?: 
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`Đơn ${booking.roomType.name}, ${formatDate(booking.checkInDate)} đến ${formatDate(booking.checkOutDate)}`}
+      accessibilityLabel={t('booking.cardAccessibility', {
+        name: booking.roomType.name,
+        checkIn: formatDate(booking.checkInDate),
+        checkOut: formatDate(booking.checkOutDate),
+      })}
       onPress={onPress}
       style={({ pressed }) => [
         styles.card,
@@ -41,7 +47,7 @@ export function BookingCard({ booking, onPress }: { booking: Booking; onPress?: 
             {booking.roomType.name}
           </ThemedText>
           <ThemedText type="caption" themeColor="textSecondary">
-            Mã đơn #{booking.bookingId.slice(0, 8).toUpperCase()}
+            {t('booking.orderCode', { code: booking.bookingId.slice(0, 8).toUpperCase() })}
           </ThemedText>
         </View>
       </View>
@@ -52,8 +58,11 @@ export function BookingCard({ booking, onPress }: { booking: Booking; onPress?: 
         <View style={styles.dates}>
           <Ionicons name="calendar-outline" size={16} color={theme.textSecondary} />
           <ThemedText type="small" themeColor="textSecondary">
-            {formatDate(booking.checkInDate, 'DD/MM')} – {formatDate(booking.checkOutDate, 'DD/MM/YYYY')} · {nights}{' '}
-            đêm
+            {t('booking.cardDates', {
+              checkIn: formatDate(booking.checkInDate, 'DD/MM'),
+              checkOut: formatDate(booking.checkOutDate, 'DD/MM/YYYY'),
+              nights,
+            })}
           </ThemedText>
         </View>
         <ThemedText style={[styles.total, { color: theme.primary }]}>{formatVND(booking.totalAmount)}</ThemedText>

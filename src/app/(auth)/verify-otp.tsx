@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { authApi } from '@/api/auth';
@@ -15,6 +16,7 @@ import { useTheme } from '@/hooks/use-theme';
 const RESEND_COOLDOWN_SECONDS = 30;
 
 export default function VerifyOtpScreen() {
+  const { t } = useTranslation();
   const theme = useTheme();
   const { email } = useLocalSearchParams<{ email: string }>();
 
@@ -27,7 +29,7 @@ export default function VerifyOtpScreen() {
 
   const handleVerify = async () => {
     if (otp.trim().length !== 6) {
-      setError('Mã OTP gồm 6 chữ số.');
+      setError(t('auth.verifyOtp.otpInvalid'));
       return;
     }
     setError(null);
@@ -36,7 +38,7 @@ export default function VerifyOtpScreen() {
       await authApi.verifyOtp({ email, otp: otp.trim() });
       setSuccess(true);
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Mã OTP không đúng hoặc đã hết hạn.'));
+      setError(getApiErrorMessage(err, t('auth.verifyOtp.otpWrongOrExpired')));
     } finally {
       setSubmitting(false);
     }
@@ -59,7 +61,7 @@ export default function VerifyOtpScreen() {
         });
       }, 1000);
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Không thể gửi lại mã, vui lòng thử lại sau.'));
+      setError(getApiErrorMessage(err, t('auth.verifyOtp.resendFailed')));
     } finally {
       setResending(false);
     }
@@ -75,13 +77,17 @@ export default function VerifyOtpScreen() {
         </View>
         <View style={styles.successText}>
           <ThemedText type="title" style={styles.center}>
-            Đăng ký thành công
+            {t('auth.verifyOtp.successTitle')}
           </ThemedText>
           <ThemedText type="body" themeColor="textSecondary" style={styles.center}>
-            Tài khoản của bạn đã sẵn sàng. Hãy đăng nhập để bắt đầu đặt phòng.
+            {t('auth.verifyOtp.successSubtitle')}
           </ThemedText>
         </View>
-        <Button label="Đến trang đăng nhập" icon="arrow-forward" onPress={() => router.replace('/(auth)/login')} />
+        <Button
+          label={t('auth.verifyOtp.goToLogin')}
+          icon="arrow-forward"
+          onPress={() => router.replace('/(auth)/login')}
+        />
       </Screen>
     );
   }
@@ -90,7 +96,7 @@ export default function VerifyOtpScreen() {
     <Screen decorated contentContainerStyle={styles.content}>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Quay lại"
+        accessibilityLabel={t('common.back')}
         onPress={() => router.back()}
         style={({ pressed }) => [
           styles.backButton,
@@ -104,10 +110,9 @@ export default function VerifyOtpScreen() {
       </View>
 
       <View style={styles.hero}>
-        <ThemedText type="title">Nhập mã xác minh</ThemedText>
+        <ThemedText type="title">{t('auth.verifyOtp.title')}</ThemedText>
         <ThemedText type="body" themeColor="textSecondary">
-          Mã gồm 6 chữ số đã được gửi tới{' '}
-          <ThemedText type="bodyBold">{email}</ThemedText>. Kiểm tra cả thư mục spam nhé.
+          {t('auth.verifyOtp.subtitle', { email })}
         </ThemedText>
       </View>
 
@@ -122,11 +127,11 @@ export default function VerifyOtpScreen() {
         </View>
       ) : null}
 
-      <Button label="Xác minh" onPress={handleVerify} loading={submitting} disabled={otp.length !== 6} />
+      <Button label={t('auth.verifyOtp.verifyButton')} onPress={handleVerify} loading={submitting} disabled={otp.length !== 6} />
 
       <View style={styles.resendRow}>
         <ThemedText type="small" themeColor="textSecondary">
-          Chưa nhận được mã?
+          {t('auth.verifyOtp.notReceived')}
         </ThemedText>
         <Pressable
           accessibilityRole="button"
@@ -134,7 +139,11 @@ export default function VerifyOtpScreen() {
           disabled={resendCooldown > 0 || resending}
           hitSlop={10}>
           <ThemedText type="smallBold" themeColor={resendCooldown > 0 ? 'textSecondary' : 'primary'}>
-            {resendCooldown > 0 ? `Gửi lại sau ${resendCooldown}s` : resending ? 'Đang gửi…' : 'Gửi lại mã'}
+            {resendCooldown > 0
+              ? t('auth.verifyOtp.resendIn', { seconds: resendCooldown })
+              : resending
+                ? t('auth.verifyOtp.sending')
+                : t('auth.verifyOtp.resend')}
           </ThemedText>
         </Pressable>
       </View>

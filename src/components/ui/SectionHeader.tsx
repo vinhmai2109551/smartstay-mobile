@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
@@ -12,8 +13,10 @@ type SectionHeaderProps = {
   onAction?: () => void;
 };
 
-export function SectionHeader({ title, subtitle, actionLabel = 'Xem tất cả', onAction }: SectionHeaderProps) {
+export function SectionHeader({ title, subtitle, actionLabel, onAction }: SectionHeaderProps) {
+  const { t } = useTranslation();
   const theme = useTheme();
+  const resolvedActionLabel = actionLabel ?? t('common.viewAll');
 
   return (
     <View style={styles.row}>
@@ -34,7 +37,7 @@ export function SectionHeader({ title, subtitle, actionLabel = 'Xem tất cả',
           hitSlop={8}
           style={({ pressed }) => [styles.action, { opacity: pressed ? 0.6 : 1 }]}>
           <ThemedText type="smallBold" themeColor="primary">
-            {actionLabel}
+            {resolvedActionLabel}
           </ThemedText>
           <Ionicons name="chevron-forward" size={16} color={theme.primary} />
         </Pressable>

@@ -5,13 +5,22 @@
 
 import { Colors, Shadows } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useSettingsStore } from '@/store/settingsStore';
+
+/** System scheme, unless the user picked Light/Dark manually in Tài khoản > Giao diện. */
+export function useEffectiveColorScheme() {
+  const systemScheme = useColorScheme();
+  const themeMode = useSettingsStore((s) => s.themeMode);
+  if (themeMode === 'light' || themeMode === 'dark') return themeMode;
+  return systemScheme === 'dark' ? 'dark' : 'light';
+}
 
 export function useTheme() {
-  const scheme = useColorScheme();
-  return Colors[scheme === 'dark' ? 'dark' : 'light'];
+  const scheme = useEffectiveColorScheme();
+  return Colors[scheme];
 }
 
 export function useShadows() {
-  const scheme = useColorScheme();
-  return Shadows[scheme === 'dark' ? 'dark' : 'light'];
+  const scheme = useEffectiveColorScheme();
+  return Shadows[scheme];
 }

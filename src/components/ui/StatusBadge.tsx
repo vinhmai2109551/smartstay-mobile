@@ -1,26 +1,16 @@
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Space } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
-const BOOKING_STATUS_LABEL: Record<string, string> = {
-  PENDING: 'Chờ xác nhận',
-  CONFIRMED: 'Đã xác nhận',
-  CHECKED_IN: 'Đang lưu trú',
-  CHECKED_OUT: 'Đã trả phòng',
-  COMPLETED: 'Hoàn tất',
-  CANCELLED: 'Đã huỷ',
-  PAID: 'Đã thanh toán',
-  UNPAID: 'Chưa thanh toán',
-  FAILED: 'Thất bại',
-};
-
 const POSITIVE_STATUSES = new Set(['CONFIRMED', 'CHECKED_IN', 'COMPLETED', 'PAID']);
 const NEGATIVE_STATUSES = new Set(['CANCELLED', 'FAILED']);
 const NEUTRAL_STATUSES = new Set(['CHECKED_OUT']);
 
 export function StatusBadge({ status }: { status: string }) {
+  const { t } = useTranslation();
   const theme = useTheme();
   const color = POSITIVE_STATUSES.has(status)
     ? theme.success
@@ -35,7 +25,7 @@ export function StatusBadge({ status }: { status: string }) {
     <View style={[styles.badge, { backgroundColor: `${color}18` }]}>
       <View style={[styles.dot, { backgroundColor: color }]} />
       <ThemedText type="caption" style={{ color }}>
-        {BOOKING_STATUS_LABEL[status] ?? status}
+        {t(`booking.status.${status}`, { defaultValue: status })}
       </ThemedText>
     </View>
   );
