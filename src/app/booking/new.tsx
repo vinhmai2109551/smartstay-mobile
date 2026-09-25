@@ -21,6 +21,7 @@ import { TextField } from '@/components/ui/TextField';
 import { FontFamily, MaxContentWidth, MinTouch, Radius, Space } from '@/constants/theme';
 import { useApi } from '@/hooks/useApi';
 import { useTheme } from '@/hooks/use-theme';
+import { useAuthStore } from '@/store/authStore';
 import { formatVND } from '@/utils/currency';
 import { formatDate, nightsBetween } from '@/utils/date';
 
@@ -46,8 +47,10 @@ export default function NewBookingScreen() {
   const fetchServices = useCallback(() => servicesApi.list(), []);
   const services = useApi(fetchServices);
 
-  const [fullName, setFullName] = useState('');
-  const [phone, setPhone] = useState('');
+  // Prefilled from the signed-in account; the guest can still edit them.
+  const user = useAuthStore((s) => s.user);
+  const [fullName, setFullName] = useState(user?.fullName ?? '');
+  const [phone, setPhone] = useState(user?.phone ?? '');
   const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'PAYOS'>('CASH');
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([]);
   const [promoCode, setPromoCode] = useState('');
@@ -78,7 +81,12 @@ export default function NewBookingScreen() {
     setValidatingPromo(true);
     setPromoMessage(null);
     try {
-      const result = await promotionsApi.validate(promoCode.trim(), roomTotal + servicesTotal);
+      const result = await promotionsApi.validate(promoCode.trim(), {
+        roomTypeId: params.roomTypeId,
+        checkIn: params.checkIn,
+        checkOut: params.checkOut,
+        serviceAmount: servicesTotal,
+      });
       if (result.valid) {
         setDiscountAmount(result.discountAmount);
         setPromoMessage(`Áp dụng thành công, giảm ${formatVND(result.discountAmount)}`);

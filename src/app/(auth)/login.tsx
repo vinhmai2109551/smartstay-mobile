@@ -18,6 +18,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/Button';
 import { OrDivider } from '@/components/ui/OrDivider';
 import { TextField } from '@/components/ui/TextField';
+import { TurnstileWidget } from '@/components/TurnstileWidget';
 import { VikaEmblem, VikaWordmark } from '@/components/VikaBrand';
 import { FontFamily, Radius, Space } from '@/constants/theme';
 import { useShadows, useTheme } from '@/hooks/use-theme';
@@ -57,6 +58,8 @@ export default function LoginScreen() {
   const setSession = useAuthStore((s) => s.setSession);
   const [serverError, setServerError] = useState<string | null>(null);
   const [signingIn, setSigningIn] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState('');
+  const [turnstileResetKey, setTurnstileResetKey] = useState(0);
 
   const {
     control,
@@ -69,11 +72,19 @@ export default function LoginScreen() {
 
   const onSubmit = async (values: FormValues) => {
     setServerError(null);
+    if (!turnstileToken) {
+      setServerError('Vui lòng chờ xác minh bảo mật hoàn tất.');
+      return;
+    }
     try {
-      const { accessToken, user } = await authApi.login(values);
+      const { accessToken, user } = await authApi.login({ ...values, turnstileToken });
       setSession(accessToken, user);
     } catch (error) {
       setServerError(getApiErrorMessage(error, 'Đăng nhập thất bại, vui lòng thử lại.'));
+    } finally {
+      // The token is spent after one attempt — reload the widget for a fresh one.
+      setTurnstileToken('');
+      setTurnstileResetKey((prev) => prev + 1);
     }
   };
 
@@ -186,13 +197,15 @@ export default function LoginScreen() {
               </View>
             ) : null}
 
+            <TurnstileWidget action="login" onTokenChange={setTurnstileToken} resetKey={turnstileResetKey} />
+
             <Button
               label="Đăng nhập"
               size="lg"
               trailingIcon="arrow-forward"
               onPress={handleSubmit(onSubmit)}
               loading={isSubmitting}
-              disabled={signingIn}
+              disabled={signingIn || !turnstileToken}
             />
 
             <OrDivider label="Hoặc" />

@@ -24,6 +24,7 @@ export type LoginResponse = {
 export type LoginDto = {
   email: string;
   password: string;
+  turnstileToken: string;
 };
 
 export type GoogleLoginDto = {

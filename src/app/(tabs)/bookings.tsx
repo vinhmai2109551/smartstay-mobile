@@ -33,7 +33,7 @@ export default function BookingsScreen() {
   const { width } = useWindowDimensions();
   const contentWidth = Math.min(width, MaxContentWidth);
   const fetchBookings = useCallback(() => bookingsApi.my(), []);
-  const { data, loading, error, refetch, refreshing, refresh } = useApi(fetchBookings);
+  const { data, loading, error, refetch, refreshing, refresh } = useApi(fetchBookings, { refetchOnFocus: true });
   const [filter, setFilter] = useState<FilterKey>('ALL');
 
   const bookings = useMemo(() => {
