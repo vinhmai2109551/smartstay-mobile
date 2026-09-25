@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, type ColorValue } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -19,6 +20,7 @@ function tabIcon(active: IconName, inactive: IconName) {
 const TAB_BAR_CONTENT_HEIGHT = 56;
 
 export default function TabsLayout() {
+  const { t } = useTranslation();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   // Devices without a home indicator still get a little breathing room below the labels.
@@ -41,17 +43,17 @@ export default function TabsLayout() {
           elevation: 0,
         },
       }}>
-      <Tabs.Screen name="index" options={{ title: 'Trang chủ', tabBarIcon: tabIcon('home', 'home-outline') }} />
-      <Tabs.Screen name="search" options={{ title: 'Tìm phòng', tabBarIcon: tabIcon('search', 'search-outline') }} />
+      <Tabs.Screen name="index" options={{ title: t('tabs.home'), tabBarIcon: tabIcon('home', 'home-outline') }} />
+      <Tabs.Screen name="search" options={{ title: t('tabs.search'), tabBarIcon: tabIcon('search', 'search-outline') }} />
       <Tabs.Screen
         name="chat"
-        options={{ title: 'Trợ lý AI', tabBarIcon: tabIcon('chatbubble-ellipses', 'chatbubble-ellipses-outline') }}
+        options={{ title: t('tabs.chat'), tabBarIcon: tabIcon('chatbubble-ellipses', 'chatbubble-ellipses-outline') }}
       />
       <Tabs.Screen
         name="bookings"
-        options={{ title: 'Đơn của tôi', tabBarIcon: tabIcon('receipt', 'receipt-outline') }}
+        options={{ title: t('tabs.bookings'), tabBarIcon: tabIcon('receipt', 'receipt-outline') }}
       />
-      <Tabs.Screen name="profile" options={{ title: 'Tài khoản', tabBarIcon: tabIcon('person', 'person-outline') }} />
+      <Tabs.Screen name="profile" options={{ title: t('tabs.profile'), tabBarIcon: tabIcon('person', 'person-outline') }} />
     </Tabs>
   );
 }

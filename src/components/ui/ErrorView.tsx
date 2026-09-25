@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
@@ -13,6 +14,7 @@ type ErrorViewProps = {
 };
 
 export function ErrorView({ message, onRetry }: ErrorViewProps) {
+  const { t } = useTranslation();
   const theme = useTheme();
 
   return (
@@ -22,14 +24,14 @@ export function ErrorView({ message, onRetry }: ErrorViewProps) {
       </View>
       <View style={styles.text}>
         <ThemedText type="heading" style={styles.center}>
-          Đã có lỗi xảy ra
+          {t('common.errorTitle')}
         </ThemedText>
         <ThemedText type="body" themeColor="textSecondary" style={styles.center}>
           {message}
         </ThemedText>
       </View>
       {onRetry ? (
-        <Button label="Thử lại" icon="refresh" variant="secondary" fullWidth={false} onPress={onRetry} />
+        <Button label={t('common.retry')} icon="refresh" variant="secondary" fullWidth={false} onPress={onRetry} />
       ) : null}
     </ThemedView>
   );

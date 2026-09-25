@@ -2,7 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   FlatList,
   Pressable,
@@ -22,38 +23,46 @@ import { MinTouch, Radius, Space } from '@/constants/theme';
 import { useAuthStore } from '@/store/authStore';
 
 type Slide = {
+  key: string;
   icon: keyof typeof Ionicons.glyphMap;
   title: string;
   subtitle: string;
   image: number;
 };
 
-const SLIDES: Slide[] = [
-  {
-    icon: 'bed-outline',
-    title: 'Chào mừng đến Vika Hotel',
-    subtitle: 'Không gian nghỉ dưỡng ven biển Đà Nẵng với phòng ấm cúng và dịch vụ tận tâm.',
-    image: HeroImage,
-  },
-  {
-    icon: 'sparkles-outline',
-    title: 'Đặt phòng bằng hội thoại',
-    subtitle: 'Nhắn cho trợ lý AI như nhắn lễ tân: hỏi phòng trống, giá, chính sách và đặt ngay.',
-    image: DemoRoomImageByName['Suite Gia Đình'] ?? HeroImage,
-  },
-  {
-    icon: 'shield-checkmark-outline',
-    title: 'Thanh toán an toàn',
-    subtitle: 'Quét VietQR qua PayOS, nhận mã đặt phòng và QR check-in ngay lập tức.',
-    image: DemoRoomImageByName['Bungalow Vườn'] ?? HeroImage,
-  },
-];
-
 export default function OnboardingScreen() {
+  const { t } = useTranslation();
   const { width } = useWindowDimensions();
   const setHasSeenOnboarding = useAuthStore((s) => s.setHasSeenOnboarding);
   const listRef = useRef<FlatList<Slide>>(null);
   const [index, setIndex] = useState(0);
+
+  const SLIDES: Slide[] = useMemo(
+    () => [
+      {
+        key: 'slide1',
+        icon: 'bed-outline',
+        title: t('onboarding.slide1Title'),
+        subtitle: t('onboarding.slide1Subtitle'),
+        image: HeroImage,
+      },
+      {
+        key: 'slide2',
+        icon: 'sparkles-outline',
+        title: t('onboarding.slide2Title'),
+        subtitle: t('onboarding.slide2Subtitle'),
+        image: DemoRoomImageByName['Suite Gia Đình'] ?? HeroImage,
+      },
+      {
+        key: 'slide3',
+        icon: 'shield-checkmark-outline',
+        title: t('onboarding.slide3Title'),
+        subtitle: t('onboarding.slide3Subtitle'),
+        image: DemoRoomImageByName['Bungalow Vườn'] ?? HeroImage,
+      },
+    ],
+    [t],
+  );
   const isLast = index >= SLIDES.length - 1;
 
   const finish = () => {
@@ -78,7 +87,7 @@ export default function OnboardingScreen() {
       <FlatList
         ref={listRef}
         data={SLIDES}
-        keyExtractor={(item) => item.title}
+        keyExtractor={(item) => item.key}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
@@ -97,7 +106,7 @@ export default function OnboardingScreen() {
               <View style={styles.header}>
                 <BrandMark size={34} iconSize={16} />
                 <ThemedText type="bodyBold" style={styles.onImage}>
-                  Vika Hotel
+                  {t('common.brandName')}
                 </ThemedText>
               </View>
 
@@ -123,7 +132,7 @@ export default function OnboardingScreen() {
         <View style={styles.dots}>
           {SLIDES.map((slide, i) => (
             <View
-              key={slide.title}
+              key={slide.key}
               style={[
                 styles.dot,
                 { backgroundColor: i === index ? '#FFFFFF' : 'rgba(255,255,255,0.4)' },
@@ -134,7 +143,7 @@ export default function OnboardingScreen() {
         </View>
 
         <Button
-          label={isLast ? 'Bắt đầu' : 'Tiếp tục'}
+          label={isLast ? t('onboarding.start') : t('onboarding.next')}
           icon={isLast ? 'arrow-forward' : undefined}
           size="lg"
           onPress={goNext}
@@ -149,7 +158,7 @@ export default function OnboardingScreen() {
           disabled={isLast}
           style={[styles.skip, isLast && styles.hidden]}>
           <ThemedText type="small" style={styles.skipText}>
-            Bỏ qua
+            {t('onboarding.skip')}
           </ThemedText>
         </Pressable>
       </SafeAreaView>

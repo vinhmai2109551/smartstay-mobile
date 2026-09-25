@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FlatList, Pressable, RefreshControl, StyleSheet, useWindowDimensions, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown, FadeInRight, ZoomIn } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -20,7 +21,7 @@ import { CountBadge } from '@/components/ui/CountBadge';
 import { ErrorView } from '@/components/ui/ErrorView';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { RoomCardSkeleton, Skeleton } from '@/components/ui/Skeleton';
-import { HomeHeroSlides } from '@/constants/demoImages';
+import { getHomeHeroSlides } from '@/constants/demoImages';
 import { MaxContentWidth, MinTouch, Radius, Space } from '@/constants/theme';
 import { useApi } from '@/hooks/useApi';
 import { useUnreadNotifications } from '@/hooks/useUnreadNotifications';
@@ -36,11 +37,13 @@ const FEATURED_COUNT = 5;
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export default function HomeScreen() {
+  const { t } = useTranslation();
   const theme = useTheme();
   const shadows = useShadows();
   const { width: windowWidth } = useWindowDimensions();
   const user = useAuthStore((s) => s.user);
   const unreadCount = useUnreadNotifications();
+  const heroSlides = useMemo(() => getHomeHeroSlides(t), [t]);
 
   const fetchRoomTypes = useCallback(() => roomTypesApi.list(), []);
   const roomTypes = useApi(fetchRoomTypes);
@@ -77,15 +80,18 @@ export default function HomeScreen() {
       <View style={styles.topBar}>
         <View style={styles.greeting}>
           <ThemedText type="small" themeColor="textSecondary">
-            Xin chào{firstName ? ',' : ''}
+            {t('home.greeting')}
+            {firstName ? ',' : ''}
           </ThemedText>
           <ThemedText type="title" numberOfLines={1}>
-            {firstName ?? 'Quý khách'}
+            {firstName ?? t('home.greetingFallbackName')}
           </ThemedText>
         </View>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={unreadCount > 0 ? `Thông báo, ${unreadCount} chưa đọc` : 'Thông báo'}
+          accessibilityLabel={
+            unreadCount > 0 ? t('home.notificationsUnread', { count: unreadCount }) : t('home.notifications')
+          }
           onPress={() => router.push('/notifications')}
           style={({ pressed }) => [
             styles.iconButton,
@@ -96,7 +102,7 @@ export default function HomeScreen() {
         </Pressable>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Tài khoản"
+          accessibilityLabel={t('tabs.profile')}
           onPress={() => router.navigate('/(tabs)/profile')}
           style={({ pressed }) => ({ opacity: pressed ? 0.8 : 1 })}>
           <Avatar name={user?.fullName} size={MinTouch} />
@@ -104,13 +110,13 @@ export default function HomeScreen() {
       </View>
 
       <Animated.View entering={FadeIn.duration(600)}>
-        <HeroCarousel slides={HomeHeroSlides} height={heroHeight} captionInset={SEARCH_OVERLAP} />
+        <HeroCarousel slides={heroSlides} height={heroHeight} captionInset={SEARCH_OVERLAP} />
       </Animated.View>
 
       <AnimatedPressable
         entering={FadeInDown.duration(500).delay(200)}
         accessibilityRole="search"
-        accessibilityLabel="Tìm phòng trống"
+        accessibilityLabel={t('home.searchAccessibility')}
         onPress={goToSearch}
         style={({ pressed }: { pressed: boolean }) => [
           styles.searchBar,
@@ -118,15 +124,27 @@ export default function HomeScreen() {
           { backgroundColor: theme.backgroundElement, opacity: pressed ? 0.95 : 1 },
         ]}>
         <View style={[styles.searchIcon, { backgroundColor: theme.primarySoft }]}>
-          <Ionicons name="search" size={20} color={theme.primary} />
+          <Ionicons name="calendar-outline" size={20} color={theme.primary} />
         </View>
         <View style={styles.searchText}>
-          <ThemedText type="smallBold">Bạn muốn nghỉ khi nào?</ThemedText>
-          <ThemedText type="caption" themeColor="textSecondary" numberOfLines={1}>
-            Chọn ngày nhận phòng · trả phòng · số khách
+          <ThemedText type="smallBold" numberOfLines={1}>
+            {t('home.searchTitle')}
           </ThemedText>
+          <View style={styles.searchMetaRow}>
+            <Ionicons name="calendar-clear-outline" size={13} color={theme.textSecondary} />
+            <ThemedText type="caption" themeColor="textSecondary">
+              {t('home.searchDate')}
+            </ThemedText>
+            <View style={[styles.searchMetaDot, { backgroundColor: theme.border }]} />
+            <Ionicons name="people-outline" size={13} color={theme.textSecondary} />
+            <ThemedText type="caption" themeColor="textSecondary">
+              {t('home.searchGuests')}
+            </ThemedText>
+          </View>
         </View>
-        <Ionicons name="options-outline" size={20} color={theme.textSecondary} />
+        <View style={[styles.searchCta, { backgroundColor: theme.primary }]}>
+          <Ionicons name="search" size={18} color={theme.primaryText} />
+        </View>
       </AnimatedPressable>
 
       <PerkRow />
@@ -137,7 +155,7 @@ export default function HomeScreen() {
         </Animated.View>
       ) : null}
 
-      <SectionHeader title="Loại phòng nổi bật" onAction={goToSearch} />
+      <SectionHeader title={t('home.featuredRooms')} onAction={goToSearch} />
     </View>
   );
 
@@ -188,11 +206,11 @@ export default function HomeScreen() {
               {header}
               {featuredCarousel}
               <View style={styles.gallerySection}>
-                <SectionHeader title="Trải nghiệm tại Vika Hotel" subtitle="Không gian nghỉ dưỡng ven biển Đà Nẵng" />
+                <SectionHeader title={t('home.experienceTitle')} subtitle={t('home.experienceSubtitle')} />
                 <ExperienceGallery width={innerWidth} />
               </View>
               <View style={styles.suggestHeader}>
-                <SectionHeader title="Gợi ý cho bạn" subtitle="Những lựa chọn được yêu thích tại Vika Hotel" />
+                <SectionHeader title={t('home.suggestedTitle')} subtitle={t('home.suggestedSubtitle')} />
               </View>
               {roomTypes.loading ? (
                 <View style={styles.skeletonList}>
@@ -212,7 +230,7 @@ export default function HomeScreen() {
           ListEmptyComponent={
             roomTypes.loading ? null : (
               <ThemedText themeColor="textSecondary" style={styles.empty}>
-                Chưa có loại phòng nào.
+                {t('home.noRoomTypes')}
               </ThemedText>
             )
           }
@@ -221,7 +239,7 @@ export default function HomeScreen() {
         <AnimatedPressable
           entering={ZoomIn.springify().damping(14).delay(600)}
           accessibilityRole="button"
-          accessibilityLabel="Hỏi trợ lý AI"
+          accessibilityLabel={t('home.askAi')}
           onPress={() => router.navigate('/(tabs)/chat')}
           style={({ pressed }: { pressed: boolean }) => [
             styles.fab,
@@ -230,7 +248,7 @@ export default function HomeScreen() {
           ]}>
           <Ionicons name="sparkles" size={18} color={theme.primaryText} />
           <ThemedText type="smallBold" style={{ color: theme.primaryText }}>
-            Hỏi trợ lý AI
+            {t('home.askAi')}
           </ThemedText>
         </AnimatedPressable>
       </SafeAreaView>
@@ -273,8 +291,8 @@ const styles = StyleSheet.create({
     marginTop: -(SEARCH_OVERLAP + Space.xl),
     marginHorizontal: Space.md,
     paddingHorizontal: Space.md,
-    paddingVertical: Space.sm,
-    borderRadius: Radius.full,
+    paddingVertical: Space.md,
+    borderRadius: Radius.xl,
   },
   searchIcon: {
     width: MinTouch,
@@ -283,7 +301,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  searchText: { flex: 1 },
+  searchText: { flex: 1, gap: 3 },
+  searchMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  searchMetaDot: {
+    width: 3,
+    height: 3,
+    borderRadius: 1.5,
+    marginHorizontal: 2,
+  },
+  searchCta: {
+    width: 40,
+    height: 40,
+    borderRadius: Radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   carousel: {
     marginTop: Space.md,
   },

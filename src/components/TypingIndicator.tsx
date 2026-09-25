@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 import Animated, {
   cancelAnimation,
@@ -37,11 +38,12 @@ function Dot({ delay }: { delay: number }) {
 
 /** Three bouncing dots shown while the AI assistant is composing a reply. */
 export function TypingIndicator() {
+  const { t } = useTranslation();
   const theme = useTheme();
 
   return (
     <View
-      accessibilityLabel="Trợ lý đang soạn trả lời"
+      accessibilityLabel={t('chat.typingAccessibility')}
       style={[styles.bubble, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
       <Dot delay={0} />
       <Dot delay={140} />

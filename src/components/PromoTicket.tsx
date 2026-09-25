@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
@@ -15,16 +16,16 @@ type PromoTicketProps = {
 
 const NOTCH = 18;
 
-function discountLabel(promotion: Promotion) {
-  return promotion.discountType === 'PERCENTAGE'
-    ? `Giảm ${promotion.discountValue}%`
-    : `Giảm ${formatVND(promotion.discountValue)}`;
-}
-
 /** Promotion banner styled as a ticket with a dashed tear line; tap to copy the code. */
 export function PromoTicket({ promotion }: PromoTicketProps) {
+  const { t } = useTranslation();
   const theme = useTheme();
   const [copied, setCopied] = useState(false);
+
+  const discountLabel =
+    promotion.discountType === 'PERCENTAGE'
+      ? t('promo.discountPercent', { percent: promotion.discountValue })
+      : t('promo.discountAmount', { amount: formatVND(promotion.discountValue) });
 
   useEffect(() => {
     if (!copied) return;
@@ -40,8 +41,8 @@ export function PromoTicket({ promotion }: PromoTicketProps) {
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${discountLabel(promotion)}. Mã ${promotion.code}. Nhấn để sao chép mã`}
-      accessibilityHint="Sao chép mã khuyến mãi"
+      accessibilityLabel={t('promo.copyAccessibility', { discount: discountLabel, code: promotion.code })}
+      accessibilityHint={t('promo.copyHint')}
       onPress={handleCopy}
       style={({ pressed }) => [styles.ticket, { backgroundColor: theme.primary, opacity: pressed ? 0.92 : 1 }]}>
       <View style={styles.left}>
@@ -50,7 +51,7 @@ export function PromoTicket({ promotion }: PromoTicketProps) {
         </View>
         <View style={styles.leftText}>
           <ThemedText type="heading" style={{ color: theme.primaryText }}>
-            {discountLabel(promotion)}
+            {discountLabel}
           </ThemedText>
           {promotion.description ? (
             <ThemedText type="small" style={{ color: theme.primaryText }} numberOfLines={2}>
@@ -69,7 +70,7 @@ export function PromoTicket({ promotion }: PromoTicketProps) {
 
       <View style={styles.right}>
         <ThemedText type="caption" style={{ color: theme.primaryText }}>
-          {copied ? 'Đã sao chép' : 'Mã'}
+          {copied ? t('promo.copied') : t('promo.codeLabel')}
         </ThemedText>
         <ThemedText style={[styles.code, { color: theme.primaryText }]} numberOfLines={1} adjustsFontSizeToFit>
           {promotion.code}

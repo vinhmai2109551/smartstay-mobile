@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
@@ -17,6 +18,7 @@ type OtpInputProps = {
  * holds the value so paste and SMS/email autofill keep working.
  */
 export function OtpInput({ value, onChange, length = 6, error }: OtpInputProps) {
+  const { t } = useTranslation();
   const theme = useTheme();
   const inputRef = useRef<TextInput>(null);
   const [focused, setFocused] = useState(false);
@@ -56,7 +58,7 @@ export function OtpInput({ value, onChange, length = 6, error }: OtpInputProps) 
         autoComplete="one-time-code"
         maxLength={length}
         autoFocus
-        accessibilityLabel={`Mã xác minh ${length} chữ số`}
+        accessibilityLabel={t('common.otpAccessibility', { length })}
         style={styles.hiddenInput}
         caretHidden
       />

@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { RoomTypeCard } from '@/components/RoomTypeCard';
@@ -22,6 +23,7 @@ export function ChatBubble({
   onConfirmBooking?: (proposalId: string) => void;
   confirming?: boolean;
 }) {
+  const { t } = useTranslation();
   const theme = useTheme();
   const { width } = useWindowDimensions();
   const isUser = message.role === 'USER';
@@ -61,24 +63,27 @@ export function ChatBubble({
             <View style={[styles.cardIcon, { backgroundColor: theme.primarySoft }]}>
               <Ionicons name="calendar" size={16} color={theme.primary} />
             </View>
-            <ThemedText type="smallBold">Xác nhận đặt phòng</ThemedText>
+            <ThemedText type="smallBold">{t('chat.confirmBookingCard')}</ThemedText>
           </View>
           <ThemedText type="bodyBold">{message.pendingBooking.roomTypeName}</ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
-            {formatDate(message.pendingBooking.checkIn)} – {formatDate(message.pendingBooking.checkOut)} ·{' '}
-            {message.pendingBooking.nights} đêm
+            {t('chat.pendingBookingDates', {
+              checkIn: formatDate(message.pendingBooking.checkIn),
+              checkOut: formatDate(message.pendingBooking.checkOut),
+              nights: message.pendingBooking.nights,
+            })}
           </ThemedText>
           <View style={[styles.divider, { backgroundColor: theme.border }]} />
           <View style={styles.totalRow}>
             <ThemedText type="small" themeColor="textSecondary">
-              Tổng cộng
+              {t('booking.total')}
             </ThemedText>
             <ThemedText style={[styles.total, { color: theme.primary }]}>
               {formatVND(message.pendingBooking.totalAmount)}
             </ThemedText>
           </View>
           <Button
-            label="Xác nhận đặt phòng"
+            label={t('chat.confirmBookingCard')}
             size="sm"
             icon="checkmark"
             loading={confirming}
@@ -90,7 +95,7 @@ export function ChatBubble({
       {message.booking ? (
         <Card style={[styles.card, { width: cardWidth }]}>
           <View style={styles.bookingHeader}>
-            <ThemedText type="smallBold">Đơn đặt phòng</ThemedText>
+            <ThemedText type="smallBold">{t('chat.bookingCard')}</ThemedText>
             <StatusBadge status={message.booking.status} />
           </View>
           <ThemedText style={[styles.total, { color: theme.primary }]}>
@@ -102,7 +107,7 @@ export function ChatBubble({
             hitSlop={8}
             style={styles.link}>
             <ThemedText type="smallBold" themeColor="primary">
-              Xem chi tiết đơn
+              {t('chat.viewBookingDetail')}
             </ThemedText>
             <Ionicons name="arrow-forward" size={16} color={theme.primary} />
           </Pressable>

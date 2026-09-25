@@ -7,17 +7,27 @@ export const DemoRoomImageByName: Record<string, number> = {
   'Dorm 6 Giường': require('@/assets/images/room-dorm.jpg'),
 };
 
-/** Slides for the home-screen hero carousel. */
-export const HomeHeroSlides = [
-  { image: HeroImage, eyebrow: 'VIKA HOTEL ĐÀ NẴNG', title: 'Kỳ nghỉ của bạn\nbắt đầu từ đây' },
-  { image: DemoRoomImageByName['Deluxe View Biển'], eyebrow: 'HƯỚNG BIỂN', title: 'Thức dậy cùng\nbình minh biển' },
-  { image: DemoRoomImageByName['Bungalow Vườn'], eyebrow: 'XANH MÁT', title: 'Bình yên giữa\nkhu vườn nhiệt đới' },
-  { image: DemoRoomImageByName['Suite Gia Đình'], eyebrow: 'CHO GIA ĐÌNH', title: 'Rộng rãi cho\ncả nhà sum vầy' },
-];
+type TFunction = (key: string) => string;
+
+/** Slides for the home-screen hero carousel. Built from a `t` function so the copy follows the app language. */
+export function getHomeHeroSlides(t: TFunction) {
+  return [
+    { image: HeroImage, eyebrow: t('home.hero1Eyebrow'), title: t('home.hero1Title') },
+    { image: DemoRoomImageByName['Deluxe View Biển'], eyebrow: t('home.hero2Eyebrow'), title: t('home.hero2Title') },
+    { image: DemoRoomImageByName['Bungalow Vườn'], eyebrow: t('home.hero3Eyebrow'), title: t('home.hero3Title') },
+    { image: DemoRoomImageByName['Suite Gia Đình'], eyebrow: t('home.hero4Eyebrow'), title: t('home.hero4Title') },
+  ];
+}
 
 /** Slides for the search-screen header. */
-export const SearchHeroSlides = [
-  { image: DemoRoomImageByName['Suite Gia Đình'], eyebrow: 'ĐẶT PHÒNG', title: 'Chọn ngày,\nchọn phòng ưng ý' },
-  { image: DemoRoomImageByName['Deluxe View Biển'], eyebrow: 'ƯU ĐÃI MỖI NGÀY', title: 'Giá tốt nhất khi\nđặt trực tiếp' },
-  { image: HeroImage, eyebrow: 'XÁC NHẬN TỨC THÌ', title: 'Nhận mã đặt phòng\nngay sau khi đặt' },
-];
+export function getSearchHeroSlides(t: TFunction) {
+  return [
+    { image: DemoRoomImageByName['Suite Gia Đình'], eyebrow: t('search.hero1Eyebrow'), title: t('search.hero1Title') },
+    {
+      image: DemoRoomImageByName['Deluxe View Biển'],
+      eyebrow: t('search.hero2Eyebrow'),
+      title: t('search.hero2Title'),
+    },
+    { image: HeroImage, eyebrow: t('search.hero3Eyebrow'), title: t('search.hero3Title') },
+  ];
+}

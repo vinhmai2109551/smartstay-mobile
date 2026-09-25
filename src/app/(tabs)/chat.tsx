@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   FlatList,
   KeyboardAvoidingView,
@@ -23,26 +24,19 @@ import { FontFamily, MaxContentWidth, MinTouch, Radius, Space } from '@/constant
 import { useTheme } from '@/hooks/use-theme';
 import { ChatMessage } from '@/types/chat';
 
-const WELCOME_MESSAGE: ChatMessage = {
-  role: 'MODEL',
-  content:
-    'Xin chào! Mình là trợ lý ảo của Vika Hotel. Bạn muốn tìm phòng theo ngày nào, cho bao nhiêu khách? Mình có thể tư vấn và đặt phòng giúp bạn ngay tại đây.',
-};
-
-const QUICK_PROMPTS = [
-  'Phòng cho 2 người cuối tuần này',
-  'Đang có khuyến mãi nào không?',
-  'Phòng rộng cho gia đình 4 người',
-  'Gợi ý phòng giá tốt nhất',
-];
-
 export default function ChatScreen() {
+  const { t } = useTranslation();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const welcomeMessage = useMemo<ChatMessage>(() => ({ role: 'MODEL', content: t('chat.welcomeMessage') }), [t]);
+  const quickPrompts = useMemo(
+    () => [t('chat.quickPrompt1'), t('chat.quickPrompt2'), t('chat.quickPrompt3'), t('chat.quickPrompt4')],
+    [t],
+  );
   // KeyboardAvoidingView needs the distance from the window top to its own top edge.
   const [headerHeight, setHeaderHeight] = useState(0);
   const conversationIdRef = useRef<string | undefined>(undefined);
-  const [messages, setMessages] = useState<ChatMessage[]>([WELCOME_MESSAGE]);
+  const [messages, setMessages] = useState<ChatMessage[]>([welcomeMessage]);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
   const [confirmingProposalId, setConfirmingProposalId] = useState<string | null>(null);
@@ -73,7 +67,7 @@ export default function ChatScreen() {
     } catch (error) {
       setMessages((prev) => [
         ...prev,
-        { role: 'MODEL', content: getApiErrorMessage(error, 'Trợ lý AI hiện chưa phản hồi được, vui lòng thử lại.') },
+        { role: 'MODEL', content: getApiErrorMessage(error, t('chat.sendFailed')) },
       ]);
     } finally {
       setSending(false);
@@ -94,9 +88,10 @@ export default function ChatScreen() {
   const handleConfirmBooking = (proposalId: string) => {
     if (sending) return;
     setConfirmingProposalId(proposalId);
-    setMessages((prev) => [...prev, { role: 'USER', content: 'Xác nhận đặt phòng' }]);
+    const confirmText = t('chat.confirmBookingMessage');
+    setMessages((prev) => [...prev, { role: 'USER', content: confirmText }]);
     scrollToEnd();
-    send('Xác nhận đặt phòng', proposalId);
+    send(confirmText, proposalId);
   };
 
   const canSend = !sending && !!input.trim();
@@ -110,11 +105,11 @@ export default function ChatScreen() {
           onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}>
           <BrandMark size={40} iconSize={18} />
           <View style={styles.headerText}>
-            <ThemedText type="bodyBold">Trợ lý Vika Hotel</ThemedText>
+            <ThemedText type="bodyBold">{t('chat.headerTitle')}</ThemedText>
             <View style={styles.statusRow}>
               <View style={[styles.statusDot, { backgroundColor: theme.success }]} />
               <ThemedText type="caption" themeColor="textSecondary">
-                {sending ? 'Đang soạn trả lời…' : 'Sẵn sàng hỗ trợ 24/7'}
+                {sending ? t('chat.typing') : t('chat.readyToHelp')}
               </ThemedText>
             </View>
           </View>
@@ -147,10 +142,10 @@ export default function ChatScreen() {
               ) : showQuickPrompts ? (
                 <View style={styles.footer}>
                   <ThemedText type="caption" themeColor="textSecondary" style={styles.quickLabel}>
-                    Gợi ý câu hỏi
+                    {t('chat.quickPromptsLabel')}
                   </ThemedText>
                   <View style={styles.quickWrap}>
-                    {QUICK_PROMPTS.map((prompt) => (
+                    {quickPrompts.map((prompt) => (
                       <Chip key={prompt} label={prompt} onPress={() => sendText(prompt)} />
                     ))}
                   </View>
@@ -163,9 +158,9 @@ export default function ChatScreen() {
             <View style={[styles.inputPill, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
               <TextInput
                 style={[styles.input, { color: theme.text }]}
-                placeholder="Nhắn tin để tìm và đặt phòng…"
+                placeholder={t('chat.placeholder')}
                 placeholderTextColor={theme.textSecondary}
-                accessibilityLabel="Tin nhắn"
+                accessibilityLabel={t('chat.messageAccessibility')}
                 value={input}
                 onChangeText={setInput}
                 onSubmitEditing={() => sendText(input)}
@@ -174,7 +169,7 @@ export default function ChatScreen() {
             </View>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Gửi tin nhắn"
+              accessibilityLabel={t('chat.sendAccessibility')}
               onPress={() => sendText(input)}
               disabled={!canSend}
               style={({ pressed }) => [

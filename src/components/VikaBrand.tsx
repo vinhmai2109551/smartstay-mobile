@@ -3,7 +3,7 @@ import Svg, { Circle, G, Path } from 'react-native-svg';
 
 import { ThemedText } from '@/components/themed-text';
 import { FontFamily, Space } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useEffectiveColorScheme } from '@/hooks/use-theme';
 
 /** Brand colours of the Vika Hotel identity (fixed, independent of the app theme). */
 export const VikaBrandColors = {
@@ -87,7 +87,7 @@ type WordmarkProps = {
 
 /** "VIKA" wordmark with the gold line–dot–line divider and "HOTEL" underneath. */
 export function VikaWordmark({ size = 34, style }: WordmarkProps) {
-  const scheme = useColorScheme();
+  const scheme = useEffectiveColorScheme();
   // Navy disappears on the dark background, so the name switches to ivory there.
   const nameColor = scheme === 'dark' ? '#F4EFE3' : VikaBrandColors.navy;
   const lineWidth = size * 0.62;

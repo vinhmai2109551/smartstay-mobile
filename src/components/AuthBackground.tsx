@@ -3,8 +3,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { useTheme } from '@/hooks/use-theme';
+import { useEffectiveColorScheme, useTheme } from '@/hooks/use-theme';
 
 /**
  * Decorative backdrop for the auth screens: a soft blue wash with organic blobs,
@@ -13,7 +12,7 @@ import { useTheme } from '@/hooks/use-theme';
  */
 export function AuthBackground() {
   const theme = useTheme();
-  const scheme = useColorScheme();
+  const scheme = useEffectiveColorScheme();
   const { width, height } = useWindowDimensions();
   const isDark = scheme === 'dark';
 

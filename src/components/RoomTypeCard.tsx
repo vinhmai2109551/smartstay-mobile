@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
+import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
@@ -21,6 +22,7 @@ export function roomImageSource(roomType: RoomType) {
 }
 
 export function RoomTypeCard({ roomType, onPress, imageHeight = 200 }: RoomTypeCardProps) {
+  const { t } = useTranslation();
   const theme = useTheme();
   const shadows = useShadows();
   const availableCount = (roomType as AvailableRoomType).availableCount;
@@ -29,7 +31,11 @@ export function RoomTypeCard({ roomType, onPress, imageHeight = 200 }: RoomTypeC
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${roomType.name}, ${roomType.capacity} khách, ${formatVND(roomType.basePrice)} mỗi đêm`}
+      accessibilityLabel={t('room.cardAccessibility', {
+        name: roomType.name,
+        capacity: roomType.capacity,
+        price: formatVND(roomType.basePrice),
+      })}
       onPress={onPress}
       style={({ pressed }) => [
         styles.card,
@@ -52,7 +58,9 @@ export function RoomTypeCard({ roomType, onPress, imageHeight = 200 }: RoomTypeC
               size={14}
               color={availableCount > 0 ? theme.success : theme.danger}
             />
-            <ThemedText type="caption">{availableCount > 0 ? `Còn ${availableCount} phòng` : 'Hết phòng'}</ThemedText>
+            <ThemedText type="caption">
+              {availableCount > 0 ? t('room.availableCount', { count: availableCount }) : t('room.soldOut')}
+            </ThemedText>
           </View>
         ) : null}
       </View>
@@ -64,13 +72,13 @@ export function RoomTypeCard({ roomType, onPress, imageHeight = 200 }: RoomTypeC
         <View style={styles.row}>
           <Ionicons name="people-outline" size={16} color={theme.textSecondary} />
           <ThemedText type="small" themeColor="textSecondary">
-            Tối đa {roomType.capacity} khách
+            {t('room.maxGuests', { count: roomType.capacity })}
           </ThemedText>
         </View>
         <View style={styles.priceRow}>
           <ThemedText style={[styles.price, { color: theme.primary }]}>{formatVND(roomType.basePrice)}</ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
-            / đêm
+            {t('room.perNight')}
           </ThemedText>
         </View>
       </View>
