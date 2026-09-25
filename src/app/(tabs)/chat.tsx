@@ -10,7 +10,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { aiChatApi } from '@/api/chat';
 import { getApiErrorMessage } from '@/api/client';
@@ -27,14 +27,11 @@ import { ChatMessage } from '@/types/chat';
 export default function ChatScreen() {
   const { t } = useTranslation();
   const theme = useTheme();
-  const insets = useSafeAreaInsets();
   const welcomeMessage = useMemo<ChatMessage>(() => ({ role: 'MODEL', content: t('chat.welcomeMessage') }), [t]);
   const quickPrompts = useMemo(
     () => [t('chat.quickPrompt1'), t('chat.quickPrompt2'), t('chat.quickPrompt3'), t('chat.quickPrompt4')],
     [t],
   );
-  // KeyboardAvoidingView needs the distance from the window top to its own top edge.
-  const [headerHeight, setHeaderHeight] = useState(0);
   const conversationIdRef = useRef<string | undefined>(undefined);
   const [messages, setMessages] = useState<ChatMessage[]>([welcomeMessage]);
   const [input, setInput] = useState('');
@@ -100,9 +97,7 @@ export default function ChatScreen() {
   return (
     <ThemedView style={styles.flex}>
       <SafeAreaView style={styles.flex} edges={['top']}>
-        <View
-          style={[styles.header, { borderBottomColor: theme.border }]}
-          onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}>
+        <View style={[styles.header, { borderBottomColor: theme.border }]}>
           <BrandMark size={40} iconSize={18} />
           <View style={styles.headerText}>
             <ThemedText type="bodyBold">{t('chat.headerTitle')}</ThemedText>
@@ -115,10 +110,9 @@ export default function ChatScreen() {
           </View>
         </View>
 
-        <KeyboardAvoidingView
-          style={styles.flex}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          keyboardVerticalOffset={insets.top + headerHeight}>
+        {/* No keyboardVerticalOffset: the view's layout y already includes the safe-area
+            inset and header, since SafeAreaView sits at the top of the window. */}
+        <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <FlatList
             ref={listRef}
             data={messages}

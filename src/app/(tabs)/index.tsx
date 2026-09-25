@@ -17,6 +17,7 @@ import { PromoTicket } from '@/components/PromoTicket';
 import { RoomTypeCard } from '@/components/RoomTypeCard';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { Button } from '@/components/ui/Button';
 import { CountBadge } from '@/components/ui/CountBadge';
 import { ErrorView } from '@/components/ui/ErrorView';
 import { SectionHeader } from '@/components/ui/SectionHeader';
@@ -34,7 +35,26 @@ const CAROUSEL_GAP = Space.md;
 const SEARCH_OVERLAP = 28;
 const FEATURED_COUNT = 5;
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+type IconName = keyof typeof Ionicons.glyphMap;
+
+function SearchField({ icon, label, value }: { icon: IconName; label: string; value: string }) {
+  const theme = useTheme();
+  return (
+    <View style={styles.searchField}>
+      <View style={[styles.searchFieldIcon, { backgroundColor: theme.primarySoft }]}>
+        <Ionicons name={icon} size={18} color={theme.primary} />
+      </View>
+      <View style={styles.searchFieldText}>
+        <ThemedText type="caption" themeColor="textSecondary" numberOfLines={1}>
+          {label}
+        </ThemedText>
+        <ThemedText type="smallBold" numberOfLines={1}>
+          {value}
+        </ThemedText>
+      </View>
+    </View>
+  );
+}
 
 export default function HomeScreen() {
   const { t } = useTranslation();
@@ -113,39 +133,30 @@ export default function HomeScreen() {
         <HeroCarousel slides={heroSlides} height={heroHeight} captionInset={SEARCH_OVERLAP} />
       </Animated.View>
 
-      <AnimatedPressable
+      {/* Entering animation lives on a plain Animated.View: Reanimated drops function
+          styles on animated Pressables, which left this card unstyled. */}
+      <Animated.View
         entering={FadeInDown.duration(500).delay(200)}
-        accessibilityRole="search"
-        accessibilityLabel={t('home.searchAccessibility')}
-        onPress={goToSearch}
-        style={({ pressed }: { pressed: boolean }) => [
-          styles.searchBar,
+        style={[
+          styles.searchCard,
           shadows.floating,
-          { backgroundColor: theme.backgroundElement, opacity: pressed ? 0.95 : 1 },
+          { backgroundColor: theme.backgroundElement, borderColor: theme.border },
         ]}>
-        <View style={[styles.searchIcon, { backgroundColor: theme.primarySoft }]}>
-          <Ionicons name="calendar-outline" size={20} color={theme.primary} />
-        </View>
-        <View style={styles.searchText}>
-          <ThemedText type="smallBold" numberOfLines={1}>
-            {t('home.searchTitle')}
-          </ThemedText>
-          <View style={styles.searchMetaRow}>
-            <Ionicons name="calendar-clear-outline" size={13} color={theme.textSecondary} />
-            <ThemedText type="caption" themeColor="textSecondary">
-              {t('home.searchDate')}
-            </ThemedText>
-            <View style={[styles.searchMetaDot, { backgroundColor: theme.border }]} />
-            <Ionicons name="people-outline" size={13} color={theme.textSecondary} />
-            <ThemedText type="caption" themeColor="textSecondary">
-              {t('home.searchGuests')}
-            </ThemedText>
-          </View>
-        </View>
-        <View style={[styles.searchCta, { backgroundColor: theme.primary }]}>
-          <Ionicons name="search" size={18} color={theme.primaryText} />
-        </View>
-      </AnimatedPressable>
+        <ThemedText type="bodyBold">{t('home.searchTitle')}</ThemedText>
+        <Pressable
+          accessibilityRole="search"
+          accessibilityLabel={t('home.searchFieldsAccessibility')}
+          onPress={goToSearch}
+          style={({ pressed }) => [
+            styles.searchFields,
+            { borderColor: theme.border, backgroundColor: theme.background, opacity: pressed ? 0.8 : 1 },
+          ]}>
+          <SearchField icon="calendar-outline" label={t('home.searchDatesLabel')} value={t('home.searchDate')} />
+          <View style={[styles.searchDivider, { backgroundColor: theme.border }]} />
+          <SearchField icon="people-outline" label={t('home.searchGuests')} value={t('home.searchAddGuests')} />
+        </Pressable>
+        <Button label={t('home.searchAccessibility')} icon="search" onPress={goToSearch} />
+      </Animated.View>
 
       <PerkRow />
 
@@ -236,21 +247,21 @@ export default function HomeScreen() {
           }
         />
 
-        <AnimatedPressable
-          entering={ZoomIn.springify().damping(14).delay(600)}
-          accessibilityRole="button"
-          accessibilityLabel={t('home.askAi')}
-          onPress={() => router.navigate('/(tabs)/chat')}
-          style={({ pressed }: { pressed: boolean }) => [
-            styles.fab,
-            shadows.floating,
-            { backgroundColor: theme.primary, transform: [{ scale: pressed ? 0.96 : 1 }] },
-          ]}>
-          <Ionicons name="sparkles" size={18} color={theme.primaryText} />
-          <ThemedText type="smallBold" style={{ color: theme.primaryText }}>
-            {t('home.askAi')}
-          </ThemedText>
-        </AnimatedPressable>
+        <Animated.View entering={ZoomIn.springify().damping(14).delay(600)} style={[styles.fab, shadows.floating]}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('home.askAi')}
+            onPress={() => router.navigate('/(tabs)/chat')}
+            style={({ pressed }) => [
+              styles.fabButton,
+              { backgroundColor: theme.primary, transform: [{ scale: pressed ? 0.96 : 1 }] },
+            ]}>
+            <Ionicons name="sparkles" size={18} color={theme.primaryText} />
+            <ThemedText type="smallBold" style={{ color: theme.primaryText }}>
+              {t('home.askAi')}
+            </ThemedText>
+          </Pressable>
+        </Animated.View>
       </SafeAreaView>
     </ThemedView>
   );
@@ -283,43 +294,39 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   bellBadge: { position: 'absolute', top: -4, right: -4 },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Space.md,
-    minHeight: 64,
+  searchCard: {
+    // Pulls the card up so it overlaps the bottom edge of the hero.
     marginTop: -(SEARCH_OVERLAP + Space.xl),
-    marginHorizontal: Space.md,
-    paddingHorizontal: Space.md,
-    paddingVertical: Space.md,
-    borderRadius: Radius.xl,
+    marginHorizontal: Space.sm,
+    padding: Space.lg,
+    gap: Space.md,
+    borderRadius: Radius.lg,
+    borderWidth: StyleSheet.hairlineWidth,
   },
-  searchIcon: {
-    width: MinTouch,
-    height: MinTouch,
-    borderRadius: MinTouch / 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  searchText: { flex: 1, gap: 3 },
-  searchMetaRow: {
+  searchFields: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    minHeight: 64,
+    borderRadius: Radius.md,
+    borderWidth: StyleSheet.hairlineWidth,
   },
-  searchMetaDot: {
-    width: 3,
-    height: 3,
-    borderRadius: 1.5,
-    marginHorizontal: 2,
+  searchDivider: { width: StyleSheet.hairlineWidth, alignSelf: 'stretch', marginVertical: Space.md },
+  searchField: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Space.sm,
+    paddingHorizontal: Space.md,
+    paddingVertical: Space.sm,
   },
-  searchCta: {
-    width: 40,
-    height: 40,
-    borderRadius: Radius.full,
+  searchFieldIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  searchFieldText: { flex: 1 },
   carousel: {
     marginTop: Space.md,
   },
@@ -354,6 +361,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: GUTTER,
     bottom: Space.lg,
+    borderRadius: Radius.full,
+  },
+  fabButton: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Space.sm,

@@ -65,7 +65,8 @@
       "googleNotConfigured": "{{envName}} is not set in .env — see the instructions in .env to enable Google sign-in.",
       "continueWithGoogle": "Continue with Google",
       "noAccount": "Don't have an account?",
-      "registerNow": "Sign up now"
+      "registerNow": "Sign up now",
+      "waitVerification": "Please wait for the security check to finish."
     },
     "register": {
       "headerTitle": "Create account",
@@ -133,6 +134,9 @@
     "searchTitle": "When would you like to stay?",
     "searchDate": "Pick dates",
     "searchGuests": "Guests",
+    "searchDatesLabel": "Dates",
+    "searchAddGuests": "Add guests",
+    "searchFieldsAccessibility": "Choose dates and guests",
     "searchAccessibility": "Search for available rooms",
     "featuredRooms": "Featured rooms",
     "experienceTitle": "The Vika Hotel experience",

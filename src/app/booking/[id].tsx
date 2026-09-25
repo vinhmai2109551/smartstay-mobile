@@ -5,7 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 
 import { bookingsApi } from '@/api/bookings';
 import { getApiErrorMessage } from '@/api/client';
@@ -36,7 +36,8 @@ export default function BookingDetailScreen() {
   const theme = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const fetchBooking = useCallback(() => bookingsApi.detail(id), [id]);
-  const { data: booking, loading, error, refetch } = useApi(fetchBooking);
+  // Staff confirm / check-in from the admin side, so reload whenever the screen is shown again.
+  const { data: booking, loading, error, refetch, refreshing, refresh } = useApi(fetchBooking, { refetchOnFocus: true });
 
   const [cancelling, setCancelling] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
@@ -109,7 +110,12 @@ export default function BookingDetailScreen() {
 
   return (
     <ThemedView style={styles.flex}>
-      <ScrollView contentContainerStyle={styles.content} automaticallyAdjustKeyboardInsets>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        automaticallyAdjustKeyboardInsets
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={theme.primary} colors={[theme.primary]} />
+        }>
         <View style={[styles.hero, { backgroundColor: theme.backgroundSelected }]}>
           {image ? <Image source={image} style={StyleSheet.absoluteFill} contentFit="cover" /> : null}
           <LinearGradient

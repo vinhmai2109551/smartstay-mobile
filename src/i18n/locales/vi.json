@@ -65,7 +65,8 @@
       "googleNotConfigured": "Chưa cấu hình {{envName}} trong file .env — xem hướng dẫn trong .env để bật đăng nhập Google.",
       "continueWithGoogle": "Tiếp tục với Google",
       "noAccount": "Chưa có tài khoản?",
-      "registerNow": "Đăng ký ngay"
+      "registerNow": "Đăng ký ngay",
+      "waitVerification": "Vui lòng chờ xác minh bảo mật hoàn tất."
     },
     "register": {
       "headerTitle": "Tạo tài khoản",
@@ -133,6 +134,9 @@
     "searchTitle": "Bạn muốn nghỉ khi nào?",
     "searchDate": "Chọn ngày",
     "searchGuests": "Số khách",
+    "searchDatesLabel": "Ngày lưu trú",
+    "searchAddGuests": "Thêm khách",
+    "searchFieldsAccessibility": "Chọn ngày lưu trú và số khách",
     "searchAccessibility": "Tìm phòng trống",
     "featuredRooms": "Loại phòng nổi bật",
     "experienceTitle": "Trải nghiệm tại Vika Hotel",

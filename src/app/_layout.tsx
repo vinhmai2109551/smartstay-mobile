@@ -75,12 +75,15 @@ export default function RootLayout() {
   // A font load failure falls back to system fonts rather than blocking the app.
   const fontsReady = fontsLoaded || !!fontError;
 
+  // Login responses only carry { userId, email, role }, so the full profile is
+  // fetched on startup and again whenever the user signs in. Keyed on the
+  // boolean so silent token refreshes don't refetch it.
+  const isLoggedIn = !!accessToken;
   useEffect(() => {
-    if (hasHydrated && accessToken) {
+    if (hasHydrated && isLoggedIn) {
       authApi.me().then(updateUser).catch(() => {});
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasHydrated]);
+  }, [hasHydrated, isLoggedIn, updateUser]);
 
   useEffect(() => {
     if (hasHydrated && settingsHydrated && fontsReady) {

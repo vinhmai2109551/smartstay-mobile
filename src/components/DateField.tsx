@@ -82,9 +82,7 @@ export function DateField({ label, value, onChange, minimumDate }: DateFieldProp
               accentColor={theme.primary}
               themeVariant={scheme === 'dark' ? 'dark' : 'light'}
               locale={i18n.language === 'en' ? 'en-US' : 'vi-VN'}
-              onChange={(_event, selectedDate) => {
-                if (selectedDate) setDraft(selectedDate);
-              }}
+              onValueChange={(_event, selectedDate) => setDraft(selectedDate)}
             />
             <Button
               label={t('common.done')}
@@ -102,10 +100,11 @@ export function DateField({ label, value, onChange, minimumDate }: DateFieldProp
           mode="date"
           display="default"
           minimumDate={minimumDate}
-          onChange={(_event, selectedDate) => {
+          onValueChange={(_event, selectedDate) => {
             setShow(false);
-            if (selectedDate) onChange(selectedDate);
+            onChange(selectedDate);
           }}
+          onDismiss={() => setShow(false)}
         />
       ) : null}
     </View>
