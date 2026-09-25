@@ -3,7 +3,9 @@ import dayjs from 'dayjs';
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FlatList, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 
 import { reviewsApi } from '@/api/reviews';
 import { roomTypesApi } from '@/api/roomTypes';
@@ -27,6 +29,7 @@ import { formatDate, nightsBetween, toIsoDate } from '@/utils/date';
 const GUTTER = Space.lg;
 
 export default function RoomTypeDetailScreen() {
+  const { t } = useTranslation();
   const theme = useTheme();
   const { width: windowWidth } = useWindowDimensions();
   const params = useLocalSearchParams<{ id: string; checkIn?: string; checkOut?: string; guests?: string }>();
@@ -53,7 +56,7 @@ export default function RoomTypeDetailScreen() {
       </ThemedView>
     );
   }
-  if (error || !roomType) return <ErrorView message={error ?? 'Không tìm thấy loại phòng.'} onRetry={refetch} />;
+  if (error || !roomType) return <ErrorView message={error ?? t('room.notFound')} onRetry={refetch} />;
 
   const checkIn = params.checkIn ?? toIsoDate(dayjs().add(1, 'day').toDate());
   const checkOut = params.checkOut ?? toIsoDate(dayjs().add(2, 'day').toDate());
@@ -75,7 +78,9 @@ export default function RoomTypeDetailScreen() {
   return (
     <ThemedView style={styles.flex}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <View style={[styles.galleryWrap, { width: galleryWidth, height: galleryHeight }]}>
+        <Animated.View
+          entering={FadeIn.duration(250)}
+          style={[styles.galleryWrap, { width: galleryWidth, height: galleryHeight }]}>
           {galleryImages.length ? (
             <FlatList
               data={galleryImages}
@@ -90,7 +95,7 @@ export default function RoomTypeDetailScreen() {
                   style={{ width: galleryWidth, height: galleryHeight }}
                   contentFit="cover"
                   transition={200}
-                  accessibilityLabel={`Ảnh ${roomType.name}`}
+                  accessibilityLabel={t('room.imageAlt', { name: roomType.name })}
                 />
               )}
             />
@@ -109,16 +114,18 @@ export default function RoomTypeDetailScreen() {
               ))}
             </View>
           ) : null}
-        </View>
+        </Animated.View>
 
-        <View style={[styles.sheet, { backgroundColor: theme.background, width: galleryWidth }]}>
+        <Animated.View
+          entering={FadeInDown.duration(240).delay(60)}
+          style={[styles.sheet, { backgroundColor: theme.background, width: galleryWidth }]}>
           <View style={styles.titleBlock}>
             <ThemedText type="title">{roomType.name}</ThemedText>
             <View style={styles.metaRow}>
               <View style={styles.meta}>
                 <Ionicons name="people-outline" size={16} color={theme.textSecondary} />
                 <ThemedText type="small" themeColor="textSecondary">
-                  Tối đa {roomType.capacity} khách
+                  {t('room.maxGuests', { count: roomType.capacity })}
                 </ThemedText>
               </View>
               {averageRating !== undefined ? (
@@ -126,7 +133,7 @@ export default function RoomTypeDetailScreen() {
                   <Ionicons name="star" size={15} color={theme.accent} />
                   <ThemedText type="smallBold">{averageRating.toFixed(1)}</ThemedText>
                   <ThemedText type="small" themeColor="textSecondary">
-                    ({reviewList.length} đánh giá)
+                    {t('room.reviewCount', { count: reviewList.length })}
                   </ThemedText>
                 </View>
               ) : null}
@@ -136,21 +143,21 @@ export default function RoomTypeDetailScreen() {
           <Card style={styles.stayCard}>
             <View style={styles.stayItem}>
               <ThemedText type="caption" themeColor="textSecondary">
-                Nhận phòng
+                {t('room.checkIn')}
               </ThemedText>
               <ThemedText type="bodyBold">{formatDate(checkIn)}</ThemedText>
             </View>
             <View style={[styles.stayDivider, { backgroundColor: theme.border }]} />
             <View style={styles.stayItem}>
               <ThemedText type="caption" themeColor="textSecondary">
-                Trả phòng
+                {t('room.checkOut')}
               </ThemedText>
               <ThemedText type="bodyBold">{formatDate(checkOut)}</ThemedText>
             </View>
             <View style={[styles.stayDivider, { backgroundColor: theme.border }]} />
             <View style={styles.stayItem}>
               <ThemedText type="caption" themeColor="textSecondary">
-                Khách
+                {t('room.guests')}
               </ThemedText>
               <ThemedText type="bodyBold">{guests}</ThemedText>
             </View>
@@ -158,7 +165,7 @@ export default function RoomTypeDetailScreen() {
 
           {roomType.description ? (
             <View style={styles.section}>
-              <ThemedText type="heading">Giới thiệu</ThemedText>
+              <ThemedText type="heading">{t('room.about')}</ThemedText>
               <ThemedText type="body" themeColor="textSecondary">
                 {roomType.description}
               </ThemedText>
@@ -167,7 +174,7 @@ export default function RoomTypeDetailScreen() {
 
           {roomType.amenities?.length ? (
             <View style={styles.section}>
-              <ThemedText type="heading">Tiện ích</ThemedText>
+              <ThemedText type="heading">{t('room.amenities')}</ThemedText>
               <View style={styles.amenityGrid}>
                 {roomType.amenities.map((amenity, index) => (
                   <View key={index} style={styles.amenity}>
@@ -185,7 +192,7 @@ export default function RoomTypeDetailScreen() {
 
           <View style={styles.section}>
             <View style={styles.reviewTitleRow}>
-              <ThemedText type="heading">Đánh giá từ khách hàng</ThemedText>
+              <ThemedText type="heading">{t('room.reviewsTitle')}</ThemedText>
               {averageRating !== undefined ? <RatingStars rating={averageRating} size={14} /> : null}
             </View>
             {reviews.loading ? (
@@ -196,7 +203,7 @@ export default function RoomTypeDetailScreen() {
                   <View style={styles.reviewHeader}>
                     <Avatar name={review.userFullName} size={36} tone="soft" />
                     <View style={styles.reviewAuthor}>
-                      <ThemedText type="smallBold">{review.userFullName ?? 'Khách hàng'}</ThemedText>
+                      <ThemedText type="smallBold">{review.userFullName ?? t('profile.fallbackName')}</ThemedText>
                       {review.createdAt ? (
                         <ThemedText type="caption" themeColor="textSecondary">
                           {formatDate(review.createdAt)}
@@ -214,11 +221,11 @@ export default function RoomTypeDetailScreen() {
               ))
             ) : (
               <ThemedText type="small" themeColor="textSecondary">
-                Chưa có đánh giá nào — hãy là người đầu tiên trải nghiệm.
+                {t('room.noReviews')}
               </ThemedText>
             )}
           </View>
-        </View>
+        </Animated.View>
       </ScrollView>
 
       <BottomBar>
@@ -226,15 +233,15 @@ export default function RoomTypeDetailScreen() {
           <View style={styles.priceRow}>
             <ThemedText style={[styles.price, { color: theme.primary }]}>{formatVND(roomType.basePrice)}</ThemedText>
             <ThemedText type="small" themeColor="textSecondary">
-              / đêm
+              {t('room.perNight')}
             </ThemedText>
           </View>
           <ThemedText type="caption" themeColor="textSecondary">
-            {nights} đêm · {formatVND(roomType.basePrice * nights)}
+            {t('room.nightsAndTotal', { nights, total: formatVND(roomType.basePrice * nights) })}
           </ThemedText>
         </View>
         <Button
-          label="Đặt phòng"
+          label={t('room.bookButton')}
           fullWidth={false}
           onPress={() =>
             router.push({

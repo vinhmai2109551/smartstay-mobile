@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FlatList, Pressable, RefreshControl, StyleSheet, useWindowDimensions, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown, FadeInRight, ZoomIn } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -21,7 +22,7 @@ import { CountBadge } from '@/components/ui/CountBadge';
 import { ErrorView } from '@/components/ui/ErrorView';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { RoomCardSkeleton, Skeleton } from '@/components/ui/Skeleton';
-import { HomeHeroSlides } from '@/constants/demoImages';
+import { getHomeHeroSlides } from '@/constants/demoImages';
 import { MaxContentWidth, MinTouch, Radius, Space } from '@/constants/theme';
 import { useApi } from '@/hooks/useApi';
 import { useUnreadNotifications } from '@/hooks/useUnreadNotifications';
@@ -56,11 +57,13 @@ function SearchField({ icon, label, value }: { icon: IconName; label: string; va
 }
 
 export default function HomeScreen() {
+  const { t } = useTranslation();
   const theme = useTheme();
   const shadows = useShadows();
   const { width: windowWidth } = useWindowDimensions();
   const user = useAuthStore((s) => s.user);
   const unreadCount = useUnreadNotifications();
+  const heroSlides = useMemo(() => getHomeHeroSlides(t), [t]);
 
   const fetchRoomTypes = useCallback(() => roomTypesApi.list(), []);
   const roomTypes = useApi(fetchRoomTypes);
@@ -97,15 +100,18 @@ export default function HomeScreen() {
       <View style={styles.topBar}>
         <View style={styles.greeting}>
           <ThemedText type="small" themeColor="textSecondary">
-            Xin chào{firstName ? ',' : ''}
+            {t('home.greeting')}
+            {firstName ? ',' : ''}
           </ThemedText>
           <ThemedText type="title" numberOfLines={1}>
-            {firstName ?? 'Quý khách'}
+            {firstName ?? t('home.greetingFallbackName')}
           </ThemedText>
         </View>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={unreadCount > 0 ? `Thông báo, ${unreadCount} chưa đọc` : 'Thông báo'}
+          accessibilityLabel={
+            unreadCount > 0 ? t('home.notificationsUnread', { count: unreadCount }) : t('home.notifications')
+          }
           onPress={() => router.push('/notifications')}
           style={({ pressed }) => [
             styles.iconButton,
@@ -116,7 +122,7 @@ export default function HomeScreen() {
         </Pressable>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Tài khoản"
+          accessibilityLabel={t('tabs.profile')}
           onPress={() => router.navigate('/(tabs)/profile')}
           style={({ pressed }) => ({ opacity: pressed ? 0.8 : 1 })}>
           <Avatar name={user?.fullName} size={MinTouch} />
@@ -124,7 +130,7 @@ export default function HomeScreen() {
       </View>
 
       <Animated.View entering={FadeIn.duration(600)}>
-        <HeroCarousel slides={HomeHeroSlides} height={heroHeight} captionInset={SEARCH_OVERLAP} />
+        <HeroCarousel slides={heroSlides} height={heroHeight} captionInset={SEARCH_OVERLAP} />
       </Animated.View>
 
       {/* Entering animation lives on a plain Animated.View: Reanimated drops function
@@ -136,20 +142,20 @@ export default function HomeScreen() {
           shadows.floating,
           { backgroundColor: theme.backgroundElement, borderColor: theme.border },
         ]}>
-        <ThemedText type="bodyBold">Bạn muốn nghỉ khi nào?</ThemedText>
+        <ThemedText type="bodyBold">{t('home.searchTitle')}</ThemedText>
         <Pressable
           accessibilityRole="search"
-          accessibilityLabel="Chọn ngày lưu trú và số khách"
+          accessibilityLabel={t('home.searchFieldsAccessibility')}
           onPress={goToSearch}
           style={({ pressed }) => [
             styles.searchFields,
             { borderColor: theme.border, backgroundColor: theme.background, opacity: pressed ? 0.8 : 1 },
           ]}>
-          <SearchField icon="calendar-outline" label="Ngày lưu trú" value="Chọn ngày" />
+          <SearchField icon="calendar-outline" label={t('home.searchDatesLabel')} value={t('home.searchDate')} />
           <View style={[styles.searchDivider, { backgroundColor: theme.border }]} />
-          <SearchField icon="people-outline" label="Số khách" value="Thêm khách" />
+          <SearchField icon="people-outline" label={t('home.searchGuests')} value={t('home.searchAddGuests')} />
         </Pressable>
-        <Button label="Tìm phòng trống" icon="search" onPress={goToSearch} />
+        <Button label={t('home.searchAccessibility')} icon="search" onPress={goToSearch} />
       </Animated.View>
 
       <PerkRow />
@@ -160,7 +166,7 @@ export default function HomeScreen() {
         </Animated.View>
       ) : null}
 
-      <SectionHeader title="Loại phòng nổi bật" onAction={goToSearch} />
+      <SectionHeader title={t('home.featuredRooms')} onAction={goToSearch} />
     </View>
   );
 
@@ -211,11 +217,11 @@ export default function HomeScreen() {
               {header}
               {featuredCarousel}
               <View style={styles.gallerySection}>
-                <SectionHeader title="Trải nghiệm tại Vika Hotel" subtitle="Không gian nghỉ dưỡng ven biển Đà Nẵng" />
+                <SectionHeader title={t('home.experienceTitle')} subtitle={t('home.experienceSubtitle')} />
                 <ExperienceGallery width={innerWidth} />
               </View>
               <View style={styles.suggestHeader}>
-                <SectionHeader title="Gợi ý cho bạn" subtitle="Những lựa chọn được yêu thích tại Vika Hotel" />
+                <SectionHeader title={t('home.suggestedTitle')} subtitle={t('home.suggestedSubtitle')} />
               </View>
               {roomTypes.loading ? (
                 <View style={styles.skeletonList}>
@@ -235,7 +241,7 @@ export default function HomeScreen() {
           ListEmptyComponent={
             roomTypes.loading ? null : (
               <ThemedText themeColor="textSecondary" style={styles.empty}>
-                Chưa có loại phòng nào.
+                {t('home.noRoomTypes')}
               </ThemedText>
             )
           }
@@ -244,7 +250,7 @@ export default function HomeScreen() {
         <Animated.View entering={ZoomIn.springify().damping(14).delay(600)} style={[styles.fab, shadows.floating]}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Hỏi trợ lý AI"
+            accessibilityLabel={t('home.askAi')}
             onPress={() => router.navigate('/(tabs)/chat')}
             style={({ pressed }) => [
               styles.fabButton,
@@ -252,7 +258,7 @@ export default function HomeScreen() {
             ]}>
             <Ionicons name="sparkles" size={18} color={theme.primaryText} />
             <ThemedText type="smallBold" style={{ color: theme.primaryText }}>
-              Hỏi trợ lý AI
+              {t('home.askAi')}
             </ThemedText>
           </Pressable>
         </Animated.View>

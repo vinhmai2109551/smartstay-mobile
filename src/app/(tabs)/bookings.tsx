@@ -1,5 +1,6 @@
 import { router } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FlatList, RefreshControl, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -20,15 +21,8 @@ const GUTTER = Space.lg;
 
 type FilterKey = 'ALL' | 'UPCOMING' | 'STAYING' | 'DONE' | 'CANCELLED';
 
-const FILTERS: { key: FilterKey; label: string; statuses?: BookingStatus[] }[] = [
-  { key: 'ALL', label: 'Tất cả' },
-  { key: 'UPCOMING', label: 'Sắp tới', statuses: ['PENDING', 'CONFIRMED'] },
-  { key: 'STAYING', label: 'Đang lưu trú', statuses: ['CHECKED_IN'] },
-  { key: 'DONE', label: 'Đã trả phòng', statuses: ['CHECKED_OUT'] },
-  { key: 'CANCELLED', label: 'Đã huỷ', statuses: ['CANCELLED'] },
-];
-
 export default function BookingsScreen() {
+  const { t } = useTranslation();
   const theme = useTheme();
   const { width } = useWindowDimensions();
   const contentWidth = Math.min(width, MaxContentWidth);
@@ -36,11 +30,22 @@ export default function BookingsScreen() {
   const { data, loading, error, refetch, refreshing, refresh } = useApi(fetchBookings, { refetchOnFocus: true });
   const [filter, setFilter] = useState<FilterKey>('ALL');
 
+  const FILTERS: { key: FilterKey; label: string; statuses?: BookingStatus[] }[] = useMemo(
+    () => [
+      { key: 'ALL', label: t('booking.filterAll') },
+      { key: 'UPCOMING', label: t('booking.filterUpcoming'), statuses: ['PENDING', 'CONFIRMED'] },
+      { key: 'STAYING', label: t('booking.filterStaying'), statuses: ['CHECKED_IN'] },
+      { key: 'DONE', label: t('booking.filterDone'), statuses: ['CHECKED_OUT'] },
+      { key: 'CANCELLED', label: t('booking.filterCancelled'), statuses: ['CANCELLED'] },
+    ],
+    [t],
+  );
+
   const bookings = useMemo(() => {
     const all = data?.data ?? [];
     const statuses = FILTERS.find((f) => f.key === filter)?.statuses;
     return statuses ? all.filter((b) => statuses.includes(b.status)) : all;
-  }, [data, filter]);
+  }, [data, filter, FILTERS]);
 
   if (error && !data) return <ErrorView message={error} onRetry={refetch} />;
 
@@ -57,9 +62,9 @@ export default function BookingsScreen() {
           ListHeaderComponent={
             <View style={styles.header}>
               <View style={styles.titles}>
-                <ThemedText type="title">Đơn đặt phòng</ThemedText>
+                <ThemedText type="title">{t('booking.listTitle')}</ThemedText>
                 <ThemedText type="body" themeColor="textSecondary">
-                  Theo dõi các kỳ nghỉ của bạn.
+                  {t('booking.listSubtitle')}
                 </ThemedText>
               </View>
               <ScrollView
@@ -84,13 +89,17 @@ export default function BookingsScreen() {
             loading ? null : filter === 'ALL' ? (
               <EmptyState
                 icon="receipt-outline"
-                title="Chưa có đơn nào"
-                description="Đặt phòng đầu tiên và kỳ nghỉ của bạn sẽ hiện ở đây."
-                actionLabel="Tìm phòng ngay"
+                title={t('booking.emptyAllTitle')}
+                description={t('booking.emptyAllDescription')}
+                actionLabel={t('booking.emptyAllAction')}
                 onAction={() => router.navigate('/(tabs)/search')}
               />
             ) : (
-              <EmptyState icon="file-tray-outline" title="Không có đơn nào" description="Thử chọn bộ lọc khác nhé." />
+              <EmptyState
+                icon="file-tray-outline"
+                title={t('booking.emptyFilteredTitle')}
+                description={t('booking.emptyFilteredDescription')}
+              />
             )
           }
           renderItem={({ item }) => (

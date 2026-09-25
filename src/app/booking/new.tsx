@@ -1,8 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
+import * as Haptics from 'expo-haptics';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import Animated, { FadeIn } from 'react-native-reanimated';
 
 import { bookingsApi } from '@/api/bookings';
 import { getApiErrorMessage } from '@/api/client';
@@ -38,6 +41,7 @@ function SectionTitle({ icon, title }: { icon: IconName; title: string }) {
 }
 
 export default function NewBookingScreen() {
+  const { t } = useTranslation();
   const theme = useTheme();
   const params = useLocalSearchParams<{ roomTypeId: string; checkIn: string; checkOut: string; guests: string }>();
 
@@ -89,14 +93,14 @@ export default function NewBookingScreen() {
       });
       if (result.valid) {
         setDiscountAmount(result.discountAmount);
-        setPromoMessage(`Áp dụng thành công, giảm ${formatVND(result.discountAmount)}`);
+        setPromoMessage(t('booking.promoApplied', { amount: formatVND(result.discountAmount) }));
       } else {
         setDiscountAmount(0);
-        setPromoMessage('Mã khuyến mãi không hợp lệ.');
+        setPromoMessage(t('booking.promoInvalid'));
       }
     } catch (error) {
       setDiscountAmount(0);
-      setPromoMessage(getApiErrorMessage(error, 'Mã khuyến mãi không hợp lệ.'));
+      setPromoMessage(getApiErrorMessage(error, t('booking.promoInvalid')));
     } finally {
       setValidatingPromo(false);
     }
@@ -105,10 +109,11 @@ export default function NewBookingScreen() {
   const handleSubmit = async () => {
     setSubmitError(null);
     if (!fullName.trim() || !phone.trim()) {
-      setSubmitError('Vui lòng nhập đầy đủ họ tên và số điện thoại.');
+      setSubmitError(t('booking.requireFullNamePhone'));
       return;
     }
 
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSubmitting(true);
     try {
       const booking = await bookingsApi.create({
@@ -129,7 +134,7 @@ export default function NewBookingScreen() {
         router.replace(`/booking/${booking.bookingId}`);
       }
     } catch (error) {
-      setSubmitError(getApiErrorMessage(error, 'Không thể tạo đơn đặt phòng, phòng có thể đã được đặt.'));
+      setSubmitError(getApiErrorMessage(error, t('booking.createFailed')));
     } finally {
       setSubmitting(false);
     }
@@ -145,13 +150,18 @@ export default function NewBookingScreen() {
     );
   }
   if (roomType.error || !roomType.data) {
-    return <ErrorView message={roomType.error ?? 'Không tìm thấy loại phòng.'} onRetry={roomType.refetch} />;
+    return <ErrorView message={roomType.error ?? t('room.notFound')} onRetry={roomType.refetch} />;
   }
 
   const image = roomImageSource(roomType.data);
   const paymentOptions: { key: 'CASH' | 'PAYOS'; icon: IconName; title: string; description: string }[] = [
-    { key: 'CASH', icon: 'cash-outline', title: 'Tiền mặt tại khách sạn', description: 'Thanh toán khi nhận phòng' },
-    { key: 'PAYOS', icon: 'qr-code-outline', title: 'Chuyển khoản QR (PayOS)', description: 'Quét mã bằng app ngân hàng' },
+    { key: 'CASH', icon: 'cash-outline', title: t('booking.paymentCash'), description: t('booking.paymentCashDescription') },
+    {
+      key: 'PAYOS',
+      icon: 'qr-code-outline',
+      title: t('booking.paymentPayos'),
+      description: t('booking.paymentPayosDescription'),
+    },
   ];
 
   return (
@@ -161,61 +171,140 @@ export default function NewBookingScreen() {
         keyboardShouldPersistTaps="handled"
         automaticallyAdjustKeyboardInsets
         showsVerticalScrollIndicator={false}>
-        <Card style={styles.summary}>
-          <View style={[styles.thumb, { backgroundColor: theme.backgroundSelected }]}>
-            {image ? <Image source={image} style={StyleSheet.absoluteFill} contentFit="cover" /> : null}
-          </View>
-          <View style={styles.summaryInfo}>
-            <ThemedText type="bodyBold" numberOfLines={1}>
-              {roomType.data.name}
-            </ThemedText>
-            <View style={styles.inline}>
-              <Ionicons name="calendar-outline" size={14} color={theme.textSecondary} />
-              <ThemedText type="small" themeColor="textSecondary">
-                {formatDate(params.checkIn, 'DD/MM')} – {formatDate(params.checkOut, 'DD/MM/YYYY')}
-              </ThemedText>
+        <Animated.View entering={FadeIn.duration(220)} style={styles.contentInner}>
+          <Card style={styles.summary}>
+            <View style={[styles.thumb, { backgroundColor: theme.backgroundSelected }]}>
+              {image ? <Image source={image} style={StyleSheet.absoluteFill} contentFit="cover" /> : null}
             </View>
-            <View style={styles.inline}>
-              <Ionicons name="moon-outline" size={14} color={theme.textSecondary} />
-              <ThemedText type="small" themeColor="textSecondary">
-                {nights} đêm · {params.guests} khách
+            <View style={styles.summaryInfo}>
+              <ThemedText type="bodyBold" numberOfLines={1}>
+                {roomType.data.name}
               </ThemedText>
+              <View style={styles.inline}>
+                <Ionicons name="calendar-outline" size={14} color={theme.textSecondary} />
+                <ThemedText type="small" themeColor="textSecondary">
+                  {t('booking.summaryDate', {
+                    checkIn: formatDate(params.checkIn, 'DD/MM'),
+                    checkOut: formatDate(params.checkOut, 'DD/MM/YYYY'),
+                  })}
+                </ThemedText>
+              </View>
+              <View style={styles.inline}>
+                <Ionicons name="moon-outline" size={14} color={theme.textSecondary} />
+                <ThemedText type="small" themeColor="textSecondary">
+                  {t('booking.summaryNightsGuests', { nights, guests: params.guests })}
+                </ThemedText>
+              </View>
             </View>
-          </View>
-        </Card>
+          </Card>
 
-        <Card style={styles.section}>
-          <SectionTitle icon="person-outline" title="Thông tin khách" />
-          <TextField
-            label="Họ và tên"
-            leftIcon="person-outline"
-            placeholder="Nguyễn Văn A"
-            textContentType="name"
-            value={fullName}
-            onChangeText={setFullName}
-          />
-          <TextField
-            label="Số điện thoại"
-            leftIcon="call-outline"
-            placeholder="09xx xxx xxx"
-            keyboardType="phone-pad"
-            textContentType="telephoneNumber"
-            value={phone}
-            onChangeText={setPhone}
-          />
-        </Card>
-
-        {services.data && services.data.length > 0 ? (
           <Card style={styles.section}>
-            <SectionTitle icon="sparkles-outline" title="Dịch vụ đi kèm" />
-            {services.data.map((service) => {
-              const selected = selectedServiceIds.includes(service.serviceId);
+            <SectionTitle icon="person-outline" title={t('booking.guestInfo')} />
+            <TextField
+              label={t('booking.fullNameLabel')}
+              leftIcon="person-outline"
+              placeholder={t('booking.fullNamePlaceholder')}
+              textContentType="name"
+              value={fullName}
+              onChangeText={setFullName}
+            />
+            <TextField
+              label={t('booking.phoneLabel')}
+              leftIcon="call-outline"
+              placeholder={t('booking.phonePlaceholder')}
+              keyboardType="phone-pad"
+              textContentType="telephoneNumber"
+              value={phone}
+              onChangeText={setPhone}
+            />
+          </Card>
+
+          {services.data && services.data.length > 0 ? (
+            <Card style={styles.section}>
+              <SectionTitle icon="sparkles-outline" title={t('booking.extraServices')} />
+              {services.data.map((service) => {
+                const selected = selectedServiceIds.includes(service.serviceId);
+                return (
+                  <Pressable
+                    key={service.serviceId}
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: selected }}
+                    onPress={() => toggleService(service.serviceId)}
+                    style={({ pressed }) => [
+                      styles.option,
+                      {
+                        borderColor: selected ? theme.primary : theme.border,
+                        backgroundColor: selected ? theme.primarySoft : theme.backgroundElement,
+                        opacity: pressed ? 0.85 : 1,
+                      },
+                    ]}>
+                    <View style={styles.optionText}>
+                      <ThemedText type="smallBold">{service.name}</ThemedText>
+                      <ThemedText type="caption" themeColor="textSecondary">
+                        {formatVND(service.price)} / {service.unit}
+                      </ThemedText>
+                    </View>
+                    <View
+                      style={[
+                        styles.checkbox,
+                        {
+                          borderColor: selected ? theme.primary : theme.textSecondary,
+                          backgroundColor: selected ? theme.primary : 'transparent',
+                        },
+                      ]}>
+                      {selected ? <Ionicons name="checkmark" size={16} color={theme.primaryText} /> : null}
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </Card>
+          ) : null}
+
+          <Card style={styles.section}>
+            <SectionTitle icon="pricetag-outline" title={t('booking.promoCode')} />
+            <View style={styles.promoRow}>
+              <View style={styles.promoInput}>
+                <TextField
+                  placeholder={t('booking.promoPlaceholder')}
+                  leftIcon="ticket-outline"
+                  autoCapitalize="characters"
+                  value={promoCode}
+                  onChangeText={setPromoCode}
+                />
+              </View>
+              <Button
+                label={t('booking.promoApply')}
+                variant="secondary"
+                fullWidth={false}
+                onPress={handleValidatePromo}
+                loading={validatingPromo}
+                disabled={!promoCode.trim()}
+              />
+            </View>
+            {promoMessage ? (
+              <View style={styles.inline}>
+                <Ionicons
+                  name={discountAmount > 0 ? 'checkmark-circle' : 'alert-circle'}
+                  size={16}
+                  color={discountAmount > 0 ? theme.success : theme.danger}
+                />
+                <ThemedText type="small" themeColor={discountAmount > 0 ? 'success' : 'danger'} style={styles.flexShrink}>
+                  {promoMessage}
+                </ThemedText>
+              </View>
+            ) : null}
+          </Card>
+
+          <Card style={styles.section}>
+            <SectionTitle icon="wallet-outline" title={t('booking.paymentMethod')} />
+            {paymentOptions.map((option) => {
+              const selected = paymentMethod === option.key;
               return (
                 <Pressable
-                  key={service.serviceId}
-                  accessibilityRole="checkbox"
-                  accessibilityState={{ checked: selected }}
-                  onPress={() => toggleService(service.serviceId)}
+                  key={option.key}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected }}
+                  onPress={() => setPaymentMethod(option.key)}
                   style={({ pressed }) => [
                     styles.option,
                     {
@@ -224,149 +313,75 @@ export default function NewBookingScreen() {
                       opacity: pressed ? 0.85 : 1,
                     },
                   ]}>
+                  <View style={[styles.optionIcon, { backgroundColor: theme.backgroundElement }]}>
+                    <Ionicons name={option.icon} size={20} color={theme.primary} />
+                  </View>
                   <View style={styles.optionText}>
-                    <ThemedText type="smallBold">{service.name}</ThemedText>
+                    <ThemedText type="smallBold">{option.title}</ThemedText>
                     <ThemedText type="caption" themeColor="textSecondary">
-                      {formatVND(service.price)} / {service.unit}
+                      {option.description}
                     </ThemedText>
                   </View>
-                  <View
-                    style={[
-                      styles.checkbox,
-                      {
-                        borderColor: selected ? theme.primary : theme.textSecondary,
-                        backgroundColor: selected ? theme.primary : 'transparent',
-                      },
-                    ]}>
-                    {selected ? <Ionicons name="checkmark" size={16} color={theme.primaryText} /> : null}
+                  <View style={[styles.radio, { borderColor: selected ? theme.primary : theme.textSecondary }]}>
+                    {selected ? <View style={[styles.radioDot, { backgroundColor: theme.primary }]} /> : null}
                   </View>
                 </Pressable>
               );
             })}
           </Card>
-        ) : null}
 
-        <Card style={styles.section}>
-          <SectionTitle icon="pricetag-outline" title="Mã khuyến mãi" />
-          <View style={styles.promoRow}>
-            <View style={styles.promoInput}>
-              <TextField
-                placeholder="Nhập mã"
-                leftIcon="ticket-outline"
-                autoCapitalize="characters"
-                value={promoCode}
-                onChangeText={setPromoCode}
-              />
-            </View>
-            <Button
-              label="Áp dụng"
-              variant="secondary"
-              fullWidth={false}
-              onPress={handleValidatePromo}
-              loading={validatingPromo}
-              disabled={!promoCode.trim()}
-            />
-          </View>
-          {promoMessage ? (
-            <View style={styles.inline}>
-              <Ionicons
-                name={discountAmount > 0 ? 'checkmark-circle' : 'alert-circle'}
-                size={16}
-                color={discountAmount > 0 ? theme.success : theme.danger}
-              />
-              <ThemedText type="small" themeColor={discountAmount > 0 ? 'success' : 'danger'} style={styles.flexShrink}>
-                {promoMessage}
-              </ThemedText>
-            </View>
-          ) : null}
-        </Card>
-
-        <Card style={styles.section}>
-          <SectionTitle icon="wallet-outline" title="Phương thức thanh toán" />
-          {paymentOptions.map((option) => {
-            const selected = paymentMethod === option.key;
-            return (
-              <Pressable
-                key={option.key}
-                accessibilityRole="radio"
-                accessibilityState={{ selected }}
-                onPress={() => setPaymentMethod(option.key)}
-                style={({ pressed }) => [
-                  styles.option,
-                  {
-                    borderColor: selected ? theme.primary : theme.border,
-                    backgroundColor: selected ? theme.primarySoft : theme.backgroundElement,
-                    opacity: pressed ? 0.85 : 1,
-                  },
-                ]}>
-                <View style={[styles.optionIcon, { backgroundColor: theme.backgroundElement }]}>
-                  <Ionicons name={option.icon} size={20} color={theme.primary} />
-                </View>
-                <View style={styles.optionText}>
-                  <ThemedText type="smallBold">{option.title}</ThemedText>
-                  <ThemedText type="caption" themeColor="textSecondary">
-                    {option.description}
-                  </ThemedText>
-                </View>
-                <View style={[styles.radio, { borderColor: selected ? theme.primary : theme.textSecondary }]}>
-                  {selected ? <View style={[styles.radioDot, { backgroundColor: theme.primary }]} /> : null}
-                </View>
-              </Pressable>
-            );
-          })}
-        </Card>
-
-        <Card style={styles.section}>
-          <SectionTitle icon="receipt-outline" title="Chi tiết giá" />
-          <View style={styles.priceRow}>
-            <ThemedText type="small" themeColor="textSecondary">
-              {formatVND(roomType.data.basePrice)} × {nights} đêm
-            </ThemedText>
-            <ThemedText type="small">{formatVND(roomTotal)}</ThemedText>
-          </View>
-          {servicesTotal > 0 ? (
+          <Card style={styles.section}>
+            <SectionTitle icon="receipt-outline" title={t('booking.priceDetails')} />
             <View style={styles.priceRow}>
               <ThemedText type="small" themeColor="textSecondary">
-                Dịch vụ
+                {t('booking.roomPriceRow', { price: formatVND(roomType.data.basePrice), nights })}
               </ThemedText>
-              <ThemedText type="small">{formatVND(servicesTotal)}</ThemedText>
+              <ThemedText type="small">{formatVND(roomTotal)}</ThemedText>
             </View>
-          ) : null}
-          {discountAmount > 0 ? (
+            {servicesTotal > 0 ? (
+              <View style={styles.priceRow}>
+                <ThemedText type="small" themeColor="textSecondary">
+                  {t('booking.services')}
+                </ThemedText>
+                <ThemedText type="small">{formatVND(servicesTotal)}</ThemedText>
+              </View>
+            ) : null}
+            {discountAmount > 0 ? (
+              <View style={styles.priceRow}>
+                <ThemedText type="small" themeColor="success">
+                  {t('booking.discount')}
+                </ThemedText>
+                <ThemedText type="small" themeColor="success">
+                  -{formatVND(discountAmount)}
+                </ThemedText>
+              </View>
+            ) : null}
+            <View style={[styles.divider, { backgroundColor: theme.border }]} />
             <View style={styles.priceRow}>
-              <ThemedText type="small" themeColor="success">
-                Giảm giá
-              </ThemedText>
-              <ThemedText type="small" themeColor="success">
-                -{formatVND(discountAmount)}
+              <ThemedText type="bodyBold">{t('booking.total')}</ThemedText>
+              <ThemedText style={[styles.total, { color: theme.primary }]}>{formatVND(grandTotal)}</ThemedText>
+            </View>
+          </Card>
+
+          {submitError ? (
+            <View style={[styles.errorBox, { backgroundColor: `${theme.danger}14` }]}>
+              <Ionicons name="alert-circle" size={18} color={theme.danger} />
+              <ThemedText type="small" themeColor="danger" style={styles.flexShrink}>
+                {submitError}
               </ThemedText>
             </View>
           ) : null}
-          <View style={[styles.divider, { backgroundColor: theme.border }]} />
-          <View style={styles.priceRow}>
-            <ThemedText type="bodyBold">Tổng cộng</ThemedText>
-            <ThemedText style={[styles.total, { color: theme.primary }]}>{formatVND(grandTotal)}</ThemedText>
-          </View>
-        </Card>
-
-        {submitError ? (
-          <View style={[styles.errorBox, { backgroundColor: `${theme.danger}14` }]}>
-            <Ionicons name="alert-circle" size={18} color={theme.danger} />
-            <ThemedText type="small" themeColor="danger" style={styles.flexShrink}>
-              {submitError}
-            </ThemedText>
-          </View>
-        ) : null}
+        </Animated.View>
       </ScrollView>
 
       <BottomBar>
         <View style={styles.flex}>
           <ThemedText type="caption" themeColor="textSecondary">
-            Tổng thanh toán
+            {t('booking.totalToPay')}
           </ThemedText>
           <ThemedText style={[styles.total, { color: theme.primary }]}>{formatVND(grandTotal)}</ThemedText>
         </View>
-        <Button label="Xác nhận đặt phòng" fullWidth={false} onPress={handleSubmit} loading={submitting} />
+        <Button label={t('booking.confirmButton')} fullWidth={false} onPress={handleSubmit} loading={submitting} />
       </BottomBar>
     </ThemedView>
   );
@@ -380,6 +395,8 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: MaxContentWidth,
     alignSelf: 'center',
+  },
+  contentInner: {
     padding: Space.lg,
     gap: Space.lg,
     paddingBottom: Space['2xl'],

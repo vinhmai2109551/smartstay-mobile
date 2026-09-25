@@ -1,8 +1,9 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, router } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { z } from 'zod';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,25 +15,32 @@ import { GoogleLogo } from '@/components/GoogleLogo';
 import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/Button';
 import { Checkbox } from '@/components/ui/Checkbox';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { OrDivider } from '@/components/ui/OrDivider';
 import { Screen } from '@/components/ui/Screen';
 import { TextField } from '@/components/ui/TextField';
 import { MinTouch, Radius, Space } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
-const schema = z.object({
-  fullName: z.string().min(1, 'Vui lòng nhập họ tên'),
-  email: z.string().min(1, 'Vui lòng nhập email').email('Email không hợp lệ'),
-  phone: z.string().min(8, 'Số điện thoại không hợp lệ'),
-  password: z.string().min(6, 'Mật khẩu tối thiểu 6 ký tự'),
-  agree: z.boolean().refine((v) => v === true, 'Bạn cần đồng ý điều khoản để tiếp tục'),
-});
-
-type FormValues = z.infer<typeof schema>;
+type FormValues = { fullName: string; email: string; phone: string; password: string; agree: boolean };
 
 export default function RegisterScreen() {
+  const { t } = useTranslation();
   const theme = useTheme();
   const [serverError, setServerError] = useState<string | null>(null);
+  const [showGoogleHint, setShowGoogleHint] = useState(false);
+
+  const schema = useMemo(
+    () =>
+      z.object({
+        fullName: z.string().min(1, t('auth.register.fullNameRequired')),
+        email: z.string().min(1, t('auth.emailRequired')).email(t('auth.emailInvalid')),
+        phone: z.string().min(8, t('auth.register.phoneInvalid')),
+        password: z.string().min(6, t('auth.register.passwordMinLength')),
+        agree: z.boolean().refine((v) => v === true, t('auth.register.agreeRequired')),
+      }),
+    [t],
+  );
 
   const {
     control,
@@ -52,7 +60,7 @@ export default function RegisterScreen() {
       await authApi.register({ fullName, email, phone, password });
       router.push({ pathname: '/(auth)/verify-otp', params: { email } });
     } catch (error) {
-      setServerError(getApiErrorMessage(error, 'Đăng ký thất bại, vui lòng thử lại.'));
+      setServerError(getApiErrorMessage(error, t('auth.register.registerFailed')));
     }
   };
 
@@ -61,7 +69,7 @@ export default function RegisterScreen() {
       <View style={styles.header}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Quay lại"
+          accessibilityLabel={t('common.back')}
           onPress={() => router.back()}
           style={({ pressed }) => [
             styles.backButton,
@@ -69,14 +77,14 @@ export default function RegisterScreen() {
           ]}>
           <Ionicons name="chevron-back" size={22} color={theme.text} />
         </Pressable>
-        <ThemedText type="bodyBold">Tạo tài khoản</ThemedText>
+        <ThemedText type="bodyBold">{t('auth.register.headerTitle')}</ThemedText>
       </View>
 
       <Animated.View entering={FadeInDown.duration(500)} style={styles.hero}>
         <BrandMark size={64} />
-        <ThemedText type="title">Bắt đầu kỳ nghỉ của bạn</ThemedText>
+        <ThemedText type="title">{t('auth.register.heroTitle')}</ThemedText>
         <ThemedText type="body" themeColor="textSecondary">
-          Chỉ mất một phút để tạo tài khoản và nhận ưu đãi dành riêng cho bạn.
+          {t('auth.register.heroSubtitle')}
         </ThemedText>
       </Animated.View>
 
@@ -86,10 +94,10 @@ export default function RegisterScreen() {
           name="fullName"
           render={({ field: { onChange, onBlur, value } }) => (
             <TextField
-              label="Họ và tên"
+              label={t('auth.register.fullNameLabel')}
               leftIcon="person-outline"
               textContentType="name"
-              placeholder="Nguyễn Văn A"
+              placeholder={t('auth.register.fullNamePlaceholder')}
               value={value}
               onChangeText={onChange}
               onBlur={onBlur}
@@ -103,9 +111,9 @@ export default function RegisterScreen() {
           name="email"
           render={({ field: { onChange, onBlur, value } }) => (
             <TextField
-              label="Email"
+              label={t('auth.emailLabel')}
               leftIcon="mail-outline"
-              placeholder="ban@email.com"
+              placeholder={t('auth.emailPlaceholder')}
               autoCapitalize="none"
               autoComplete="email"
               textContentType="emailAddress"
@@ -123,10 +131,10 @@ export default function RegisterScreen() {
           name="phone"
           render={({ field: { onChange, onBlur, value } }) => (
             <TextField
-              label="Số điện thoại"
+              label={t('auth.register.phoneLabel')}
               leftIcon="call-outline"
               textContentType="telephoneNumber"
-              placeholder="09xx xxx xxx"
+              placeholder={t('auth.register.phonePlaceholder')}
               keyboardType="phone-pad"
               value={value}
               onChangeText={onChange}
@@ -141,9 +149,9 @@ export default function RegisterScreen() {
           name="password"
           render={({ field: { onChange, onBlur, value } }) => (
             <TextField
-              label="Mật khẩu"
+              label={t('auth.passwordLabel')}
               leftIcon="lock-closed-outline"
-              placeholder="Tối thiểu 6 ký tự"
+              placeholder={t('auth.register.passwordPlaceholder')}
               autoComplete="new-password"
               textContentType="newPassword"
               secureTextEntry
@@ -164,21 +172,21 @@ export default function RegisterScreen() {
             <Checkbox checked={value} onChange={onChange} />
             <Text style={styles.agreeText}>
               <ThemedText type="small" themeColor="textSecondary">
-                Tôi đồng ý với{' '}
+                {t('auth.register.agreePrefix')}{' '}
               </ThemedText>
               <ThemedText type="small" themeColor="primary">
-                Điều khoản sử dụng
+                {t('auth.register.agreeTerms')}
               </ThemedText>
               <ThemedText type="small" themeColor="textSecondary">
                 {' '}
-                và{' '}
+                {t('auth.register.agreeAnd')}{' '}
               </ThemedText>
               <ThemedText type="small" themeColor="primary">
-                Chính sách bảo mật
+                {t('auth.register.agreePrivacy')}
               </ThemedText>
               <ThemedText type="small" themeColor="textSecondary">
                 {' '}
-                của Vika Hotel.
+                {t('auth.register.agreeSuffix')}
               </ThemedText>
             </Text>
           </View>
@@ -199,41 +207,50 @@ export default function RegisterScreen() {
         </View>
       ) : null}
 
-      <Button label="Đăng ký" size="lg" onPress={handleSubmit(onSubmit)} loading={isSubmitting} />
+      <Button
+        label={t('auth.register.registerButton')}
+        size="lg"
+        onPress={handleSubmit(onSubmit)}
+        loading={isSubmitting}
+      />
 
       <OrDivider />
 
       <Button
-        label="Tiếp tục với Google"
+        label={t('auth.register.continueWithGoogle')}
         variant="outline"
         size="lg"
         leading={<GoogleLogo size={20} />}
-        onPress={() =>
-          Alert.alert(
-            'Dùng Google ở màn Đăng nhập',
-            'Google tự tạo tài khoản cho bạn nếu email chưa tồn tại — quay lại màn Đăng nhập và bấm "Tiếp tục với Google".',
-            [
-              { text: 'Để sau', style: 'cancel' },
-              { text: 'Đến Đăng nhập', onPress: () => router.replace('/(auth)/login') },
-            ],
-          )
-        }
+        onPress={() => setShowGoogleHint(true)}
       />
 
       <View style={styles.spacer} />
 
       <View style={styles.footer}>
         <ThemedText type="small" themeColor="textSecondary">
-          Đã có tài khoản?
+          {t('auth.register.haveAccount')}
         </ThemedText>
         <Link href="/(auth)/login" asChild>
           <Pressable accessibilityRole="link" hitSlop={10}>
             <ThemedText type="smallBold" themeColor="primary">
-              Đăng nhập
+              {t('auth.register.loginNow')}
             </ThemedText>
           </Pressable>
         </Link>
       </View>
+
+      <ConfirmDialog
+        visible={showGoogleHint}
+        title={t('auth.register.googleHintTitle')}
+        message={t('auth.register.googleHintMessage')}
+        confirmLabel={t('auth.register.googleHintConfirm')}
+        cancelLabel={t('auth.register.googleHintCancel')}
+        onConfirm={() => {
+          setShowGoogleHint(false);
+          router.replace('/(auth)/login');
+        }}
+        onCancel={() => setShowGoogleHint(false)}
+      />
     </Screen>
   );
 }

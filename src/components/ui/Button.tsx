@@ -7,7 +7,7 @@ import { ThemedText } from '@/components/themed-text';
 import { MinTouch, Radius, Space } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
-type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost';
+type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
 type ButtonSize = 'sm' | 'md' | 'lg';
 
 type ButtonProps = Omit<PressableProps, 'style'> & {
@@ -60,6 +60,8 @@ export function Button({
     secondary: { background: theme.primarySoft, border: theme.primarySoft, text: theme.primary },
     outline: { background: 'transparent', border: theme.border, text: theme.primary },
     ghost: { background: 'transparent', border: 'transparent', text: theme.primary },
+    // Fixed white label: readable on both the light and dark danger reds.
+    danger: { background: theme.danger, border: theme.danger, text: '#FFFFFF' },
   }[variant];
   const sizing = SIZES[size];
 

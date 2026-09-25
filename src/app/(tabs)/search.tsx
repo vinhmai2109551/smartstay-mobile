@@ -1,6 +1,7 @@
 import dayjs from 'dayjs';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FlatList, StyleSheet, useWindowDimensions, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -17,7 +18,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { RoomCardSkeleton } from '@/components/ui/Skeleton';
-import { SearchHeroSlides } from '@/constants/demoImages';
+import { getSearchHeroSlides } from '@/constants/demoImages';
 import { MaxContentWidth, Space } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { AvailableRoomType } from '@/types/room';
@@ -27,10 +28,12 @@ const GUTTER = Space.lg;
 const FORM_OVERLAP = 36;
 
 export default function SearchScreen() {
+  const { t } = useTranslation();
   const theme = useTheme();
   const { width } = useWindowDimensions();
   const contentWidth = Math.min(width, MaxContentWidth);
   const heroHeight = Math.round(Math.min(Math.max((contentWidth - GUTTER * 2) * 0.58, 200), 300));
+  const heroSlides = useMemo(() => getSearchHeroSlides(t), [t]);
 
   const [checkIn, setCheckIn] = useState(dayjs().add(1, 'day').toDate());
   const [checkOut, setCheckOut] = useState(dayjs().add(2, 'day').toDate());
@@ -52,7 +55,7 @@ export default function SearchScreen() {
       });
       setResults(data);
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Không thể tìm phòng, vui lòng thử lại.'));
+      setError(getApiErrorMessage(err, t('search.searchFailed')));
     } finally {
       setLoading(false);
     }
@@ -61,13 +64,13 @@ export default function SearchScreen() {
   const header = (
     <View style={styles.header}>
       <Animated.View entering={FadeIn.duration(600)}>
-        <HeroCarousel slides={SearchHeroSlides} height={heroHeight} captionInset={FORM_OVERLAP} interval={4500} />
+        <HeroCarousel slides={heroSlides} height={heroHeight} captionInset={FORM_OVERLAP} interval={4500} />
       </Animated.View>
 
       <Card elevation="floating" style={[styles.form, styles.formOverlap]}>
         <View style={styles.dates}>
           <DateField
-            label="Nhận phòng"
+            label={t('search.checkIn')}
             value={checkIn}
             minimumDate={new Date()}
             onChange={(date) => {
@@ -76,7 +79,7 @@ export default function SearchScreen() {
             }}
           />
           <DateField
-            label="Trả phòng"
+            label={t('search.checkOut')}
             value={checkOut}
             minimumDate={dayjs(checkIn).add(1, 'day').toDate()}
             onChange={setCheckOut}
@@ -85,7 +88,7 @@ export default function SearchScreen() {
 
         <View style={[styles.divider, { backgroundColor: theme.border }]} />
 
-        <Stepper label="Số khách" hint="Người lớn và trẻ em" value={guests} onChange={setGuests} max={20} />
+        <Stepper label={t('search.guests')} hint={t('search.guestsHint')} value={guests} onChange={setGuests} max={20} />
 
         {error ? (
           <ThemedText type="small" themeColor="danger">
@@ -93,12 +96,12 @@ export default function SearchScreen() {
           </ThemedText>
         ) : null}
 
-        <Button label={`Tìm phòng · ${nights} đêm`} icon="search" onPress={handleSearch} loading={loading} />
+        <Button label={t('search.searchButton', { count: nights })} icon="search" onPress={handleSearch} loading={loading} />
       </Card>
 
       {results !== null && !loading ? (
         <ThemedText type="heading" style={styles.resultTitle}>
-          {results.length > 0 ? `${results.length} loại phòng còn trống` : 'Kết quả'}
+          {results.length > 0 ? t('search.resultsCount', { count: results.length }) : t('search.resultsTitle')}
         </ThemedText>
       ) : null}
 
@@ -124,14 +127,14 @@ export default function SearchScreen() {
             loading ? null : results === null ? (
               <EmptyState
                 icon="calendar-outline"
-                title="Sẵn sàng cho chuyến đi?"
-                description="Kết quả phòng trống sẽ hiện ở đây sau khi bạn bấm Tìm phòng."
+                title={t('search.emptyInitialTitle')}
+                description={t('search.emptyInitialDescription')}
               />
             ) : (
               <EmptyState
                 icon="bed-outline"
-                title="Không còn phòng phù hợp"
-                description="Thử đổi ngày khác hoặc giảm số khách nhé."
+                title={t('search.emptyResultsTitle')}
+                description={t('search.emptyResultsDescription')}
               />
             )
           }

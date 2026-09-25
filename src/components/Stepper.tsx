@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
@@ -15,6 +16,7 @@ type StepperProps = {
 };
 
 export function Stepper({ label, value, min = 1, max = 10, onChange, hint }: StepperProps) {
+  const { t } = useTranslation();
   const theme = useTheme();
 
   const renderButton = (kind: 'remove' | 'add') => {
@@ -22,7 +24,9 @@ export function Stepper({ label, value, min = 1, max = 10, onChange, hint }: Ste
     return (
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={kind === 'remove' ? `Giảm ${label}` : `Tăng ${label}`}
+        accessibilityLabel={
+          kind === 'remove' ? t('common.decreaseLabel', { label }) : t('common.increaseLabel', { label })
+        }
         disabled={disabled}
         onPress={() => onChange(kind === 'remove' ? Math.max(min, value - 1) : Math.min(max, value + 1))}
         style={({ pressed }) => [

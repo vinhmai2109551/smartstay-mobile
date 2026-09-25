@@ -3,7 +3,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as Google from 'expo-auth-session/providers/google';
 import { Link } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Controller, useForm } from 'react-hook-form';
 import { Platform, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown, ZoomIn } from 'react-native-reanimated';
@@ -42,14 +43,18 @@ const GOOGLE_CLIENT_ID_ENV_NAME = Platform.select({
 });
 const GOOGLE_PLACEHOLDER_CLIENT_ID = 'not-configured';
 
-const schema = z.object({
-  email: z.string().min(1, 'Vui lòng nhập email').email('Email không hợp lệ'),
-  password: z.string().min(1, 'Vui lòng nhập mật khẩu'),
-});
-
-type FormValues = z.infer<typeof schema>;
+type FormValues = { email: string; password: string };
 
 export default function LoginScreen() {
+  const { t } = useTranslation();
+  const schema = useMemo(
+    () =>
+      z.object({
+        email: z.string().min(1, t('auth.emailRequired')).email(t('auth.emailInvalid')),
+        password: z.string().min(1, t('auth.passwordRequired')),
+      }),
+    [t],
+  );
   const theme = useTheme();
   const shadows = useShadows();
   const { width } = useWindowDimensions();
@@ -73,14 +78,14 @@ export default function LoginScreen() {
   const onSubmit = async (values: FormValues) => {
     setServerError(null);
     if (!turnstileToken) {
-      setServerError('Vui lòng chờ xác minh bảo mật hoàn tất.');
+      setServerError(t('auth.login.waitVerification'));
       return;
     }
     try {
       const { accessToken, user } = await authApi.login({ ...values, turnstileToken });
       setSession(accessToken, user);
     } catch (error) {
-      setServerError(getApiErrorMessage(error, 'Đăng nhập thất bại, vui lòng thử lại.'));
+      setServerError(getApiErrorMessage(error, t('auth.login.loginFailed')));
     } finally {
       // The token is spent after one attempt — reload the widget for a fresh one.
       setTurnstileToken('');
@@ -101,7 +106,7 @@ export default function LoginScreen() {
 
     (async () => {
       if (!idToken) {
-        setServerError('Không lấy được token từ Google, vui lòng thử lại.');
+        setServerError(t('auth.login.googleNoToken'));
         return;
       }
       setServerError(null);
@@ -110,12 +115,12 @@ export default function LoginScreen() {
         const { accessToken, user } = await authApi.google({ idToken });
         setSession(accessToken, user);
       } catch (error) {
-        setServerError(getApiErrorMessage(error, 'Đăng nhập Google thất bại.'));
+        setServerError(getApiErrorMessage(error, t('auth.login.googleFailed')));
       } finally {
         setSigningIn(false);
       }
     })();
-  }, [response, setSession]);
+  }, [response, setSession, t]);
 
   const googleNotConfigured = !PLATFORM_GOOGLE_CLIENT_ID;
 
@@ -138,9 +143,9 @@ export default function LoginScreen() {
           </View>
 
           <Animated.View entering={FadeInDown.duration(500).delay(150)} style={styles.hero}>
-            <ThemedText style={[styles.title, { color: theme.text }]}>Chào mừng trở lại!</ThemedText>
+            <ThemedText style={[styles.title, { color: theme.text }]}>{t('auth.login.title')}</ThemedText>
             <ThemedText type="body" themeColor="textSecondary" style={styles.center}>
-              Đăng nhập để tiếp tục hành trình nghỉ dưỡng của bạn.
+              {t('auth.login.subtitle')}
             </ThemedText>
           </Animated.View>
 
@@ -153,9 +158,9 @@ export default function LoginScreen() {
               render={({ field: { onChange, onBlur, value } }) => (
                 <TextField
                   inlineLabel
-                  label="Email"
+                  label={t('auth.emailLabel')}
                   leftIcon="mail-outline"
-                  placeholder="ban@email.com"
+                  placeholder={t('auth.emailPlaceholder')}
                   autoCapitalize="none"
                   autoComplete="email"
                   textContentType="emailAddress"
@@ -174,9 +179,9 @@ export default function LoginScreen() {
               render={({ field: { onChange, onBlur, value } }) => (
                 <TextField
                   inlineLabel
-                  label="Mật khẩu"
+                  label={t('auth.passwordLabel')}
                   leftIcon="lock-closed-outline"
-                  placeholder="Nhập mật khẩu"
+                  placeholder={t('auth.login.passwordPlaceholder')}
                   autoComplete="current-password"
                   textContentType="password"
                   secureTextEntry
@@ -200,25 +205,23 @@ export default function LoginScreen() {
             <TurnstileWidget action="login" onTokenChange={setTurnstileToken} resetKey={turnstileResetKey} />
 
             <Button
-              label="Đăng nhập"
+              label={t('auth.login.loginButton')}
               size="lg"
-              trailingIcon="arrow-forward"
               onPress={handleSubmit(onSubmit)}
               loading={isSubmitting}
               disabled={signingIn || !turnstileToken}
             />
 
-            <OrDivider label="Hoặc" />
+            <OrDivider />
 
             {googleNotConfigured ? (
               <ThemedText type="caption" themeColor="danger">
-                Chưa cấu hình {GOOGLE_CLIENT_ID_ENV_NAME} trong file .env — xem hướng dẫn trong .env để bật đăng
-                nhập Google.
+                {t('auth.login.googleNotConfigured', { envName: GOOGLE_CLIENT_ID_ENV_NAME })}
               </ThemedText>
             ) : null}
 
             <Button
-              label="Tiếp tục với Google"
+              label={t('auth.login.continueWithGoogle')}
               variant="outline"
               size="lg"
               leading={<GoogleLogo size={20} />}
@@ -229,14 +232,13 @@ export default function LoginScreen() {
 
             <View style={styles.footer}>
               <ThemedText type="small" themeColor="textSecondary">
-                Chưa có tài khoản?
+                {t('auth.login.noAccount')}
               </ThemedText>
               <Link href="/(auth)/register" asChild>
                 <Pressable accessibilityRole="link" hitSlop={10} style={styles.footerLink}>
                   <ThemedText type="smallBold" themeColor="primary">
-                    Đăng ký ngay
+                    {t('auth.login.registerNow')}
                   </ThemedText>
-                  <Ionicons name="arrow-forward" size={16} color={theme.primary} />
                 </Pressable>
               </Link>
             </View>

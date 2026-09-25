@@ -10,11 +10,14 @@ import { DarkTheme, DefaultTheme, ThemeProvider, type Theme } from 'expo-router/
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
-import { useColorScheme } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { authApi } from '@/api/auth';
 import { Colors, FontFamily } from '@/constants/theme';
+import { useEffectiveColorScheme } from '@/hooks/use-theme';
 import { useAuthStore } from '@/store/authStore';
+import { useSettingsStore } from '@/store/settingsStore';
+import '@/i18n';
 
 // Keep the splash screen up until fonts and the persisted auth store are ready.
 SplashScreen.preventAutoHideAsync();
@@ -53,8 +56,10 @@ const DarkNavigationTheme: Theme = {
 };
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
+  const { t } = useTranslation();
+  const colorScheme = useEffectiveColorScheme();
   const hasHydrated = useAuthStore((s) => s.hasHydrated);
+  const settingsHydrated = useSettingsStore((s) => s.hasHydrated);
   const accessToken = useAuthStore((s) => s.accessToken);
   const hasSeenOnboarding = useAuthStore((s) => s.hasSeenOnboarding);
   const updateUser = useAuthStore((s) => s.updateUser);
@@ -81,12 +86,12 @@ export default function RootLayout() {
   }, [hasHydrated, isLoggedIn, updateUser]);
 
   useEffect(() => {
-    if (hasHydrated && fontsReady) {
+    if (hasHydrated && settingsHydrated && fontsReady) {
       SplashScreen.hideAsync();
     }
-  }, [hasHydrated, fontsReady]);
+  }, [hasHydrated, settingsHydrated, fontsReady]);
 
-  if (!hasHydrated || !fontsReady) {
+  if (!hasHydrated || !settingsHydrated || !fontsReady) {
     return null;
   }
 
@@ -104,23 +109,23 @@ export default function RootLayout() {
           <Stack.Screen name="(tabs)" />
           <Stack.Screen
             name="room/[id]"
-            options={{ headerShown: true, title: 'Chi tiết phòng', headerBackTitle: 'Quay lại' }}
+            options={{ headerShown: true, title: t('layout.roomDetailTitle'), headerBackTitle: t('common.back') }}
           />
           <Stack.Screen
             name="booking/new"
-            options={{ headerShown: true, title: 'Đặt phòng', presentation: 'modal' }}
+            options={{ headerShown: true, title: t('layout.newBookingTitle'), presentation: 'modal' }}
           />
           <Stack.Screen
             name="booking/[id]"
-            options={{ headerShown: true, title: 'Chi tiết đơn', headerBackTitle: 'Quay lại' }}
+            options={{ headerShown: true, title: t('layout.bookingDetailTitle'), headerBackTitle: t('common.back') }}
           />
           <Stack.Screen
             name="checkout/[bookingId]"
-            options={{ headerShown: true, title: 'Thanh toán', presentation: 'modal' }}
+            options={{ headerShown: true, title: t('layout.checkoutTitle'), presentation: 'modal' }}
           />
           <Stack.Screen
             name="notifications"
-            options={{ headerShown: true, title: 'Thông báo', headerBackTitle: 'Quay lại' }}
+            options={{ headerShown: true, title: t('layout.notificationsTitle'), headerBackTitle: t('common.back') }}
           />
         </Stack.Protected>
 

@@ -1,6 +1,8 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
+import i18next from 'i18next';
 
 import { API_URL } from '@/config/env';
+import '@/i18n';
 import { useAuthStore } from '@/store/authStore';
 import { ApiErrorBody } from '@/types/common';
 
@@ -64,11 +66,12 @@ apiClient.interceptors.response.use(
   },
 );
 
-export function getApiErrorMessage(error: unknown, fallback = 'Đã có lỗi xảy ra, vui lòng thử lại.') {
+export function getApiErrorMessage(error: unknown, fallback?: string) {
+  const resolvedFallback = fallback ?? i18next.t('common.errorFallback');
   if (axios.isAxiosError<ApiErrorBody>(error)) {
     const body = error.response?.data;
     if (Array.isArray(body?.message)) return body.message.join('\n');
     if (typeof body?.message === 'string') return body.message;
   }
-  return fallback;
+  return resolvedFallback;
 }

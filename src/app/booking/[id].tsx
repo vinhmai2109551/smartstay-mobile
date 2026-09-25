@@ -1,9 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
+import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 
 import { bookingsApi } from '@/api/bookings';
 import { getApiErrorMessage } from '@/api/client';
@@ -13,6 +15,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { ErrorView } from '@/components/ui/ErrorView';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { StatusBadge } from '@/components/ui/StatusBadge';
@@ -24,11 +27,12 @@ import { formatVND } from '@/utils/currency';
 import { formatDate, nightsBetween } from '@/utils/date';
 
 const CANCELLABLE_STATUSES = new Set(['PENDING', 'CONFIRMED']);
-const RATING_LABELS = ['', 'Tệ', 'Chưa tốt', 'Bình thường', 'Tốt', 'Tuyệt vời'];
+const RATING_KEYS = ['', 'reviewRating1', 'reviewRating2', 'reviewRating3', 'reviewRating4', 'reviewRating5'] as const;
 
 type IconName = keyof typeof Ionicons.glyphMap;
 
 export default function BookingDetailScreen() {
+  const { t } = useTranslation();
   const theme = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const fetchBooking = useCallback(() => bookingsApi.detail(id), [id]);
@@ -36,6 +40,7 @@ export default function BookingDetailScreen() {
   const { data: booking, loading, error, refetch, refreshing, refresh } = useApi(fetchBooking, { refetchOnFocus: true });
 
   const [cancelling, setCancelling] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
@@ -51,28 +56,26 @@ export default function BookingDetailScreen() {
       </ThemedView>
     );
   }
-  if (error || !booking) return <ErrorView message={error ?? 'Không tìm thấy đơn đặt phòng.'} onRetry={refetch} />;
+  if (error || !booking) return <ErrorView message={error ?? t('booking.notFound')} onRetry={refetch} />;
 
-  const handleCancel = () => {
-    Alert.alert('Huỷ đơn đặt phòng', 'Bạn có chắc muốn huỷ đơn này?', [
-      { text: 'Không', style: 'cancel' },
-      {
-        text: 'Huỷ đơn',
-        style: 'destructive',
-        onPress: async () => {
-          setCancelling(true);
-          setActionError(null);
-          try {
-            await bookingsApi.cancel(id, { reason: 'Khách hàng yêu cầu huỷ' });
-            refetch();
-          } catch (err) {
-            setActionError(getApiErrorMessage(err, 'Không thể huỷ đơn.'));
-          } finally {
-            setCancelling(false);
-          }
-        },
-      },
-    ]);
+  const handleConfirmCancel = async () => {
+    setCancelling(true);
+    setActionError(null);
+    try {
+      await bookingsApi.cancel(id, { reason: 'Khách hàng yêu cầu huỷ' });
+      setShowCancelConfirm(false);
+      refetch();
+    } catch (err) {
+      setActionError(getApiErrorMessage(err, t('booking.cancelFailed')));
+      setShowCancelConfirm(false);
+    } finally {
+      setCancelling(false);
+    }
+  };
+
+  const handlePayNow = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.push(`/checkout/${booking.bookingId}`);
   };
 
   const handleSubmitReview = async () => {
@@ -82,7 +85,7 @@ export default function BookingDetailScreen() {
       await reviewsApi.create({ bookingId: id, rating, comment });
       setReviewDone(true);
     } catch (err) {
-      setActionError(getApiErrorMessage(err, 'Không thể gửi đánh giá.'));
+      setActionError(getApiErrorMessage(err, t('booking.reviewFailed')));
     } finally {
       setReviewSubmitting(false);
     }
@@ -94,12 +97,16 @@ export default function BookingDetailScreen() {
   const needsPayment = booking.paymentMethod === 'PAYOS' && booking.paymentStatus === 'UNPAID' && booking.status !== 'CANCELLED';
 
   const priceLines: { label: string; value: number; tone?: 'success' }[] = [
-    { label: `Tiền phòng (${nights} đêm)`, value: booking.roomAmount },
-    ...(booking.serviceAmount > 0 ? [{ label: 'Dịch vụ', value: booking.serviceAmount }] : []),
-    ...(booking.lateCheckoutFee > 0 ? [{ label: 'Phí trả phòng muộn', value: booking.lateCheckoutFee }] : []),
-    ...(booking.discountAmount > 0 ? [{ label: 'Giảm giá', value: -booking.discountAmount, tone: 'success' as const }] : []),
-    ...(booking.vatAmount > 0 ? [{ label: 'VAT', value: booking.vatAmount }] : []),
+    { label: t('booking.roomAmountRow', { nights }), value: booking.roomAmount },
+    ...(booking.serviceAmount > 0 ? [{ label: t('booking.services'), value: booking.serviceAmount }] : []),
+    ...(booking.lateCheckoutFee > 0 ? [{ label: t('booking.lateCheckoutFee'), value: booking.lateCheckoutFee }] : []),
+    ...(booking.discountAmount > 0
+      ? [{ label: t('booking.discount'), value: -booking.discountAmount, tone: 'success' as const }]
+      : []),
+    ...(booking.vatAmount > 0 ? [{ label: t('booking.vat'), value: booking.vatAmount }] : []),
   ];
+
+  const orderCode = booking.bookingId.slice(0, 8).toUpperCase();
 
   return (
     <ThemedView style={styles.flex}>
@@ -125,8 +132,9 @@ export default function BookingDetailScreen() {
               {booking.roomType.name}
             </ThemedText>
             <ThemedText type="caption" style={styles.onImageMuted}>
-              Mã đơn #{booking.bookingId.slice(0, 8).toUpperCase()}
-              {booking.room ? ` · Phòng ${booking.room.roomNumber}` : ''}
+              {booking.room
+                ? t('booking.orderCodeWithRoom', { code: orderCode, room: booking.room.roomNumber })
+                : t('booking.orderCode', { code: orderCode })}
             </ThemedText>
           </View>
         </View>
@@ -134,7 +142,7 @@ export default function BookingDetailScreen() {
         <Card style={styles.stay}>
           <View style={styles.stayCol}>
             <ThemedText type="caption" themeColor="textSecondary">
-              Nhận phòng
+              {t('room.checkIn')}
             </ThemedText>
             <ThemedText type="heading">{formatDate(booking.checkInDate, 'DD/MM')}</ThemedText>
             <ThemedText type="caption" themeColor="textSecondary">
@@ -146,14 +154,14 @@ export default function BookingDetailScreen() {
             <View style={[styles.nightsPill, { backgroundColor: theme.primarySoft }]}>
               <Ionicons name="moon" size={12} color={theme.primary} />
               <ThemedText type="caption" themeColor="primary">
-                {nights} đêm
+                {t('common.night', { count: nights })}
               </ThemedText>
             </View>
             <View style={[styles.stayLine, { backgroundColor: theme.border }]} />
           </View>
           <View style={[styles.stayCol, styles.alignEnd]}>
             <ThemedText type="caption" themeColor="textSecondary">
-              Trả phòng
+              {t('room.checkOut')}
             </ThemedText>
             <ThemedText type="heading">{formatDate(booking.checkOutDate, 'DD/MM')}</ThemedText>
             <ThemedText type="caption" themeColor="textSecondary">
@@ -163,23 +171,27 @@ export default function BookingDetailScreen() {
         </Card>
 
         <Card style={styles.section}>
-          <ThemedText type="bodyBold">Thông tin khách</ThemedText>
-          <InfoRow icon="person-outline" label="Họ tên" value={booking.guestInfo.fullName} />
-          <InfoRow icon="call-outline" label="Điện thoại" value={booking.guestInfo.phone} />
+          <ThemedText type="bodyBold">{t('booking.guestInfo')}</ThemedText>
+          <InfoRow icon="person-outline" label={t('booking.fullName')} value={booking.guestInfo.fullName} />
+          <InfoRow icon="call-outline" label={t('booking.phone')} value={booking.guestInfo.phone} />
           <InfoRow
             icon={booking.paymentMethod === 'PAYOS' ? 'qr-code-outline' : 'cash-outline'}
-            label="Thanh toán"
+            label={t('booking.paymentInfo')}
             value={
               booking.paymentMethod === 'PAYOS'
-                ? `PayOS · ${isPaid ? 'Đã thanh toán' : 'Chưa thanh toán'}`
-                : `Tiền mặt · ${isPaid ? 'Đã thanh toán' : 'Thanh toán tại khách sạn'}`
+                ? isPaid
+                  ? t('booking.paymentPayosPaid')
+                  : t('booking.paymentPayosUnpaid')
+                : isPaid
+                  ? t('booking.paymentCashPaid')
+                  : t('booking.paymentCashUnpaid')
             }
           />
         </Card>
 
         {booking.serviceItems.length > 0 ? (
           <Card style={styles.section}>
-            <ThemedText type="bodyBold">Dịch vụ đã dùng</ThemedText>
+            <ThemedText type="bodyBold">{t('booking.servicesUsed')}</ThemedText>
             {booking.serviceItems.map((item) => (
               <View key={item.bookingServiceId} style={styles.lineRow}>
                 <ThemedText type="small" style={styles.flexShrink}>
@@ -192,7 +204,7 @@ export default function BookingDetailScreen() {
         ) : null}
 
         <Card style={styles.section}>
-          <ThemedText type="bodyBold">Chi tiết giá</ThemedText>
+          <ThemedText type="bodyBold">{t('booking.priceDetails')}</ThemedText>
           {priceLines.map((line) => (
             <View key={line.label} style={styles.lineRow}>
               <ThemedText type="small" themeColor={line.tone ?? 'textSecondary'}>
@@ -205,19 +217,19 @@ export default function BookingDetailScreen() {
           ))}
           <View style={[styles.divider, { backgroundColor: theme.border }]} />
           <View style={styles.lineRow}>
-            <ThemedText type="bodyBold">Tổng cộng</ThemedText>
+            <ThemedText type="bodyBold">{t('booking.total')}</ThemedText>
             <ThemedText style={[styles.total, { color: theme.primary }]}>{formatVND(booking.totalAmount)}</ThemedText>
           </View>
           {booking.paidAmount > 0 && booking.dueAmount > 0 ? (
             <>
               <View style={styles.lineRow}>
                 <ThemedText type="small" themeColor="textSecondary">
-                  Đã thanh toán
+                  {t('booking.paidAmount')}
                 </ThemedText>
                 <ThemedText type="small">{formatVND(booking.paidAmount)}</ThemedText>
               </View>
               <View style={styles.lineRow}>
-                <ThemedText type="smallBold">Còn lại</ThemedText>
+                <ThemedText type="smallBold">{t('booking.dueAmount')}</ThemedText>
                 <ThemedText type="smallBold">{formatVND(booking.dueAmount)}</ThemedText>
               </View>
             </>
@@ -236,14 +248,10 @@ export default function BookingDetailScreen() {
         {needsPayment || CANCELLABLE_STATUSES.has(booking.status) ? (
           <View style={styles.actions}>
             {needsPayment ? (
-              <Button
-                label="Thanh toán ngay"
-                icon="qr-code-outline"
-                onPress={() => router.push(`/checkout/${booking.bookingId}`)}
-              />
+              <Button label={t('booking.payNow')} icon="qr-code-outline" onPress={handlePayNow} />
             ) : null}
             {CANCELLABLE_STATUSES.has(booking.status) ? (
-              <Button label="Huỷ đơn" variant="outline" onPress={handleCancel} loading={cancelling} />
+              <Button label={t('booking.cancelBooking')} variant="outline" onPress={() => setShowCancelConfirm(true)} />
             ) : null}
           </View>
         ) : null}
@@ -251,9 +259,9 @@ export default function BookingDetailScreen() {
         {booking.status === 'CHECKED_OUT' && !reviewDone ? (
           <Card style={styles.section}>
             <View style={styles.reviewHeader}>
-              <ThemedText type="heading">Kỳ nghỉ của bạn thế nào?</ThemedText>
+              <ThemedText type="heading">{t('booking.reviewTitle')}</ThemedText>
               <ThemedText type="small" themeColor="textSecondary">
-                Đánh giá giúp Vika Hotel phục vụ bạn tốt hơn.
+                {t('booking.reviewSubtitle')}
               </ThemedText>
             </View>
             <View style={styles.ratingRow}>
@@ -261,7 +269,7 @@ export default function BookingDetailScreen() {
                 <Pressable
                   key={value}
                   accessibilityRole="button"
-                  accessibilityLabel={`${value} sao`}
+                  accessibilityLabel={t('booking.starLabel', { count: value })}
                   accessibilityState={{ selected: value === rating }}
                   onPress={() => setRating(value)}
                   style={styles.starButton}>
@@ -270,10 +278,10 @@ export default function BookingDetailScreen() {
               ))}
             </View>
             <ThemedText type="smallBold" themeColor="accentText" style={styles.center}>
-              {RATING_LABELS[rating]}
+              {t(`booking.${RATING_KEYS[rating]}`)}
             </ThemedText>
-            <TextField placeholder="Chia sẻ trải nghiệm của bạn..." value={comment} onChangeText={setComment} multiline />
-            <Button label="Gửi đánh giá" onPress={handleSubmitReview} loading={reviewSubmitting} />
+            <TextField placeholder={t('booking.reviewPlaceholder')} value={comment} onChangeText={setComment} multiline />
+            <Button label={t('booking.reviewSubmit')} onPress={handleSubmitReview} loading={reviewSubmitting} />
           </Card>
         ) : null}
 
@@ -281,11 +289,23 @@ export default function BookingDetailScreen() {
           <Card style={[styles.thanks, { backgroundColor: theme.primarySoft }]} elevation="none">
             <Ionicons name="heart" size={20} color={theme.primary} />
             <ThemedText type="smallBold" themeColor="primary">
-              Cảm ơn bạn đã đánh giá!
+              {t('booking.reviewThanks')}
             </ThemedText>
           </Card>
         ) : null}
       </ScrollView>
+
+      <ConfirmDialog
+        visible={showCancelConfirm}
+        title={t('booking.cancelTitle')}
+        message={t('booking.cancelMessage')}
+        confirmLabel={t('booking.cancelConfirm')}
+        cancelLabel={t('booking.cancelDismiss')}
+        destructive
+        loading={cancelling}
+        onConfirm={handleConfirmCancel}
+        onCancel={() => setShowCancelConfirm(false)}
+      />
     </ThemedView>
   );
 }

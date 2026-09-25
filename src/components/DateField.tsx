@@ -1,14 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Modal, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/Button';
 import { Radius, Space } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { useTheme } from '@/hooks/use-theme';
+import { useEffectiveColorScheme, useTheme } from '@/hooks/use-theme';
 import { formatDate } from '@/utils/date';
 
 type DateFieldProps = {
@@ -19,8 +19,9 @@ type DateFieldProps = {
 };
 
 export function DateField({ label, value, onChange, minimumDate }: DateFieldProps) {
+  const { t, i18n } = useTranslation();
   const theme = useTheme();
-  const scheme = useColorScheme();
+  const scheme = useEffectiveColorScheme();
   const insets = useSafeAreaInsets();
   const [show, setShow] = useState(false);
   // iOS: the calendar edits a draft inside a bottom sheet and applies it on "Xong".
@@ -57,7 +58,7 @@ export function DateField({ label, value, onChange, minimumDate }: DateFieldProp
       {Platform.OS === 'ios' ? (
         <Modal visible={show} transparent animationType="slide" onRequestClose={() => setShow(false)}>
           <Pressable
-            accessibilityLabel="Đóng"
+            accessibilityLabel={t('common.close')}
             style={styles.backdrop}
             onPress={() => setShow(false)}
           />
@@ -80,11 +81,11 @@ export function DateField({ label, value, onChange, minimumDate }: DateFieldProp
               minimumDate={minimumDate}
               accentColor={theme.primary}
               themeVariant={scheme === 'dark' ? 'dark' : 'light'}
-              locale="vi-VN"
+              locale={i18n.language === 'en' ? 'en-US' : 'vi-VN'}
               onValueChange={(_event, selectedDate) => setDraft(selectedDate)}
             />
             <Button
-              label="Xong"
+              label={t('common.done')}
               onPress={() => {
                 onChange(draft);
                 setShow(false);
