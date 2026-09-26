@@ -3,13 +3,15 @@ import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 
 import { bookingsApi } from '@/api/bookings';
 import { getApiErrorMessage } from '@/api/client';
 import { reviewsApi } from '@/api/reviews';
+import { ReviewCard } from '@/components/ReviewCard';
+import { StarRatingInput } from '@/components/StarRatingInput';
 import { roomImageSource } from '@/components/RoomTypeCard';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -20,10 +22,11 @@ import { ErrorView } from '@/components/ui/ErrorView';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { TextField } from '@/components/ui/TextField';
-import { FontFamily, MaxContentWidth, MinTouch, Radius, Space } from '@/constants/theme';
+import { FontFamily, MaxContentWidth, Radius, Space } from '@/constants/theme';
 import { useApi } from '@/hooks/useApi';
 import { useTheme } from '@/hooks/use-theme';
 import { formatVND } from '@/utils/currency';
+import { Review, REVIEW_COMMENT_MAX, REVIEW_COMMENT_MIN } from '@/types/review';
 import { formatDate, nightsBetween } from '@/utils/date';
 
 const CANCELLABLE_STATUSES = new Set(['PENDING', 'CONFIRMED']);
@@ -34,17 +37,39 @@ type IconName = keyof typeof Ionicons.glyphMap;
 export default function BookingDetailScreen() {
   const { t } = useTranslation();
   const theme = useTheme();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, review: focusReview } = useLocalSearchParams<{ id: string; review?: string }>();
   const fetchBooking = useCallback(() => bookingsApi.detail(id), [id]);
   // Staff confirm / check-in from the admin side, so reload whenever the screen is shown again.
   const { data: booking, loading, error, refetch, refreshing, refresh } = useApi(fetchBooking, { refetchOnFocus: true });
+  const fetchMyReviews = useCallback(() => reviewsApi.mine(), []);
+  const myReviews = useApi(fetchMyReviews);
+
+  // "Write a review" in the booking list opens this screen with ?review=1 — jump to the form.
+  const scrollRef = useRef<ScrollView>(null);
+  const [reviewY, setReviewY] = useState<number | null>(null);
+  const hasScrolledRef = useRef(false);
+  useEffect(() => {
+    if (focusReview && reviewY !== null && !hasScrolledRef.current) {
+      hasScrolledRef.current = true;
+      scrollRef.current?.scrollTo({ y: Math.max(reviewY - Space.lg, 0), animated: true });
+    }
+  }, [focusReview, reviewY]);
+
+  const onRefresh = () => {
+    refresh();
+    myReviews.refresh();
+  };
 
   const [cancelling, setCancelling] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
-  const [reviewDone, setReviewDone] = useState(false);
+  // Set right after a successful submit so the card shows without waiting for a refetch.
+  const [submittedReview, setSubmittedReview] = useState<Review | null>(null);
+  const [justReviewed, setJustReviewed] = useState(false);
+  const existingReview = myReviews.data?.find((review) => review.bookingId === id) ?? null;
+  const review = submittedReview ?? existingReview;
   const [actionError, setActionError] = useState<string | null>(null);
 
   if (loading) {
@@ -82,14 +107,17 @@ export default function BookingDetailScreen() {
     setReviewSubmitting(true);
     setActionError(null);
     try {
-      await reviewsApi.create({ bookingId: id, rating, comment });
-      setReviewDone(true);
+      setSubmittedReview(await reviewsApi.create({ bookingId: id, rating, comment: comment.trim() }));
+      setJustReviewed(true);
     } catch (err) {
       setActionError(getApiErrorMessage(err, t('booking.reviewFailed')));
     } finally {
       setReviewSubmitting(false);
     }
   };
+
+  const trimmedLength = comment.trim().length;
+  const commentTooShort = trimmedLength < REVIEW_COMMENT_MIN;
 
   const image = roomImageSource(booking.roomType);
   const nights = nightsBetween(booking.checkInDate, booking.checkOutDate);
@@ -111,10 +139,11 @@ export default function BookingDetailScreen() {
   return (
     <ThemedView style={styles.flex}>
       <ScrollView
+        ref={scrollRef}
         contentContainerStyle={styles.content}
         automaticallyAdjustKeyboardInsets
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={theme.primary} colors={[theme.primary]} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} colors={[theme.primary]} />
         }>
         <View style={[styles.hero, { backgroundColor: theme.backgroundSelected }]}>
           {image ? <Image source={image} style={StyleSheet.absoluteFill} contentFit="cover" /> : null}
@@ -256,42 +285,61 @@ export default function BookingDetailScreen() {
           </View>
         ) : null}
 
-        {booking.status === 'CHECKED_OUT' && !reviewDone ? (
-          <Card style={styles.section}>
-            <View style={styles.reviewHeader}>
-              <ThemedText type="heading">{t('booking.reviewTitle')}</ThemedText>
-              <ThemedText type="small" themeColor="textSecondary">
-                {t('booking.reviewSubtitle')}
-              </ThemedText>
-            </View>
-            <View style={styles.ratingRow}>
-              {[1, 2, 3, 4, 5].map((value) => (
-                <Pressable
-                  key={value}
-                  accessibilityRole="button"
-                  accessibilityLabel={t('booking.starLabel', { count: value })}
-                  accessibilityState={{ selected: value === rating }}
-                  onPress={() => setRating(value)}
-                  style={styles.starButton}>
-                  <Ionicons name={value <= rating ? 'star' : 'star-outline'} size={32} color={theme.accent} />
-                </Pressable>
-              ))}
-            </View>
-            <ThemedText type="smallBold" themeColor="accentText" style={styles.center}>
-              {t(`booking.${RATING_KEYS[rating]}`)}
-            </ThemedText>
-            <TextField placeholder={t('booking.reviewPlaceholder')} value={comment} onChangeText={setComment} multiline />
-            <Button label={t('booking.reviewSubmit')} onPress={handleSubmitReview} loading={reviewSubmitting} />
-          </Card>
-        ) : null}
-
-        {reviewDone ? (
-          <Card style={[styles.thanks, { backgroundColor: theme.primarySoft }]} elevation="none">
-            <Ionicons name="heart" size={20} color={theme.primary} />
-            <ThemedText type="smallBold" themeColor="primary">
-              {t('booking.reviewThanks')}
-            </ThemedText>
-          </Card>
+        {booking.status === 'CHECKED_OUT' ? (
+          <View style={styles.reviewBlock} onLayout={(e) => setReviewY(e.nativeEvent.layout.y)}>
+            {review ? (
+              <>
+                {justReviewed ? (
+                  <Card style={[styles.thanks, { backgroundColor: theme.primarySoft }]} elevation="none">
+                    <Ionicons name="heart" size={20} color={theme.primary} />
+                    <ThemedText type="smallBold" themeColor="primary">
+                      {t('booking.reviewThanks')}
+                    </ThemedText>
+                  </Card>
+                ) : null}
+                <ThemedText type="heading">{t('booking.reviewYours')}</ThemedText>
+                <ReviewCard review={review} />
+              </>
+            ) : myReviews.loading ? (
+              <Skeleton height={140} radius={Radius.lg} />
+            ) : (
+              <Card style={styles.section}>
+                <View style={styles.reviewHeader}>
+                  <ThemedText type="heading">{t('booking.reviewTitle')}</ThemedText>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    {t('booking.reviewSubtitle')}
+                  </ThemedText>
+                </View>
+                <StarRatingInput
+                  value={rating}
+                  onChange={setRating}
+                  accessibilityLabel={t('booking.reviewRatingLabel')}
+                />
+                <ThemedText type="smallBold" themeColor="accentText" style={styles.center}>
+                  {/* Half stars share the label of the whole star they round up to (4.5 → "Tuyệt vời"). */}
+                  {rating.toFixed(1)} · {t(`booking.${RATING_KEYS[Math.ceil(rating)]}`)}
+                </ThemedText>
+                <TextField
+                  placeholder={t('booking.reviewPlaceholder')}
+                  value={comment}
+                  onChangeText={setComment}
+                  maxLength={REVIEW_COMMENT_MAX}
+                  multiline
+                />
+                <ThemedText type="caption" themeColor="textSecondary">
+                  {commentTooShort
+                    ? t('booking.reviewCommentHint', { min: REVIEW_COMMENT_MIN })
+                    : t('booking.reviewCommentCount', { count: trimmedLength, max: REVIEW_COMMENT_MAX })}
+                </ThemedText>
+                <Button
+                  label={t('booking.reviewSubmit')}
+                  onPress={handleSubmitReview}
+                  loading={reviewSubmitting}
+                  disabled={commentTooShort}
+                />
+              </Card>
+            )}
+          </View>
         ) : null}
       </ScrollView>
 
@@ -367,7 +415,6 @@ const styles = StyleSheet.create({
   errorBox: { flexDirection: 'row', alignItems: 'center', gap: Space.sm, padding: Space.md, borderRadius: Radius.md },
   actions: { gap: Space.md },
   reviewHeader: { gap: Space.xs },
-  ratingRow: { flexDirection: 'row', justifyContent: 'center', gap: Space.xs },
-  starButton: { width: MinTouch + 4, height: MinTouch + 4, alignItems: 'center', justifyContent: 'center' },
+  reviewBlock: { gap: Space.md },
   thanks: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Space.sm },
 });

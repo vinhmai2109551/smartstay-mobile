@@ -9,8 +9,8 @@ import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 
 import { reviewsApi } from '@/api/reviews';
 import { roomTypesApi } from '@/api/roomTypes';
-import { Avatar } from '@/components/Avatar';
 import { RatingStars } from '@/components/RatingStars';
+import { ReviewCard } from '@/components/ReviewCard';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomBar } from '@/components/ui/BottomBar';
@@ -70,7 +70,7 @@ export default function RoomTypeDetailScreen() {
       ? [fallbackImage]
       : [];
 
-  const reviewList = reviews.data?.data ?? [];
+  const reviewList = reviews.data ?? [];
   const averageRating = reviewList.length
     ? reviewList.reduce((sum, review) => sum + review.rating, 0) / reviewList.length
     : undefined;
@@ -198,27 +198,7 @@ export default function RoomTypeDetailScreen() {
             {reviews.loading ? (
               <Skeleton height={90} radius={Radius.md} />
             ) : reviewList.length > 0 ? (
-              reviewList.map((review) => (
-                <Card key={review.id} style={styles.reviewCard} elevation="none">
-                  <View style={styles.reviewHeader}>
-                    <Avatar name={review.userFullName} size={36} tone="soft" />
-                    <View style={styles.reviewAuthor}>
-                      <ThemedText type="smallBold">{review.userFullName ?? t('profile.fallbackName')}</ThemedText>
-                      {review.createdAt ? (
-                        <ThemedText type="caption" themeColor="textSecondary">
-                          {formatDate(review.createdAt)}
-                        </ThemedText>
-                      ) : null}
-                    </View>
-                    <RatingStars rating={review.rating} size={12} />
-                  </View>
-                  {review.comment ? (
-                    <ThemedText type="small" themeColor="textSecondary">
-                      {review.comment}
-                    </ThemedText>
-                  ) : null}
-                </Card>
-              ))
+              reviewList.map((review) => <ReviewCard key={review.reviewId} review={review} />)
             ) : (
               <ThemedText type="small" themeColor="textSecondary">
                 {t('room.noReviews')}
@@ -290,9 +270,6 @@ const styles = StyleSheet.create({
   amenityIcon: { width: 36, height: 36, borderRadius: Radius.sm, alignItems: 'center', justifyContent: 'center' },
   amenityText: { flex: 1 },
   reviewTitleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Space.sm },
-  reviewCard: { gap: Space.sm },
-  reviewHeader: { flexDirection: 'row', alignItems: 'center', gap: Space.md },
-  reviewAuthor: { flex: 1 },
   priceBlock: { flex: 1 },
   priceRow: { flexDirection: 'row', alignItems: 'baseline', gap: Space.xs },
   price: { fontFamily: FontFamily.bold, fontSize: 20, lineHeight: 26 },
