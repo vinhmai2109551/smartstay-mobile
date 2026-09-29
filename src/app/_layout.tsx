@@ -13,7 +13,9 @@ import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { authApi } from '@/api/auth';
+import { NotificationToast } from '@/components/NotificationToast';
 import { Colors, FontFamily } from '@/constants/theme';
+import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
 import { useEffectiveColorScheme } from '@/hooks/use-theme';
 import { useAuthStore } from '@/store/authStore';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -85,6 +87,8 @@ export default function RootLayout() {
     }
   }, [hasHydrated, isLoggedIn, updateUser]);
 
+  useRealtimeNotifications(hasHydrated && isLoggedIn);
+
   useEffect(() => {
     if (hasHydrated && settingsHydrated && fontsReady) {
       SplashScreen.hideAsync();
@@ -137,6 +141,7 @@ export default function RootLayout() {
           <Stack.Screen name="(auth)" />
         </Stack.Protected>
       </Stack>
+      {isLoggedIn ? <NotificationToast /> : null}
     </ThemeProvider>
   );
 }

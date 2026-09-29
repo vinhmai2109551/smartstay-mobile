@@ -1,19 +1,31 @@
+// Mirrors backend NotificationType (common/enums/notification-type.enum.ts).
 export type NotificationType =
-  | 'BOOKING_CREATED'
   | 'BOOKING_CONFIRMED'
-  | 'BOOKING_CHECKED_IN'
-  | 'BOOKING_CHECKED_OUT'
   | 'BOOKING_CANCELLED'
-  | 'PAYMENT_SUCCESS'
-  | 'PAYMENT_FAILED';
+  | 'CHECKED_IN'
+  | 'CHECKED_OUT'
+  | 'PAYMENT_PAID'
+  | 'PAYMENT_FAILED'
+  | 'REVIEW_REPLIED';
 
 export type AppNotification = {
-  id: string;
+  notificationId: string;
+  // Typed loosely so a type added on the backend still renders (with the default icon).
+  type: NotificationType | (string & {});
   title: string;
-  body: string;
+  message: string;
   isRead: boolean;
   createdAt: string;
-  type?: NotificationType | string;
-  // Related booking, if any — tapping the notification opens it.
-  bookingId?: string | null;
+  // Related booking/room type — tapping the notification opens it.
+  bookingId: string | null;
+  roomTypeId: string | null;
 };
+
+// GET /notifications returns the 20 most recent plus the total unread count.
+export type NotificationFeed = {
+  unreadCount: number;
+  items: AppNotification[];
+};
+
+// Payload of the `notification:new` socket event.
+export type NotificationPush = Pick<AppNotification, 'notificationId' | 'type' | 'title' | 'message'>;

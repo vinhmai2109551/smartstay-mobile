@@ -362,7 +362,7 @@
     "languageEn": "English"
   },
   "notifications": {
-    "markAllRead": "Mark all read",
+    "markAllRead": "Mark all as read",
     "filterAll": "All",
     "filterUnread": "Unread",
     "unreadPrefix": "Unread. ",
@@ -371,6 +371,14 @@
     "emptyUnreadDescription": "No unread notifications left.",
     "emptyAllTitle": "No notifications",
     "emptyAllDescription": "Updates about your bookings and payments will show up here.",
-    "viewBooking": "View booking"
+    "viewBooking": "View booking",
+    "unreadSummary": "You have {{count}} unread notifications",
+    "groupToday": "Today",
+    "groupYesterday": "Yesterday",
+    "groupThisWeek": "This week",
+    "groupEarlier": "Earlier",
+    "viewRoom": "View room",
+    "recentLimitNote": "Showing the {{count}} most recent notifications.",
+    "toastHint": "Opens the notification"
   }
 }

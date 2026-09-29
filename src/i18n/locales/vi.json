@@ -362,7 +362,7 @@
     "languageEn": "English"
   },
   "notifications": {
-    "markAllRead": "Đọc tất cả",
+    "markAllRead": "Đánh dấu đã đọc hết",
     "filterAll": "Tất cả",
     "filterUnread": "Chưa đọc",
     "unreadPrefix": "Chưa đọc. ",
@@ -371,6 +371,14 @@
     "emptyUnreadDescription": "Không còn thông báo nào chưa đọc.",
     "emptyAllTitle": "Chưa có thông báo",
     "emptyAllDescription": "Cập nhật về đơn đặt phòng và thanh toán sẽ xuất hiện ở đây.",
-    "viewBooking": "Xem đơn"
+    "viewBooking": "Xem đơn",
+    "unreadSummary": "Bạn có {{count}} thông báo chưa đọc",
+    "groupToday": "Hôm nay",
+    "groupYesterday": "Hôm qua",
+    "groupThisWeek": "Tuần này",
+    "groupEarlier": "Trước đó",
+    "viewRoom": "Xem phòng",
+    "recentLimitNote": "Đang hiển thị {{count}} thông báo gần nhất.",
+    "toastHint": "Mở thông báo"
   }
 }
