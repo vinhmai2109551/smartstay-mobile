@@ -15,6 +15,7 @@ import { ErrorView } from '@/components/ui/ErrorView';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { MaxContentWidth, Radius, Space } from '@/constants/theme';
 import { useApi } from '@/hooks/useApi';
+import { useBookingUpdates } from '@/hooks/useBookingUpdates';
 import { useTheme } from '@/hooks/use-theme';
 import { BookingStatus } from '@/types/booking';
 
@@ -30,6 +31,7 @@ export default function BookingsScreen() {
   const fetchBookings = useCallback(() => bookingsApi.my(), []);
   const { data, loading, error, refetch, refreshing, refresh } = useApi(fetchBookings, { refetchOnFocus: true });
   const [filter, setFilter] = useState<FilterKey>('ALL');
+  useBookingUpdates(refresh);
   // Which bookings already have a review. Decorative — if it fails the cards simply
   // offer "Write a review", and the detail screen re-checks before showing the form.
   const fetchMyReviews = useCallback(() => reviewsApi.mine(), []);

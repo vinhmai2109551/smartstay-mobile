@@ -24,6 +24,7 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { TextField } from '@/components/ui/TextField';
 import { FontFamily, MaxContentWidth, Radius, Space } from '@/constants/theme';
 import { useApi } from '@/hooks/useApi';
+import { useBookingUpdates } from '@/hooks/useBookingUpdates';
 import { useTheme } from '@/hooks/use-theme';
 import { formatVND } from '@/utils/currency';
 import { Review, REVIEW_COMMENT_MAX, REVIEW_COMMENT_MIN } from '@/types/review';
@@ -41,6 +42,8 @@ export default function BookingDetailScreen() {
   const fetchBooking = useCallback(() => bookingsApi.detail(id), [id]);
   // Staff confirm / check-in from the admin side, so reload whenever the screen is shown again.
   const { data: booking, loading, error, refetch, refreshing, refresh } = useApi(fetchBooking, { refetchOnFocus: true });
+  // Pushed over the socket when staff act on the booking, so the status changes live.
+  useBookingUpdates(refresh);
   const fetchMyReviews = useCallback(() => reviewsApi.mine(), []);
   const myReviews = useApi(fetchMyReviews);
 
