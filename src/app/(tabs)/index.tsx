@@ -3,7 +3,7 @@ import { router } from 'expo-router';
 import { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FlatList, Pressable, RefreshControl, StyleSheet, useWindowDimensions, View } from 'react-native';
-import Animated, { FadeIn, FadeInDown, FadeInRight, ZoomIn } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInDown, FadeInRight } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { promotionsApi } from '@/api/promotions';
@@ -247,21 +247,6 @@ export default function HomeScreen() {
           }
         />
 
-        <Animated.View entering={ZoomIn.springify().damping(14).delay(600)} style={[styles.fab, shadows.floating]}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={t('home.askAi')}
-            onPress={() => router.navigate('/(tabs)/chat')}
-            style={({ pressed }) => [
-              styles.fabButton,
-              { backgroundColor: theme.primary, transform: [{ scale: pressed ? 0.96 : 1 }] },
-            ]}>
-            <Ionicons name="sparkles" size={18} color={theme.primaryText} />
-            <ThemedText type="smallBold" style={{ color: theme.primaryText }}>
-              {t('home.askAi')}
-            </ThemedText>
-          </Pressable>
-        </Animated.View>
       </SafeAreaView>
     </ThemedView>
   );
@@ -271,8 +256,7 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   list: {
     alignSelf: 'center',
-    // Leaves space so the last card isn't hidden behind the floating AI button.
-    paddingBottom: Space['4xl'] + Space['3xl'],
+    paddingBottom: Space['3xl'],
   },
   headerBlock: {
     paddingHorizontal: GUTTER,
@@ -356,19 +340,5 @@ const styles = StyleSheet.create({
   empty: {
     textAlign: 'center',
     paddingHorizontal: GUTTER,
-  },
-  fab: {
-    position: 'absolute',
-    right: GUTTER,
-    bottom: Space.lg,
-    borderRadius: Radius.full,
-  },
-  fabButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Space.sm,
-    minHeight: 48,
-    paddingHorizontal: Space.xl,
-    borderRadius: Radius.full,
   },
 });

@@ -1,4 +1,3 @@
-import { Ionicons } from '@expo/vector-icons';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as Google from 'expo-auth-session/providers/google';
 import { Link } from 'expo-router';
@@ -25,6 +24,7 @@ import { FontFamily, Radius, Space } from '@/constants/theme';
 import { useShadows, useTheme } from '@/hooks/use-theme';
 import { GOOGLE_ANDROID_CLIENT_ID, GOOGLE_IOS_CLIENT_ID, GOOGLE_WEB_CLIENT_ID } from '@/config/env';
 import { useAuthStore } from '@/store/authStore';
+import { toast } from '@/store/toastStore';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -61,7 +61,6 @@ export default function LoginScreen() {
   // Emblem scales with the screen (≈ 104pt on a 390pt-wide phone), within sensible bounds.
   const emblemSize = Math.round(Math.min(Math.max(width * 0.27, 88), 124));
   const setSession = useAuthStore((s) => s.setSession);
-  const [serverError, setServerError] = useState<string | null>(null);
   const [signingIn, setSigningIn] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState('');
   const [turnstileResetKey, setTurnstileResetKey] = useState(0);
@@ -76,16 +75,15 @@ export default function LoginScreen() {
   });
 
   const onSubmit = async (values: FormValues) => {
-    setServerError(null);
     if (!turnstileToken) {
-      setServerError(t('auth.login.waitVerification'));
+      toast.info(t('auth.login.waitVerification'));
       return;
     }
     try {
       const { accessToken, user } = await authApi.login({ ...values, turnstileToken });
       setSession(accessToken, user);
     } catch (error) {
-      setServerError(getApiErrorMessage(error, t('auth.login.loginFailed')));
+      toast.error(getApiErrorMessage(error, t('auth.login.loginFailed')));
     } finally {
       // The token is spent after one attempt — reload the widget for a fresh one.
       setTurnstileToken('');
@@ -106,16 +104,15 @@ export default function LoginScreen() {
 
     (async () => {
       if (!idToken) {
-        setServerError(t('auth.login.googleNoToken'));
+        toast.error(t('auth.login.googleNoToken'));
         return;
       }
-      setServerError(null);
       setSigningIn(true);
       try {
         const { accessToken, user } = await authApi.google({ idToken });
         setSession(accessToken, user);
       } catch (error) {
-        setServerError(getApiErrorMessage(error, t('auth.login.googleFailed')));
+        toast.error(getApiErrorMessage(error, t('auth.login.googleFailed')));
       } finally {
         setSigningIn(false);
       }
@@ -193,14 +190,6 @@ export default function LoginScreen() {
               )}
             />
 
-            {serverError ? (
-              <View style={[styles.errorBox, { backgroundColor: `${theme.danger}14` }]}>
-                <Ionicons name="alert-circle" size={18} color={theme.danger} />
-                <ThemedText type="small" themeColor="danger" style={styles.flexShrink}>
-                  {serverError}
-                </ThemedText>
-              </View>
-            ) : null}
 
             <TurnstileWidget action="login" onTokenChange={setTurnstileToken} resetKey={turnstileResetKey} />
 
@@ -272,7 +261,6 @@ const styles = StyleSheet.create({
     padding: Space.xl,
     gap: Space.lg,
   },
-  errorBox: { flexDirection: 'row', alignItems: 'center', gap: Space.sm, padding: Space.md, borderRadius: Radius.md },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',

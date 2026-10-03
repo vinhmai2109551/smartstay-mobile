@@ -14,6 +14,8 @@ import { useTranslation } from 'react-i18next';
 
 import { authApi } from '@/api/auth';
 import { NotificationToast } from '@/components/NotificationToast';
+import { ToastHost } from '@/components/ui/ToastHost';
+import { TopOverlay } from '@/components/ui/TopOverlay';
 import { Colors, FontFamily } from '@/constants/theme';
 import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
 import { useEffectiveColorScheme } from '@/hooks/use-theme';
@@ -141,7 +143,12 @@ export default function RootLayout() {
           <Stack.Screen name="(auth)" />
         </Stack.Protected>
       </Stack>
-      {isLoggedIn ? <NotificationToast /> : null}
+      {/* Above modal screens too (e.g. the booking sheet) — see TopOverlay. */}
+      <TopOverlay>
+        {isLoggedIn ? <NotificationToast /> : null}
+        {/* App-wide feedback toasts (errors, confirmations) — on auth screens too. */}
+        <ToastHost />
+      </TopOverlay>
     </ThemeProvider>
   );
 }

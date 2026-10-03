@@ -5,7 +5,7 @@ import * as Haptics from 'expo-haptics';
 import { Stack, useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, RefreshControl, SectionList, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, RefreshControl, SectionList, StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { ThemedText } from '@/components/themed-text';
@@ -20,12 +20,8 @@ import { MaxContentWidth, Radius, Space } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useNotificationStore } from '@/store/notificationStore';
 import { AppNotification } from '@/types/notification';
-import { formatDateTime } from '@/utils/date';
 
 dayjs.extend(relativeTime);
-
-// Matches the backend's RECENT_LIMIT — the feed never returns more than this.
-const FEED_LIMIT = 20;
 
 type GroupKey = 'groupToday' | 'groupYesterday' | 'groupThisWeek' | 'groupEarlier';
 
@@ -37,17 +33,27 @@ function groupOf(createdAt: string): GroupKey {
   return 'groupEarlier';
 }
 
-// Relative time within a week ("5 phút trước"), a full date beyond that.
+// Clock time plus how long ago, e.g. "14:29 · 23 phút trước". Rows are already grouped
+// by day, so older rows show their date instead of the relative part.
 function timeLabel(createdAt: string) {
   const date = dayjs(createdAt);
-  return dayjs().diff(date, 'day') < 7 ? date.fromNow() : formatDateTime(createdAt);
+  const clock = date.format('HH:mm');
+  return dayjs().diff(date, 'day') < 7 ? `${clock} · ${date.fromNow()}` : `${clock} · ${date.format('DD/MM/YYYY')}`;
+}
+
+// Older notifications stored raw ISO dates in their text ("2026-10-08T00:00:00.000Z");
+// show them as DD/MM/YYYY. UTC date, matching how the backend formats booking days.
+const ISO_DATE_IN_TEXT = /\b(\d{4})-(\d{2})-(\d{2})T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z\b/g;
+function formatBody(text: string) {
+  return text.replace(ISO_DATE_IN_TEXT, (_, y, m, d) => `${d}/${m}/${y}`);
 }
 
 export default function NotificationsScreen() {
   const { t } = useTranslation();
   const theme = useTheme();
   const styleFor = useNotificationStyle();
-  const { items, unreadCount, loading, refreshing, error, fetch, markRead, markAllRead } = useNotificationStore();
+  const { items, total, unreadCount, loading, refreshing, loadingMore, error, fetch, loadMore, markRead, markAllRead } =
+    useNotificationStore();
   const [onlyUnread, setOnlyUnread] = useState(false);
   const [markingAll, setMarkingAll] = useState(false);
   const canMarkAll = unreadCount > 0 && !markingAll;
@@ -86,7 +92,7 @@ export default function NotificationsScreen() {
   }
 
   const handlePress = (notification: AppNotification) => {
-    markRead(notification.notificationId);
+    markRead(notification.id);
     openNotificationTarget(notification);
   };
 
@@ -155,7 +161,7 @@ export default function NotificationsScreen() {
       />
       <SectionList
         sections={loading ? [] : sections}
-        keyExtractor={(item) => item.notificationId}
+        keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
         stickySectionHeadersEnabled={false}
         refreshControl={
@@ -178,13 +184,12 @@ export default function NotificationsScreen() {
             />
           )
         }
-        ListFooterComponent={
-          !loading && !onlyUnread && items.length >= FEED_LIMIT ? (
-            <ThemedText type="caption" themeColor="textSecondary" style={styles.footer}>
-              {t('notifications.recentLimitNote', { count: FEED_LIMIT })}
-            </ThemedText>
-          ) : null
-        }
+        // The backend pages by 20; fetch the next page as the end comes into view.
+        onEndReached={() => {
+          if (!loading && items.length < total) loadMore();
+        }}
+        onEndReachedThreshold={0.4}
+        ListFooterComponent={loadingMore ? <ActivityIndicator style={styles.footer} color={theme.primary} /> : null}
         renderSectionHeader={({ section }) => (
           <ThemedText type="smallBold" themeColor="textSecondary" style={styles.sectionTitle}>
             {section.title}
@@ -194,8 +199,6 @@ export default function NotificationsScreen() {
         renderItem={({ item: notification, index }) => {
           const unread = !notification.isRead;
           const { icon, color } = styleFor(notification.type);
-          const opensRoom = notification.type === 'REVIEW_REPLIED' && !!notification.roomTypeId;
-          const hasTarget = opensRoom || !!notification.bookingId;
           return (
             <Animated.View entering={FadeInDown.duration(350).delay(Math.min(index, 6) * 40)}>
               <Pressable
@@ -203,7 +206,7 @@ export default function NotificationsScreen() {
                 accessibilityLabel={t('notifications.itemAccessibility', {
                   prefix: unread ? t('notifications.unreadPrefix') : '',
                   title: notification.title,
-                  body: notification.message,
+                  body: formatBody(notification.body),
                 })}
                 onPress={() => handlePress(notification)}
                 style={({ pressed }) => [
@@ -231,7 +234,7 @@ export default function NotificationsScreen() {
                     {unread ? <View style={[styles.dot, { backgroundColor: theme.primary }]} /> : null}
                   </View>
                   <ThemedText type="small" themeColor="textSecondary">
-                    {notification.message}
+                    {formatBody(notification.body)}
                   </ThemedText>
                   <View style={styles.metaRow}>
                     <View style={styles.time}>
@@ -240,10 +243,10 @@ export default function NotificationsScreen() {
                         {timeLabel(notification.createdAt)}
                       </ThemedText>
                     </View>
-                    {hasTarget ? (
+                    {notification.bookingId ? (
                       <View style={styles.link}>
                         <ThemedText type="caption" themeColor="primary">
-                          {opensRoom ? t('notifications.viewRoom') : t('notifications.viewBooking')}
+                          {t('notifications.viewBooking')}
                         </ThemedText>
                         <Ionicons name="chevron-forward" size={12} color={theme.primary} />
                       </View>

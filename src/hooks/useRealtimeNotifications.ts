@@ -5,7 +5,7 @@ import { io } from 'socket.io-client';
 import { API_URL } from '@/config/env';
 import { useAuthStore } from '@/store/authStore';
 import { useNotificationStore } from '@/store/notificationStore';
-import { NotificationPush } from '@/types/notification';
+import { AppNotification } from '@/types/notification';
 
 // The socket.io server lives at the API host root, not under /api/v1.
 const SOCKET_URL = API_URL.replace(/\/api\/v\d+\/?$/, '');
@@ -35,7 +35,7 @@ export function useRealtimeNotifications(enabled: boolean) {
       if (socket.recovered) return;
       fetch();
     });
-    socket.on('notification:new', (push: NotificationPush) => receive(push));
+    socket.on('notification:new', (notification: AppNotification) => receive(notification));
     socket.on('booking:updated', () => bumpBookings());
 
     // iOS suspends sockets in the background; reconnect and resync on return.
