@@ -8,11 +8,12 @@ type IconName = keyof typeof Ionicons.glyphMap;
 type Tone = 'primary' | 'success' | 'danger' | 'warning' | 'neutral';
 
 const TYPE_STYLE: Record<string, { icon: IconName; tone: Tone }> = {
+  BOOKING_CREATED: { icon: 'calendar', tone: 'primary' },
   BOOKING_CONFIRMED: { icon: 'checkmark-circle', tone: 'primary' },
   BOOKING_CANCELLED: { icon: 'close-circle', tone: 'danger' },
-  CHECKED_IN: { icon: 'key', tone: 'success' },
-  CHECKED_OUT: { icon: 'exit', tone: 'neutral' },
-  PAYMENT_PAID: { icon: 'wallet', tone: 'success' },
+  BOOKING_CHECKED_IN: { icon: 'key', tone: 'success' },
+  BOOKING_CHECKED_OUT: { icon: 'exit', tone: 'neutral' },
+  PAYMENT_SUCCESS: { icon: 'wallet', tone: 'success' },
   PAYMENT_FAILED: { icon: 'alert-circle', tone: 'danger' },
   REVIEW_REPLIED: { icon: 'chatbubble-ellipses', tone: 'warning' },
 };
@@ -35,13 +36,11 @@ export function useNotificationStyle() {
 }
 
 /**
- * Where tapping a notification leads: a review reply opens the room page (where the
- * reply is shown), everything else is about a booking.
+ * Where tapping a notification leads: its booking. For a review reply that's also
+ * right — the booking screen shows the guest's review together with the hotel's reply.
  */
-export function openNotificationTarget(notification: Pick<AppNotification, 'type' | 'bookingId' | 'roomTypeId'>) {
-  if (notification.type === 'REVIEW_REPLIED' && notification.roomTypeId) {
-    router.push(`/room/${notification.roomTypeId}`);
-  } else if (notification.bookingId) {
+export function openNotificationTarget(notification: Pick<AppNotification, 'bookingId'>) {
+  if (notification.bookingId) {
     router.push(`/booking/${notification.bookingId}`);
   } else {
     router.navigate('/(tabs)/bookings');

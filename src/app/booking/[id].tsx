@@ -26,6 +26,7 @@ import { FontFamily, MaxContentWidth, Radius, Space } from '@/constants/theme';
 import { useApi } from '@/hooks/useApi';
 import { useBookingUpdates } from '@/hooks/useBookingUpdates';
 import { useTheme } from '@/hooks/use-theme';
+import { toast } from '@/store/toastStore';
 import { formatVND } from '@/utils/currency';
 import { Review, REVIEW_COMMENT_MAX, REVIEW_COMMENT_MIN } from '@/types/review';
 import { formatDate, nightsBetween } from '@/utils/date';
@@ -73,7 +74,6 @@ export default function BookingDetailScreen() {
   const [justReviewed, setJustReviewed] = useState(false);
   const existingReview = myReviews.data?.find((review) => review.bookingId === id) ?? null;
   const review = submittedReview ?? existingReview;
-  const [actionError, setActionError] = useState<string | null>(null);
 
   if (loading) {
     return (
@@ -88,13 +88,13 @@ export default function BookingDetailScreen() {
 
   const handleConfirmCancel = async () => {
     setCancelling(true);
-    setActionError(null);
     try {
       await bookingsApi.cancel(id, { reason: 'Khách hàng yêu cầu huỷ' });
       setShowCancelConfirm(false);
+      toast.success(t('booking.cancelSuccess'));
       refetch();
     } catch (err) {
-      setActionError(getApiErrorMessage(err, t('booking.cancelFailed')));
+      toast.error(getApiErrorMessage(err, t('booking.cancelFailed')));
       setShowCancelConfirm(false);
     } finally {
       setCancelling(false);
@@ -108,12 +108,11 @@ export default function BookingDetailScreen() {
 
   const handleSubmitReview = async () => {
     setReviewSubmitting(true);
-    setActionError(null);
     try {
       setSubmittedReview(await reviewsApi.create({ bookingId: id, rating, comment: comment.trim() }));
       setJustReviewed(true);
     } catch (err) {
-      setActionError(getApiErrorMessage(err, t('booking.reviewFailed')));
+      toast.error(getApiErrorMessage(err, t('booking.reviewFailed')));
     } finally {
       setReviewSubmitting(false);
     }
@@ -268,14 +267,6 @@ export default function BookingDetailScreen() {
           ) : null}
         </Card>
 
-        {actionError ? (
-          <View style={[styles.errorBox, { backgroundColor: `${theme.danger}14` }]}>
-            <Ionicons name="alert-circle" size={18} color={theme.danger} />
-            <ThemedText type="small" themeColor="danger" style={styles.flexShrink}>
-              {actionError}
-            </ThemedText>
-          </View>
-        ) : null}
 
         {needsPayment || CANCELLABLE_STATUSES.has(booking.status) ? (
           <View style={styles.actions}>
@@ -415,7 +406,6 @@ const styles = StyleSheet.create({
   lineRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: Space.sm },
   divider: { height: StyleSheet.hairlineWidth, marginVertical: Space.xs },
   total: { fontFamily: FontFamily.bold, fontSize: 18, lineHeight: 24 },
-  errorBox: { flexDirection: 'row', alignItems: 'center', gap: Space.sm, padding: Space.md, borderRadius: Radius.md },
   actions: { gap: Space.md },
   reviewHeader: { gap: Space.xs },
   reviewBlock: { gap: Space.md },

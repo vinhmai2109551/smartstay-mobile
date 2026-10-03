@@ -295,7 +295,8 @@
       "PAID": "Paid",
       "UNPAID": "Unpaid",
       "FAILED": "Failed"
-    }
+    },
+    "cancelSuccess": "Your booking has been cancelled."
   },
   "checkout": {
     "createLinkFailed": "Couldn't start the payment.",
@@ -377,8 +378,12 @@
     "groupYesterday": "Yesterday",
     "groupThisWeek": "This week",
     "groupEarlier": "Earlier",
-    "viewRoom": "View room",
-    "recentLimitNote": "Showing the {{count}} most recent notifications.",
     "toastHint": "Opens the notification"
+  },
+  "toast": {
+    "successTitle": "Success",
+    "errorTitle": "Something went wrong",
+    "warningTitle": "Heads up",
+    "infoTitle": "Notice"
   }
 }

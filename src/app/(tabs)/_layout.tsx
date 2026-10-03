@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { StyleSheet, type ColorValue } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { AiTabButton } from '@/components/AiTabButton';
 import { FontFamily, Space } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -41,13 +42,16 @@ export default function TabsLayout() {
           height: TAB_BAR_CONTENT_HEIGHT + bottomPadding,
           paddingBottom: bottomPadding,
           elevation: 0,
+          // Lets the raised AI button poke out above the bar.
+          overflow: 'visible',
         },
       }}>
       <Tabs.Screen name="index" options={{ title: t('tabs.home'), tabBarIcon: tabIcon('home', 'home-outline') }} />
       <Tabs.Screen name="search" options={{ title: t('tabs.search'), tabBarIcon: tabIcon('search', 'search-outline') }} />
       <Tabs.Screen
         name="chat"
-        options={{ title: t('tabs.chat'), tabBarIcon: tabIcon('chatbubble-ellipses', 'chatbubble-ellipses-outline') }}
+        // Raised centre button — the single entry point to the AI concierge.
+        options={{ title: t('tabs.chat'), tabBarButton: (props) => <AiTabButton {...props} /> }}
       />
       <Tabs.Screen
         name="bookings"

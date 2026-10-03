@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   FlatList,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -14,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { aiChatApi } from '@/api/chat';
 import { getApiErrorMessage } from '@/api/client';
+import { AI_TAB_LIFT } from '@/components/AiTabButton';
 import { BrandMark } from '@/components/BrandMark';
 import { ChatBubble } from '@/components/ChatBubble';
 import { ThemedText } from '@/components/themed-text';
@@ -38,6 +40,22 @@ export default function ChatScreen() {
   const [sending, setSending] = useState(false);
   const [confirmingProposalId, setConfirmingProposalId] = useState<string | null>(null);
   const listRef = useRef<FlatList>(null);
+
+  // The raised AI tab button pokes above the tab bar, right where the input sits — keep
+  // clear of it, except while the keyboard covers the tab bar anyway.
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
+  useEffect(() => {
+    const show = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow', () =>
+      setKeyboardOpen(true),
+    );
+    const hide = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide', () =>
+      setKeyboardOpen(false),
+    );
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
 
   const scrollToEnd = () => requestAnimationFrame(() => listRef.current?.scrollToEnd({ animated: true }));
 
@@ -148,7 +166,15 @@ export default function ChatScreen() {
             }
           />
 
-          <View style={[styles.inputBar, { borderTopColor: theme.border, backgroundColor: theme.background }]}>
+          <View
+            style={[
+              styles.inputBar,
+              {
+                borderTopColor: theme.border,
+                backgroundColor: theme.background,
+                paddingBottom: Space.sm + (keyboardOpen ? 0 : AI_TAB_LIFT),
+              },
+            ]}>
             <View style={[styles.inputPill, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
               <TextInput
                 style={[styles.input, { color: theme.text }]}

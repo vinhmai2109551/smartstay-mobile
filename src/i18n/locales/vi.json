@@ -295,7 +295,8 @@
       "PAID": "Đã thanh toán",
       "UNPAID": "Chưa thanh toán",
       "FAILED": "Thất bại"
-    }
+    },
+    "cancelSuccess": "Đơn đặt phòng đã được huỷ."
   },
   "checkout": {
     "createLinkFailed": "Không thể khởi tạo thanh toán.",
@@ -377,8 +378,12 @@
     "groupYesterday": "Hôm qua",
     "groupThisWeek": "Tuần này",
     "groupEarlier": "Trước đó",
-    "viewRoom": "Xem phòng",
-    "recentLimitNote": "Đang hiển thị {{count}} thông báo gần nhất.",
     "toastHint": "Mở thông báo"
+  },
+  "toast": {
+    "successTitle": "Thành công",
+    "errorTitle": "Có lỗi xảy ra",
+    "warningTitle": "Lưu ý",
+    "infoTitle": "Thông báo"
   }
 }

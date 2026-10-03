@@ -1,15 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { router } from 'expo-router';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
-import Animated, { SlideInUp, SlideOutUp } from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { openNotificationTarget, useNotificationStyle } from '@/constants/notificationTypes';
 import { MaxContentWidth, Radius, Space } from '@/constants/theme';
+import { toastEntering, toastExiting } from '@/constants/toastAnimation';
 import { useShadows, useTheme } from '@/hooks/use-theme';
 import { useNotificationStore } from '@/store/notificationStore';
 
@@ -37,26 +37,19 @@ export function NotificationToast() {
 
   const handleOpen = () => {
     dismissToast();
-    const { items, markRead } = useNotificationStore.getState();
-    // The push has no booking/room ids; the full row arrives with the refetch it triggered.
-    const full = items.find((item) => item.notificationId === toast.notificationId);
-    if (full) {
-      markRead(full.notificationId);
-      openNotificationTarget(full);
-    } else {
-      router.push('/notifications');
-    }
+    useNotificationStore.getState().markRead(toast.id);
+    openNotificationTarget(toast);
   };
 
   return (
     <Animated.View
-      key={toast.notificationId}
-      entering={SlideInUp.springify().damping(18)}
-      exiting={SlideOutUp.duration(220)}
+      key={toast.id}
+      entering={toastEntering}
+      exiting={toastExiting}
       style={[styles.wrapper, { top: insets.top + Space.sm }]}>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={`${toast.title}. ${toast.message}`}
+        accessibilityLabel={`${toast.title}. ${toast.body}`}
         accessibilityHint={t('notifications.toastHint')}
         onPress={handleOpen}
         style={({ pressed }) => [
@@ -72,7 +65,7 @@ export function NotificationToast() {
             {toast.title}
           </ThemedText>
           <ThemedText type="caption" themeColor="textSecondary" numberOfLines={2}>
-            {toast.message}
+            {toast.body}
           </ThemedText>
         </View>
         <Pressable
