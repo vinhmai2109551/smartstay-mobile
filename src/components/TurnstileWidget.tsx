@@ -1,7 +1,9 @@
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 
 import { TURNSTILE_BASE_URL, TURNSTILE_SITE_KEY } from '@/config/env';
+import { useEffectiveColorScheme } from '@/hooks/use-theme';
 
 type Props = {
   action: 'login' | 'register';
@@ -14,7 +16,7 @@ type Props = {
 // posts its token back. The page is loaded with a baseUrl whose hostname must
 // be allowed both on the Cloudflare site key and in the backend's
 // TURNSTILE_ALLOWED_HOSTNAMES, since /auth/login checks it.
-function buildHtml(siteKey: string, action: string) {
+function buildHtml(siteKey: string, action: string, theme: 'light' | 'dark', language: string) {
   return `<!DOCTYPE html>
 <html>
 <head>
@@ -32,8 +34,8 @@ function buildHtml(siteKey: string, action: string) {
     turnstile.render('#widget', {
       sitekey: ${JSON.stringify(siteKey)},
       action: ${JSON.stringify(action)},
-      theme: 'light',
-      language: 'vi',
+      theme: ${JSON.stringify(theme)},
+      language: ${JSON.stringify(language)},
       size: 'flexible',
       callback: function (token) { send(token); },
       'expired-callback': function () { send(''); },
@@ -46,6 +48,8 @@ function buildHtml(siteKey: string, action: string) {
 }
 
 export function TurnstileWidget({ action, onTokenChange, resetKey = 0 }: Props) {
+  const { i18n } = useTranslation();
+  const scheme = useEffectiveColorScheme();
   const handleMessage = (event: WebViewMessageEvent) => onTokenChange(event.nativeEvent.data);
 
   return (
@@ -53,7 +57,10 @@ export function TurnstileWidget({ action, onTokenChange, resetKey = 0 }: Props) 
       <WebView
         key={resetKey}
         originWhitelist={['*']}
-        source={{ html: buildHtml(TURNSTILE_SITE_KEY, action), baseUrl: TURNSTILE_BASE_URL }}
+        source={{
+          html: buildHtml(TURNSTILE_SITE_KEY, action, scheme, i18n.language === 'en' ? 'en' : 'vi'),
+          baseUrl: TURNSTILE_BASE_URL,
+        }}
         onMessage={handleMessage}
         javaScriptEnabled
         domStorageEnabled

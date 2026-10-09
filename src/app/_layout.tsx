@@ -137,6 +137,8 @@ export default function RootLayout() {
             name="notifications"
             options={{ headerShown: true, title: t('layout.notificationsTitle'), headerBackTitle: t('common.back') }}
           />
+          <Stack.Screen name="change-password" options={{ headerShown: false }} />
+          <Stack.Screen name="edit-profile" options={{ headerShown: false }} />
         </Stack.Protected>
 
         <Stack.Protected guard={!accessToken && !hasSeenOnboarding}>

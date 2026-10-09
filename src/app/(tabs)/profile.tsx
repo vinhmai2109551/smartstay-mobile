@@ -8,17 +8,13 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { authApi } from '@/api/auth';
-import { getApiErrorMessage } from '@/api/client';
-import { usersApi } from '@/api/users';
 import { Avatar } from '@/components/Avatar';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Chip } from '@/components/ui/Chip';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { CountBadge } from '@/components/ui/CountBadge';
-import { TextField } from '@/components/ui/TextField';
 import { MaxContentWidth, MinTouch, Radius, Space } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useUnreadNotifications } from '@/hooks/useUnreadNotifications';
@@ -80,12 +76,6 @@ export default function ProfileScreen() {
   const language = useSettingsStore((s) => s.language);
   const setLanguage = useSettingsStore((s) => s.setLanguage);
 
-  const [showChangePassword, setShowChangePassword] = useState(false);
-  const [oldPassword, setOldPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [passwordError, setPasswordError] = useState<string | null>(null);
-  const [passwordSuccess, setPasswordSuccess] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
 
@@ -109,22 +99,6 @@ export default function ProfileScreen() {
       setLoggingOut(false);
       setShowLogoutConfirm(false);
       clearSession();
-    }
-  };
-
-  const handleChangePassword = async () => {
-    setPasswordError(null);
-    setPasswordSuccess(false);
-    setSubmitting(true);
-    try {
-      await usersApi.changePassword({ oldPassword, newPassword });
-      setPasswordSuccess(true);
-      setOldPassword('');
-      setNewPassword('');
-    } catch (error) {
-      setPasswordError(getApiErrorMessage(error, t('profile.changePasswordFailed')));
-    } finally {
-      setSubmitting(false);
     }
   };
 
@@ -171,6 +145,19 @@ export default function ProfileScreen() {
               ) : null}
             </View>
             <Ionicons name="chevron-forward" size={18} color={theme.textSecondary} />
+          </Card>
+
+          <ThemedText type="caption" themeColor="textSecondary" style={styles.groupLabel}>
+            {t('profile.sectionAccount')}
+          </ThemedText>
+          <Card padded={false} elevation="none" style={styles.group}>
+            <MenuRow
+              icon="person-outline"
+              label={t('profile.editProfile')}
+              trailing="chevron-forward"
+              onPress={() => router.push('/edit-profile')}
+              last
+            />
           </Card>
 
           <ThemedText type="caption" themeColor="textSecondary" style={styles.groupLabel}>
@@ -241,48 +228,10 @@ export default function ProfileScreen() {
             <MenuRow
               icon="lock-closed-outline"
               label={t('profile.changePassword')}
-              trailing={showChangePassword ? 'chevron-up' : 'chevron-down'}
-              onPress={() => setShowChangePassword((v) => !v)}
-              last={!showChangePassword}
+              trailing="chevron-forward"
+              onPress={() => router.push('/change-password')}
+              last
             />
-            {showChangePassword ? (
-              <View style={styles.passwordForm}>
-                <TextField
-                  label={t('profile.currentPassword')}
-                  leftIcon="key-outline"
-                  secureTextEntry
-                  value={oldPassword}
-                  onChangeText={setOldPassword}
-                />
-                <TextField
-                  label={t('profile.newPassword')}
-                  leftIcon="lock-closed-outline"
-                  hint={t('profile.newPasswordHint')}
-                  secureTextEntry
-                  value={newPassword}
-                  onChangeText={setNewPassword}
-                />
-                {passwordError ? (
-                  <ThemedText type="small" themeColor="danger">
-                    {passwordError}
-                  </ThemedText>
-                ) : null}
-                {passwordSuccess ? (
-                  <View style={styles.infoRow}>
-                    <Ionicons name="checkmark-circle" size={16} color={theme.success} />
-                    <ThemedText type="small" themeColor="success">
-                      {t('profile.changePasswordSuccess')}
-                    </ThemedText>
-                  </View>
-                ) : null}
-                <Button
-                  label={t('profile.updatePassword')}
-                  onPress={handleChangePassword}
-                  loading={submitting}
-                  disabled={!oldPassword || newPassword.length < 8}
-                />
-              </View>
-            ) : null}
           </Card>
 
           <Card padded={false} elevation="none" style={[styles.group, styles.logoutGroup]}>
@@ -348,6 +297,5 @@ const styles = StyleSheet.create({
   },
   menuIcon: { width: 34, height: 34, borderRadius: Radius.sm, alignItems: 'center', justifyContent: 'center' },
   menuLabel: { flex: 1 },
-  passwordForm: { gap: Space.lg, padding: Space.lg, paddingTop: Space.sm },
   version: { textAlign: 'center', marginTop: Space['2xl'] },
 });
