@@ -1,8 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 
+import { ChatBookingForm } from '@/components/ChatBookingForm';
+import { CheckInPass } from '@/components/CheckInPass';
 import { RoomTypeCard } from '@/components/RoomTypeCard';
 import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/Button';
@@ -10,23 +13,57 @@ import { Card } from '@/components/ui/Card';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { FontFamily, MaxContentWidth, Radius, Space } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { ChatMessage } from '@/types/chat';
+import { ChatMessage, PendingBooking } from '@/types/chat';
 import { formatVND } from '@/utils/currency';
 import { formatDate } from '@/utils/date';
+
+// Rooms shown before "Show n more" when a reply still lists many.
+const COLLAPSED_ROOMS = 2;
+
+// Renders the **bold** spans the AI writes in markdown; everything else stays plain text.
+function renderInlineMarkdown(text: string) {
+  return text.split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
+    part.startsWith('**') && part.endsWith('**') && part.length > 4 ? (
+      <ThemedText key={i} style={styles.bold}>
+        {part.slice(2, -2)}
+      </ThemedText>
+    ) : (
+      part
+    ),
+  );
+}
 
 export function ChatBubble({
   message,
   onConfirmBooking,
+  onCancelProposal,
   confirming,
+  showBookingForm,
+  onSubmitBookingForm,
+  onCancelBookingForm,
+  busy,
+  proposal,
 }: {
   message: ChatMessage;
   onConfirmBooking?: (proposalId: string) => void;
+  onCancelProposal?: () => void;
   confirming?: boolean;
+  showBookingForm?: boolean;
+  onSubmitBookingForm?: (text: string) => void;
+  onCancelBookingForm?: () => void;
+  // A reply is on its way — blocks sending another message from the cards.
+  busy?: boolean;
+  // The proposal this booking was created from, for the room/dates/name on the full-screen QR.
+  proposal?: PendingBooking | null;
 }) {
   const { t } = useTranslation();
   const theme = useTheme();
   const { width } = useWindowDimensions();
   const isUser = message.role === 'USER';
+  const [showAllRooms, setShowAllRooms] = useState(false);
+  const rooms = message.rooms ?? [];
+  const visibleRooms = showAllRooms ? rooms : rooms.slice(0, COLLAPSED_ROOMS);
+  const hiddenRooms = rooms.length - visibleRooms.length;
   // Rich cards take ~3/4 of the screen, capped for tablets.
   const cardWidth = Math.round(Math.min(Math.min(width, MaxContentWidth) * 0.74, 320));
 
@@ -40,13 +77,13 @@ export function ChatBubble({
             : [styles.bubbleAssistant, { backgroundColor: theme.backgroundElement, borderColor: theme.border }],
         ]}>
         <ThemedText type="body" style={{ color: isUser ? theme.primaryText : theme.text }}>
-          {message.content}
+          {isUser ? message.content : renderInlineMarkdown(message.content)}
         </ThemedText>
       </View>
 
-      {message.rooms?.length ? (
+      {rooms.length ? (
         <View style={[styles.cards, { width: cardWidth }]}>
-          {message.rooms.map((roomType) => (
+          {visibleRooms.map((roomType) => (
             <RoomTypeCard
               key={roomType.roomTypeId}
               roomType={roomType}
@@ -54,6 +91,20 @@ export function ChatBubble({
               onPress={() => router.push(`/room/${roomType.roomTypeId}`)}
             />
           ))}
+          {hiddenRooms > 0 ? (
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => setShowAllRooms(true)}
+              style={({ pressed }) => [
+                styles.moreRooms,
+                { borderColor: theme.border, backgroundColor: theme.backgroundElement, opacity: pressed ? 0.7 : 1 },
+              ]}>
+              <ThemedText type="smallBold" themeColor="primary">
+                {t('chat.showMoreRooms', { count: hiddenRooms })}
+              </ThemedText>
+              <Ionicons name="chevron-down" size={16} color={theme.primary} />
+            </Pressable>
+          ) : null}
         </View>
       ) : null}
 
@@ -82,14 +133,39 @@ export function ChatBubble({
               {formatVND(message.pendingBooking.totalAmount)}
             </ThemedText>
           </View>
-          <Button
-            label={t('chat.confirmBookingCard')}
-            size="sm"
-            icon="checkmark"
-            loading={confirming}
-            onPress={() => onConfirmBooking?.(message.pendingBooking!.proposalId)}
-          />
+          <View style={styles.actions}>
+            <View style={styles.flex}>
+              <Button
+                label={t('common.cancel')}
+                variant="outline"
+                size="sm"
+                disabled={busy}
+                onPress={onCancelProposal}
+              />
+            </View>
+            <View style={styles.flex}>
+              <Button
+                label={t('chat.confirmBookingCard')}
+                size="sm"
+                icon="checkmark"
+                loading={confirming}
+                disabled={busy && !confirming}
+                onPress={() => onConfirmBooking?.(message.pendingBooking!.proposalId)}
+              />
+            </View>
+          </View>
         </Card>
+      ) : null}
+
+      {showBookingForm && message.bookingFormRequest ? (
+        <View style={{ width: cardWidth }}>
+          <ChatBookingForm
+            request={message.bookingFormRequest}
+            disabled={busy}
+            onSubmit={(text) => onSubmitBookingForm?.(text)}
+            onCancel={() => onCancelBookingForm?.()}
+          />
+        </View>
       ) : null}
 
       {message.booking ? (
@@ -111,6 +187,23 @@ export function ChatBubble({
             </ThemedText>
             <Ionicons name="arrow-forward" size={16} color={theme.primary} />
           </Pressable>
+          {message.booking.status !== 'CANCELLED' ? (
+            <>
+              <View style={[styles.divider, { backgroundColor: theme.border }]} />
+              <CheckInPass
+                variant="inline"
+                bookingId={message.booking.bookingId}
+                details={
+                  proposal
+                    ? [
+                        `${proposal.roomTypeName} · ${formatDate(proposal.checkIn, 'DD/MM')} – ${formatDate(proposal.checkOut, 'DD/MM/YYYY')}`,
+                        proposal.guestInfo.fullName,
+                      ]
+                    : []
+                }
+              />
+            </>
+          ) : null}
         </Card>
       ) : null}
     </View>
@@ -129,6 +222,18 @@ const styles = StyleSheet.create({
   bubbleUser: { borderBottomRightRadius: Space.xs },
   bubbleAssistant: { borderBottomLeftRadius: Space.xs, borderWidth: StyleSheet.hairlineWidth },
   cards: { gap: Space.md },
+  flex: { flex: 1 },
+  actions: { flexDirection: 'row', gap: Space.sm },
+  bold: { fontFamily: FontFamily.bold },
+  moreRooms: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Space.xs,
+    minHeight: 44,
+    borderRadius: Radius.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
   card: { gap: Space.sm },
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: Space.sm },
   cardIcon: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },

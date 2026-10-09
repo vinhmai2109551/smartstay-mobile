@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   FlatList,
+  ActivityIndicator,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -11,6 +12,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { isAxiosError } from 'axios';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { aiChatApi } from '@/api/chat';
@@ -25,6 +27,23 @@ import { Chip } from '@/components/ui/Chip';
 import { FontFamily, MaxContentWidth, MinTouch, Radius, Space } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { ChatMessage } from '@/types/chat';
+import { useAuthStore } from '@/store/authStore';
+import {
+  buildMessagesFromHistory,
+  clearStoredConversationId,
+  readStoredConversationId,
+  storeConversationId,
+} from '@/utils/aiChatHistory';
+import { pickRelevantRooms } from '@/utils/chatRooms';
+
+// The latest booking proposal shown before `index` — what an AI-created booking was made from.
+function findProposalBefore(messages: ChatMessage[], index: number) {
+  for (let i = index - 1; i >= 0; i--) {
+    const proposal = messages[i].pendingBooking;
+    if (proposal) return proposal;
+  }
+  return null;
+}
 
 export default function ChatScreen() {
   const { t } = useTranslation();
@@ -40,6 +59,46 @@ export default function ChatScreen() {
   const [sending, setSending] = useState(false);
   const [confirmingProposalId, setConfirmingProposalId] = useState<string | null>(null);
   const listRef = useRef<FlatList>(null);
+  const userId = useAuthStore((s) => s.user?.userId);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+
+  // Resume the last conversation, like the web widget does after a reload. This tab only
+  // exists while signed in and unmounts on sign-out, so the chat never leaks across users.
+  useEffect(() => {
+    if (!userId) return;
+    let active = true;
+    (async () => {
+      const storedId = await readStoredConversationId(userId);
+      if (!storedId || !active) return;
+      setLoadingHistory(true);
+      try {
+        const history = await aiChatApi.conversationHistory(storedId);
+        if (!active) return;
+        conversationIdRef.current = storedId;
+        setMessages([welcomeMessage, ...buildMessagesFromHistory(history)]);
+        requestAnimationFrame(() => listRef.current?.scrollToEnd({ animated: false }));
+      } catch {
+        // Gone or not this user's any more — start fresh.
+        clearStoredConversationId(userId);
+      } finally {
+        if (active) setLoadingHistory(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+    // welcomeMessage only changes with the language; reloading history for that isn't needed.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
+
+  const startNewConversation = () => {
+    if (sending) return;
+    conversationIdRef.current = undefined;
+    if (userId) clearStoredConversationId(userId);
+    setMessages([welcomeMessage]);
+    setDismissedFormAt(null);
+    setInput('');
+  };
 
   // The raised AI tab button pokes above the tab bar, right where the input sits — keep
   // clear of it, except while the keyboard covers the tab bar anyway.
@@ -68,18 +127,26 @@ export default function ChatScreen() {
         confirmProposalId,
       });
       conversationIdRef.current = response.conversationId;
+      if (userId) storeConversationId(userId, response.conversationId);
       setMessages((prev) => [
         ...prev,
         {
           role: 'MODEL',
           content: response.reply,
-          rooms: response.rooms,
+          // Only the rooms the answer is about — see pickRelevantRooms.
+          rooms: pickRelevantRooms(response.reply, text, response.rooms),
           promotions: response.promotions,
           pendingBooking: response.pendingBooking,
           booking: response.booking,
+          bookingFormRequest: response.bookingFormRequest,
         },
       ]);
     } catch (error) {
+      // The stored conversation was deleted or isn't this user's — let the next message start a new one.
+      if (isAxiosError(error) && (error.response?.status === 403 || error.response?.status === 404)) {
+        conversationIdRef.current = undefined;
+        if (userId) clearStoredConversationId(userId);
+      }
       setMessages((prev) => [
         ...prev,
         { role: 'MODEL', content: getApiErrorMessage(error, t('chat.sendFailed')) },
@@ -109,6 +176,17 @@ export default function ChatScreen() {
     send(confirmText, proposalId);
   };
 
+  // The booking form belongs to the latest reply only, and goes away once submitted or
+  // cancelled (like the web, which tracks the dismissed message index).
+  const [dismissedFormAt, setDismissedFormAt] = useState<number | null>(null);
+
+  const handleSubmitBookingForm = (text: string, index: number) => {
+    setDismissedFormAt(index);
+    sendText(text);
+  };
+
+  const handleCancelProposal = () => sendText(t('chat.cancelProposalMessage'));
+
   const canSend = !sending && !!input.trim();
   const showQuickPrompts = messages.length === 1 && !sending;
 
@@ -126,6 +204,22 @@ export default function ChatScreen() {
               </ThemedText>
             </View>
           </View>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('chat.newConversation')}
+            onPress={startNewConversation}
+            disabled={sending || messages.length <= 1}
+            hitSlop={10}
+            style={({ pressed }) => [
+              styles.newChat,
+              {
+                backgroundColor: theme.backgroundElement,
+                borderColor: theme.border,
+                opacity: sending || messages.length <= 1 ? 0.4 : pressed ? 0.6 : 1,
+              },
+            ]}>
+            <Ionicons name="create-outline" size={20} color={theme.primary} />
+          </Pressable>
         </View>
 
         {/* No keyboardVerticalOffset: the view's layout y already includes the safe-area
@@ -137,17 +231,27 @@ export default function ChatScreen() {
             keyExtractor={(_, index) => String(index)}
             contentContainerStyle={styles.list}
             keyboardShouldPersistTaps="handled"
-            renderItem={({ item }) => (
+            renderItem={({ item, index }) => (
               <ChatBubble
                 message={item}
                 confirming={sending && item.pendingBooking?.proposalId === confirmingProposalId}
                 onConfirmBooking={handleConfirmBooking}
+                onCancelProposal={handleCancelProposal}
+                showBookingForm={index === messages.length - 1 && dismissedFormAt !== index}
+                onSubmitBookingForm={(text) => handleSubmitBookingForm(text, index)}
+                onCancelBookingForm={() => setDismissedFormAt(index)}
+                busy={sending}
+                proposal={item.booking ? findProposalBefore(messages, index) : null}
               />
             )}
             onContentSizeChange={scrollToEnd}
             ItemSeparatorComponent={() => <View style={styles.separator} />}
             ListFooterComponent={
-              sending ? (
+              loadingHistory ? (
+                <View style={styles.footer}>
+                  <ActivityIndicator color={theme.primary} />
+                </View>
+              ) : sending ? (
                 <View style={styles.footer}>
                   <TypingIndicator />
                 </View>
@@ -219,6 +323,14 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   headerText: { flex: 1 },
+  newChat: {
+    width: MinTouch,
+    height: MinTouch,
+    borderRadius: MinTouch / 2,
+    borderWidth: StyleSheet.hairlineWidth,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   statusRow: { flexDirection: 'row', alignItems: 'center', gap: Space.xs + 2 },
   statusDot: { width: 7, height: 7, borderRadius: 4 },
   list: {

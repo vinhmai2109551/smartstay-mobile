@@ -10,6 +10,7 @@ import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { bookingsApi } from '@/api/bookings';
 import { getApiErrorMessage } from '@/api/client';
 import { reviewsApi } from '@/api/reviews';
+import { CheckInPass } from '@/components/CheckInPass';
 import { ReviewCard } from '@/components/ReviewCard';
 import { StarRatingInput } from '@/components/StarRatingInput';
 import { roomImageSource } from '@/components/RoomTypeCard';
@@ -29,9 +30,11 @@ import { useTheme } from '@/hooks/use-theme';
 import { toast } from '@/store/toastStore';
 import { formatVND } from '@/utils/currency';
 import { Review, REVIEW_COMMENT_MAX, REVIEW_COMMENT_MIN } from '@/types/review';
+import { getBookingCode } from '@/utils/bookingQr';
 import { formatDate, nightsBetween } from '@/utils/date';
 
 const CANCELLABLE_STATUSES = new Set(['PENDING', 'CONFIRMED']);
+const CHECK_IN_PASS_STATUSES = new Set(['PENDING', 'CONFIRMED']);
 const RATING_KEYS = ['', 'reviewRating1', 'reviewRating2', 'reviewRating3', 'reviewRating4', 'reviewRating5'] as const;
 
 type IconName = keyof typeof Ionicons.glyphMap;
@@ -136,7 +139,7 @@ export default function BookingDetailScreen() {
     ...(booking.vatAmount > 0 ? [{ label: t('booking.vat'), value: booking.vatAmount }] : []),
   ];
 
-  const orderCode = booking.bookingId.slice(0, 8).toUpperCase();
+  const orderCode = getBookingCode(booking.bookingId);
 
   return (
     <ThemedView style={styles.flex}>
@@ -200,6 +203,17 @@ export default function BookingDetailScreen() {
             </ThemedText>
           </View>
         </Card>
+
+        {/* Shown until the guest has checked in — that's when reception needs to scan it. */}
+        {CHECK_IN_PASS_STATUSES.has(booking.status) ? (
+          <CheckInPass
+            bookingId={booking.bookingId}
+            details={[
+              `${booking.roomType.name} · ${formatDate(booking.checkInDate, 'DD/MM')} – ${formatDate(booking.checkOutDate, 'DD/MM/YYYY')}`,
+              booking.guestInfo.fullName,
+            ]}
+          />
+        ) : null}
 
         <Card style={styles.section}>
           <ThemedText type="bodyBold">{t('booking.guestInfo')}</ThemedText>

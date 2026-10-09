@@ -124,7 +124,8 @@
     "newBookingTitle": "Đặt phòng",
     "bookingDetailTitle": "Chi tiết đơn",
     "checkoutTitle": "Thanh toán",
-    "notificationsTitle": "Thông báo"
+    "notificationsTitle": "Thông báo",
+    "accountTitle": "Thông tin tài khoản"
   },
   "home": {
     "greeting": "Xin chào",
@@ -334,7 +335,10 @@
     "quickPrompt2": "Đang có khuyến mãi nào không?",
     "quickPrompt3": "Phòng rộng cho gia đình 4 người",
     "quickPrompt4": "Gợi ý phòng giá tốt nhất",
-    "pendingBookingDates": "{{checkIn}} – {{checkOut}} · {{nights}} đêm"
+    "pendingBookingDates": "{{checkIn}} – {{checkOut}} · {{nights}} đêm",
+    "showMoreRooms": "Xem thêm {{count}} phòng",
+    "cancelProposalMessage": "Tôi không đồng ý, vui lòng huỷ đề xuất này.",
+    "newConversation": "Cuộc trò chuyện mới"
   },
   "profile": {
     "title": "Tài khoản",
@@ -360,7 +364,8 @@
     "themeDark": "Tối",
     "themeSystem": "Hệ thống",
     "languageVi": "Tiếng Việt",
-    "languageEn": "English"
+    "languageEn": "English",
+    "accountDetails": "Thông tin tài khoản"
   },
   "notifications": {
     "markAllRead": "Đánh dấu đã đọc hết",
@@ -385,5 +390,63 @@
     "errorTitle": "Có lỗi xảy ra",
     "warningTitle": "Lưu ý",
     "infoTitle": "Thông báo"
+  },
+  "checkInPass": {
+    "title": "Mã nhận phòng",
+    "hint": "Đưa mã này cho lễ tân để quét nhận phòng",
+    "qrLabel": "Mã QR nhận phòng của đơn {{code}}",
+    "expandHint": "Mở mã QR toàn màn hình",
+    "codeLabel": "Mã đơn",
+    "copy": "Sao chép",
+    "copyCode": "Sao chép mã đơn",
+    "codeCopied": "Đã sao chép mã đơn"
+  },
+  "chatForm": {
+    "title": "Thông tin đặt phòng",
+    "checkIn": "Nhận phòng",
+    "checkOut": "Trả phòng",
+    "guests": "Số khách",
+    "fullName": "Họ và tên",
+    "phone": "Số điện thoại",
+    "email": "Email (không bắt buộc)",
+    "paymentMethod": "Phương thức thanh toán",
+    "payCash": "Tiền mặt",
+    "payTransfer": "Chuyển khoản",
+    "submit": "Gửi thông tin"
+  },
+  "account": {
+    "fullName": "Họ và tên",
+    "email": "Email",
+    "phone": "Số điện thoại",
+    "idNumber": "CCCD / CMND / Hộ chiếu",
+    "idNumberHint": "Dùng để làm thủ tục nhận phòng nhanh hơn",
+    "address": "Địa chỉ",
+    "memberSince": "Thành viên từ",
+    "updatedAt": "Cập nhật lần cuối",
+    "notProvided": "Chưa cập nhật",
+    "sectionPersonal": "Thông tin cá nhân",
+    "sectionAccount": "Tài khoản",
+    "edit": "Chỉnh sửa thông tin",
+    "editTitle": "Chỉnh sửa thông tin cá nhân",
+    "emailLocked": "Email đăng nhập không thể thay đổi",
+    "save": "Lưu thay đổi",
+    "saved": "Đã cập nhật thông tin tài khoản",
+    "saveFailed": "Không thể cập nhật thông tin",
+    "loadFailed": "Không tải được thông tin tài khoản",
+    "roles": {
+      "CUSTOMER": "Khách hàng",
+      "STAFF": "Nhân viên",
+      "ADMIN": "Quản trị viên"
+    },
+    "status": {
+      "Active": "Đang hoạt động",
+      "Locked": "Đã khoá"
+    },
+    "errors": {
+      "fullName": "Họ tên phải từ 2 đến 100 ký tự",
+      "phone": "Số điện thoại không hợp lệ (VD: 0912345678)",
+      "idNumber": "Số giấy tờ gồm 6–20 chữ hoặc số",
+      "address": "Địa chỉ tối đa 255 ký tự"
+    }
   }
 }
