@@ -124,7 +124,8 @@
     "newBookingTitle": "Book a room",
     "bookingDetailTitle": "Booking details",
     "checkoutTitle": "Checkout",
-    "notificationsTitle": "Notifications"
+    "notificationsTitle": "Notifications",
+    "accountTitle": "Account details"
   },
   "home": {
     "greeting": "Hello",
@@ -334,7 +335,10 @@
     "quickPrompt2": "Any promotions running?",
     "quickPrompt3": "A spacious room for a family of 4",
     "quickPrompt4": "Suggest your best-value room",
-    "pendingBookingDates": "{{checkIn}} – {{checkOut}} · {{nights}} nights"
+    "pendingBookingDates": "{{checkIn}} – {{checkOut}} · {{nights}} nights",
+    "showMoreRooms": "Show {{count}} more rooms",
+    "cancelProposalMessage": "I don't agree, please cancel this proposal.",
+    "newConversation": "New conversation"
   },
   "profile": {
     "title": "Account",
@@ -360,7 +364,8 @@
     "themeDark": "Dark",
     "themeSystem": "System",
     "languageVi": "Tiếng Việt",
-    "languageEn": "English"
+    "languageEn": "English",
+    "accountDetails": "Account details"
   },
   "notifications": {
     "markAllRead": "Mark all as read",
@@ -385,5 +390,63 @@
     "errorTitle": "Something went wrong",
     "warningTitle": "Heads up",
     "infoTitle": "Notice"
+  },
+  "checkInPass": {
+    "title": "Check-in pass",
+    "hint": "Show this code at reception to check in",
+    "qrLabel": "Check-in QR code for booking {{code}}",
+    "expandHint": "Opens the QR code full screen",
+    "codeLabel": "Booking code",
+    "copy": "Copy",
+    "copyCode": "Copy booking code",
+    "codeCopied": "Booking code copied"
+  },
+  "chatForm": {
+    "title": "Booking details",
+    "checkIn": "Check-in",
+    "checkOut": "Check-out",
+    "guests": "Guests",
+    "fullName": "Full name",
+    "phone": "Phone number",
+    "email": "Email (optional)",
+    "paymentMethod": "Payment method",
+    "payCash": "Cash",
+    "payTransfer": "Bank transfer",
+    "submit": "Send details"
+  },
+  "account": {
+    "fullName": "Full name",
+    "email": "Email",
+    "phone": "Phone number",
+    "idNumber": "ID card / Passport",
+    "idNumberHint": "Speeds up check-in at reception",
+    "address": "Address",
+    "memberSince": "Member since",
+    "updatedAt": "Last updated",
+    "notProvided": "Not provided",
+    "sectionPersonal": "Personal details",
+    "sectionAccount": "Account",
+    "edit": "Edit details",
+    "editTitle": "Edit personal details",
+    "emailLocked": "Your sign-in email can’t be changed",
+    "save": "Save changes",
+    "saved": "Account details updated",
+    "saveFailed": "Couldn’t update your details",
+    "loadFailed": "Couldn’t load your account",
+    "roles": {
+      "CUSTOMER": "Guest",
+      "STAFF": "Staff",
+      "ADMIN": "Administrator"
+    },
+    "status": {
+      "Active": "Active",
+      "Locked": "Locked"
+    },
+    "errors": {
+      "fullName": "Name must be 2–100 characters",
+      "phone": "Invalid phone number (e.g. 0912345678)",
+      "idNumber": "ID number must be 6–20 letters or digits",
+      "address": "Address can be at most 255 characters"
+    }
   }
 }

@@ -142,7 +142,12 @@ export default function ProfileScreen() {
         </LinearGradient>
 
         <View style={styles.content}>
-          <Card elevation="floating" style={styles.profileCard}>
+          <Card
+            elevation="floating"
+            style={styles.profileCard}
+            onPress={() => router.push('/account')}
+            accessibilityRole="button"
+            accessibilityLabel={t('profile.accountDetails')}>
             <Avatar name={user?.fullName} size={64} />
             <View style={styles.profileInfo}>
               <ThemedText type="heading" numberOfLines={1}>
@@ -165,12 +170,19 @@ export default function ProfileScreen() {
                 </View>
               ) : null}
             </View>
+            <Ionicons name="chevron-forward" size={18} color={theme.textSecondary} />
           </Card>
 
           <ThemedText type="caption" themeColor="textSecondary" style={styles.groupLabel}>
             {t('profile.sectionActivity')}
           </ThemedText>
           <Card padded={false} elevation="none" style={styles.group}>
+            <MenuRow
+              icon="person-circle-outline"
+              label={t('profile.accountDetails')}
+              trailing="chevron-forward"
+              onPress={() => router.push('/account')}
+            />
             <MenuRow
               icon="receipt-outline"
               label={t('profile.myBookings')}

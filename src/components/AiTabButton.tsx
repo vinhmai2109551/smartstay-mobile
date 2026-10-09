@@ -1,6 +1,6 @@
-import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
+import { BotMessageSquare, Sparkles } from 'lucide-react-native';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View, type GestureResponderEvent } from 'react-native';
@@ -23,8 +23,12 @@ const SIZE = 48;
 // How far the circle rises above the tab bar's top edge. Screens with content pinned to
 // the bottom (the chat input) pad by this so the button doesn't cover it.
 export const AI_TAB_LIFT = 14;
-// Second gradient stop — a violet that reads as "AI" next to the brand blue.
-const AI_VIOLET = '#7C3AED';
+// Same launcher as the web chatbot (AiChatbot.jsx): BotMessageSquare on a
+// blue-500 → violet-500 → blue-600 gradient, with an amber-400 sparkle badge.
+const AI_GRADIENT = ['#3B82F6', '#8B5CF6', '#2563EB'] as const;
+const AI_VIOLET = '#8B5CF6';
+const BADGE_AMBER = '#FBBF24';
+const BADGE_ICON = '#1E3A8A';
 
 type Props = {
   onPress?: (event: GestureResponderEvent) => void;
@@ -96,12 +100,15 @@ export function AiTabButton({ onPress, onLongPress, testID, ...rest }: Props) {
             circleStyle,
           ]}>
           <LinearGradient
-            colors={[theme.primary, AI_VIOLET]}
+            colors={AI_GRADIENT}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.circle}>
-            <Ionicons name="sparkles" size={22} color="#FFFFFF" />
+            <BotMessageSquare size={24} color="#FFFFFF" strokeWidth={2} />
           </LinearGradient>
+          <View style={[styles.badge, { borderColor: theme.backgroundElement }]}>
+            <Sparkles size={10} color={BADGE_ICON} strokeWidth={2.5} />
+          </View>
         </Animated.View>
       </View>
       <ThemedText
@@ -141,5 +148,17 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   circle: { width: SIZE, height: SIZE, borderRadius: SIZE / 2, alignItems: 'center', justifyContent: 'center' },
+  badge: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: BADGE_AMBER,
+  },
   label: { fontSize: 11, lineHeight: 14 },
 });

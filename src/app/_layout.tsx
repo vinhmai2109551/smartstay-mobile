@@ -130,6 +130,10 @@ export default function RootLayout() {
             options={{ headerShown: true, title: t('layout.checkoutTitle'), presentation: 'modal' }}
           />
           <Stack.Screen
+            name="account"
+            options={{ headerShown: true, title: t('layout.accountTitle'), headerBackTitle: t('common.back') }}
+          />
+          <Stack.Screen
             name="notifications"
             options={{ headerShown: true, title: t('layout.notificationsTitle'), headerBackTitle: t('common.back') }}
           />
