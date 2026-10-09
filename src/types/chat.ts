@@ -39,6 +39,7 @@ export type SendChatMessageDto = {
   conversationId?: string;
   message: string;
   confirmProposalId?: string;
+  cancelProposalId?: string;
 };
 
 export type SendChatMessageResponse = {
