@@ -338,7 +338,8 @@
     "pendingBookingDates": "{{checkIn}} – {{checkOut}} · {{nights}} đêm",
     "showMoreRooms": "Xem thêm {{count}} phòng",
     "cancelProposalMessage": "Tôi không đồng ý, vui lòng huỷ đề xuất này.",
-    "newConversation": "Cuộc trò chuyện mới"
+    "newConversation": "Cuộc trò chuyện mới",
+    "cancelBookingFormMessage": "Tôi không muốn điền biểu mẫu nữa, tạm thời chưa đặt phòng."
   },
   "profile": {
     "title": "Tài khoản",

@@ -338,7 +338,8 @@
     "pendingBookingDates": "{{checkIn}} – {{checkOut}} · {{nights}} nights",
     "showMoreRooms": "Show {{count}} more rooms",
     "cancelProposalMessage": "I don't agree, please cancel this proposal.",
-    "newConversation": "New conversation"
+    "newConversation": "New conversation",
+    "cancelBookingFormMessage": "I don't want to fill in the form, I'm not booking for now."
   },
   "profile": {
     "title": "Account",
