@@ -70,14 +70,23 @@ export function ChatBubble({
   const cardWidth = Math.round(
     Math.min(Math.min(width, MaxContentWidth) * 0.74, 320),
   );
+  // The booking form spans the whole chat column, like on the web — it has two fields
+  // per row and is cramped at card width. Matches the list's horizontal padding (chat.tsx).
+  const showForm = !!showBookingForm && !!message.bookingFormRequest;
+  const formWidth = Math.min(width, MaxContentWidth) - Space.lg * 2;
 
   return (
     <View
-      style={[styles.container, isUser ? styles.alignEnd : styles.alignStart]}
+      style={[
+        styles.container,
+        isUser ? styles.alignEnd : styles.alignStart,
+        showForm && styles.containerWide,
+      ]}
     >
       <View
         style={[
           styles.bubble,
+          showForm && styles.bubbleNarrow,
           isUser
             ? [styles.bubbleUser, { backgroundColor: theme.primary }]
             : [
@@ -130,28 +139,76 @@ export function ChatBubble({
       ) : null}
 
       {showProposal && message.pendingBooking ? (
-        <Card style={[styles.card, { width: cardWidth }]}>
+        <Card
+          style={[
+            styles.card,
+            { width: cardWidth },
+            {
+              borderWidth: 2,
+              borderColor: theme.primaryBorder,
+              backgroundColor: theme.primarySoft,
+            },
+          ]}
+        >
           <View style={styles.cardHeader}>
-            <View
-              style={[styles.cardIcon, { backgroundColor: theme.primarySoft }]}
-            >
-              <Ionicons name="calendar" size={16} color={theme.primary} />
-            </View>
-            <ThemedText type="smallBold">
+            <ThemedText type="smallBold" style={{ color: theme.primary }}>
               {t("chat.confirmBookingCard")}
             </ThemedText>
           </View>
-          <ThemedText type="bodyBold">
-            {message.pendingBooking.roomTypeName}
+          {/* Same rows as the web's PendingBookingCard (AiChatWidgets.jsx). */}
+          <ThemedText type="small">
+            <ThemedText type="small" themeColor="textSecondary">
+              {t("chat.proposalRoomType")}{" "}
+            </ThemedText>
+            <ThemedText type="smallBold">
+              {message.pendingBooking.roomTypeName}
+            </ThemedText>
           </ThemedText>
-          <ThemedText type="small" themeColor="textSecondary">
-            {t("chat.pendingBookingDates", {
-              checkIn: formatDate(message.pendingBooking.checkIn),
-              checkOut: formatDate(message.pendingBooking.checkOut),
-              nights: message.pendingBooking.nights,
-            })}
+          <ThemedText type="small">
+            <ThemedText type="small" themeColor="textSecondary">
+              {t("chat.proposalCheckIn")}{" "}
+            </ThemedText>
+            {formatDate(message.pendingBooking.checkIn)}
+            {"  →  "}
+            <ThemedText type="small" themeColor="textSecondary">
+              {t("chat.proposalCheckOut")}{" "}
+            </ThemedText>
+            {formatDate(message.pendingBooking.checkOut)}{" "}
+            <ThemedText type="small" themeColor="textSecondary">
+              {t("chat.proposalNights", {
+                nights: message.pendingBooking.nights,
+              })}
+            </ThemedText>
           </ThemedText>
-          <View style={[styles.divider, { backgroundColor: theme.border }]} />
+          {message.pendingBooking.guestInfo?.fullName ? (
+            <ThemedText type="small">
+              <ThemedText type="small" themeColor="textSecondary">
+                {t("chat.proposalGuest")}{" "}
+              </ThemedText>
+              {message.pendingBooking.guestInfo.fullName} ·{" "}
+              {message.pendingBooking.guestInfo.phone}
+            </ThemedText>
+          ) : null}
+          {message.pendingBooking.discountAmount > 0 ? (
+            <ThemedText type="small" style={{ color: theme.success }}>
+              {t("chat.proposalDiscount", {
+                amount: formatVND(message.pendingBooking.discountAmount),
+              })}
+            </ThemedText>
+          ) : null}
+          {message.pendingBooking.paymentMethod ? (
+            <ThemedText type="small">
+              <ThemedText type="small" themeColor="textSecondary">
+                {t("chat.proposalPayment")}{" "}
+              </ThemedText>
+              {t(
+                message.pendingBooking.paymentMethod === "PAYOS"
+                  ? "chat.payTransferFull"
+                  : "chat.payCashFull",
+              )}
+            </ThemedText>
+          ) : null}
+          <View style={[styles.divider, { backgroundColor: theme.primaryBorder }]} />
           <View style={styles.totalRow}>
             <ThemedText type="small" themeColor="textSecondary">
               {t("booking.total")}
@@ -161,17 +218,6 @@ export function ChatBubble({
             </ThemedText>
           </View>
           <View style={styles.actions}>
-            <View style={styles.flex}>
-              <Button
-                label={t("common.cancel")}
-                variant="outline"
-                size="sm"
-                disabled={busy}
-                onPress={() =>
-                  onCancelProposal?.(message.pendingBooking!.proposalId)
-                }
-              />
-            </View>
             <View style={styles.flex}>
               <Button
                 label={t("chat.confirmBookingCard")}
@@ -184,12 +230,23 @@ export function ChatBubble({
                 }
               />
             </View>
+            <View style={styles.flex}>
+              <Button
+                label={t("common.cancel")}
+                variant="outline"
+                size="sm"
+                disabled={busy}
+                onPress={() =>
+                  onCancelProposal?.(message.pendingBooking!.proposalId)
+                }
+              />
+            </View>
           </View>
         </Card>
       ) : null}
 
-      {showBookingForm && message.bookingFormRequest ? (
-        <View style={{ width: cardWidth }}>
+      {showForm && message.bookingFormRequest ? (
+        <View style={{ width: formWidth }}>
           <ChatBookingForm
             request={message.bookingFormRequest}
             disabled={busy}
@@ -248,6 +305,8 @@ export function ChatBubble({
 
 const styles = StyleSheet.create({
   container: { gap: Space.sm, maxWidth: "86%" },
+  containerWide: { maxWidth: "100%" },
+  bubbleNarrow: { maxWidth: "86%" },
   alignEnd: { alignSelf: "flex-end", alignItems: "flex-end" },
   alignStart: { alignSelf: "flex-start", alignItems: "flex-start" },
   bubble: {
@@ -275,13 +334,13 @@ const styles = StyleSheet.create({
   },
   card: { gap: Space.sm },
   cardHeader: { flexDirection: "row", alignItems: "center", gap: Space.sm },
-  cardIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-  },
+  // cardIcon: {
+  //   width: 28,
+  //   height: 28,
+  //   borderRadius: 14,
+  //   alignItems: "center",
+  //   justifyContent: "center",
+  // },
   divider: { height: StyleSheet.hairlineWidth, marginVertical: Space.xs },
   totalRow: {
     flexDirection: "row",

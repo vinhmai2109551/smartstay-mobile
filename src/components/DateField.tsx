@@ -16,9 +16,11 @@ type DateFieldProps = {
   value: Date;
   onChange: (date: Date) => void;
   minimumDate?: Date;
+  /** Icon and date only (the label stays in the accessibility label), for chat cards. */
+  dense?: boolean;
 };
 
-export function DateField({ label, value, onChange, minimumDate }: DateFieldProps) {
+export function DateField({ label, value, onChange, minimumDate, dense = false }: DateFieldProps) {
   const { t, i18n } = useTranslation();
   const theme = useTheme();
   const scheme = useEffectiveColorScheme();
@@ -40,19 +42,26 @@ export function DateField({ label, value, onChange, minimumDate }: DateFieldProp
         onPress={open}
         style={({ pressed }) => [
           styles.field,
+          dense && styles.fieldDense,
           {
             borderColor: show ? theme.primary : theme.border,
             backgroundColor: theme.backgroundElement,
             opacity: pressed ? 0.85 : 1,
           },
         ]}>
-        <Ionicons name="calendar-outline" size={20} color={show ? theme.primary : theme.textSecondary} />
-        <View style={styles.text}>
-          <ThemedText type="caption" themeColor="textSecondary">
-            {label}
+        <Ionicons name="calendar-outline" size={dense ? 16 : 20} color={show ? theme.primary : theme.textSecondary} />
+        {dense ? (
+          <ThemedText type="small" style={styles.text}>
+            {formatDate(value, 'DD/MM/YYYY')}
           </ThemedText>
-          <ThemedText type="bodyBold">{formatDate(value, 'DD/MM/YYYY')}</ThemedText>
-        </View>
+        ) : (
+          <View style={styles.text}>
+            <ThemedText type="caption" themeColor="textSecondary">
+              {label}
+            </ThemedText>
+            <ThemedText type="bodyBold">{formatDate(value, 'DD/MM/YYYY')}</ThemedText>
+          </View>
+        )}
       </Pressable>
 
       {Platform.OS === 'ios' ? (
@@ -122,6 +131,7 @@ const styles = StyleSheet.create({
     borderRadius: Radius.md,
     paddingHorizontal: Space.md,
   },
+  fieldDense: { gap: Space.sm, minHeight: 44 },
   text: { flex: 1 },
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' },
   sheet: {
