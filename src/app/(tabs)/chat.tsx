@@ -168,6 +168,23 @@ export default function ChatScreen() {
         },
       ]);
     } catch (error) {
+      const timedOut =
+        isAxiosError(error) &&
+        (error.code === "ECONNABORTED" || error.code === "ETIMEDOUT");
+      const conversationId = conversationIdRef.current;
+      if (timedOut && conversationId) {
+        try {
+          const history = await aiChatApi.conversationHistory(conversationId);
+          const rebuilt = buildMessagesFromHistory(history);
+          if (rebuilt.at(-1)?.role === "MODEL") {
+            setMessages([welcomeMessage, ...rebuilt]);
+            setDismissedFormAt(null);
+            return; // finally vẫn chạy: tắt sending và cuộn xuống cuối
+          }
+        } catch {
+          // Không lấy được lịch sử thì để rơi xuống báo lỗi như cũ
+        }
+      }
       // The stored conversation was deleted or isn't this user's — let the next message start a new one.
       if (
         isAxiosError(error) &&
