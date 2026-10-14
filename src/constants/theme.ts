@@ -6,6 +6,7 @@
 import "@/global.css";
 
 import { Platform } from "react-native";
+import { success } from "zod";
 
 // Palette mirrors the customer-facing web frontend (Tailwind: blue-600 primary,
 // gray scale, amber highlights). Pairs used for text are checked against WCAG AA.
@@ -28,6 +29,9 @@ export const Colors = {
     success: "#047857", // emerald-700 (emerald-600 is only 3.8:1)
     danger: "#DC2626", // red-600
     warning: "#B45309", // amber-700
+    successSoft: "#ECFDF5",
+    successBorder: "#A7F3D0",
+    accentBorder: "#FDE68A",
   },
   dark: {
     text: "#F3F4F6", // gray-100
@@ -46,6 +50,9 @@ export const Colors = {
     success: "#34D399", // emerald-400
     danger: "#F87171", // red-400
     warning: "#FBBF24", // amber-400
+    successSoft: "#064E3B",
+    successBorder: "#065F46",
+    accentBorder: "#78350F",
   },
 } as const;
 

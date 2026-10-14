@@ -347,7 +347,19 @@
     "showMoreRooms": "Show {{count}} more rooms",
     "cancelProposalMessage": "I don't agree, please cancel this proposal.",
     "newConversation": "New conversation",
-    "cancelBookingFormMessage": "I don't want to fill in the form, I'm not booking for now."
+    "cancelBookingFormMessage": "I don't want to fill in the form, I'm not booking for now.",
+    "bookingSuccessTitle": "Booking confirmed!",
+    "bookingAwaitingTitle": "Booking received - awaiting payment",
+    "bookingCode": "Booking code: {{code}}",
+    "bookingTotal": "Total: {{amount}}",
+    "payScanTitle": "Scan to pay by bank transfer",
+    "payOpenPage": "Open payment page",
+    "payWaiting": "Waiting for payment confirmation, your booking pass will appear as soon as we receive it...",
+    "payChecking": "Checking payment status...",
+    "payExpired": "The payment QR code has expired. Please go to \"My bookings\" to create a new payment link.",
+    "payNoQr": "We couldn't create a payment QR code right now. Please go to \"My bookings\" to get a new one or contact reception.",
+    "payReceived": "Bank transfer received",
+    "payCashNote": "Please pay in cash at the front desk when you check in."
   },
   "profile": {
     "title": "Account",
