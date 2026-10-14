@@ -14,6 +14,7 @@ import { ChatMessage, PendingBooking } from "@/types/chat";
 import { formatVND } from "@/utils/currency";
 import { formatDate } from "@/utils/date";
 import { ChatBookingCreatedCard } from "./ChatBookingCreatedCard";
+import { ChatPromotionList } from "./ChatPromotionList";
 
 // Rooms shown before "Show n more" when a reply still lists many.
 const COLLAPSED_ROOMS = 2;
@@ -73,7 +74,9 @@ export function ChatBubble({
   // padding (chat.tsx).
   const showForm = !!showBookingForm && !!message.bookingFormRequest;
   const showProposalCard = !!showProposal && !!message.pendingBooking;
-  const wide = showForm || showProposalCard || !!message.booking;
+  const promotions = message.promotions ?? [];
+  const wide =
+    showForm || showProposalCard || !!message.booking || promotions.length > 0;
   const formWidth = Math.min(width, MaxContentWidth) - Space.lg * 2;
 
   return (
@@ -138,6 +141,9 @@ export function ChatBubble({
           ) : null}
         </View>
       ) : null}
+      {showProposalCard && message.pendingBooking ? (
+        <ChatPromotionList promotions={promotions} width={formWidth} />
+      ) : null}
 
       {showProposalCard && message.pendingBooking ? (
         <Card
@@ -158,7 +164,12 @@ export function ChatBubble({
             </ThemedText>
           </View>
           {/* Same rows as the web's PendingBookingCard (AiChatWidgets.jsx). */}
-          <ThemedText type="small" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
+          <ThemedText
+            type="small"
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.8}
+          >
             <ThemedText type="small" themeColor="textSecondary">
               {t("chat.proposalRoomType")}{" "}
             </ThemedText>
@@ -166,7 +177,12 @@ export function ChatBubble({
               {message.pendingBooking.roomTypeName}
             </ThemedText>
           </ThemedText>
-          <ThemedText type="small" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
+          <ThemedText
+            type="small"
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.8}
+          >
             <ThemedText type="small" themeColor="textSecondary">
               {t("chat.proposalCheckIn")}{" "}
             </ThemedText>
@@ -183,7 +199,12 @@ export function ChatBubble({
             </ThemedText>
           </ThemedText>
           {message.pendingBooking.guestInfo?.fullName ? (
-            <ThemedText type="small" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
+            <ThemedText
+              type="small"
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.8}
+            >
               <ThemedText type="small" themeColor="textSecondary">
                 {t("chat.proposalGuest")}{" "}
               </ThemedText>
@@ -199,7 +220,12 @@ export function ChatBubble({
             </ThemedText>
           ) : null}
           {message.pendingBooking.paymentMethod ? (
-            <ThemedText type="small" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
+            <ThemedText
+              type="small"
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.8}
+            >
               <ThemedText type="small" themeColor="textSecondary">
                 {t("chat.proposalPayment")}{" "}
               </ThemedText>
