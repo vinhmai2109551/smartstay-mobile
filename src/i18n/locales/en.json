@@ -359,7 +359,17 @@
     "payExpired": "The payment QR code has expired. Please go to \"My bookings\" to create a new payment link.",
     "payNoQr": "We couldn't create a payment QR code right now. Please go to \"My bookings\" to get a new one or contact reception.",
     "payReceived": "Bank transfer received",
-    "payCashNote": "Please pay in cash at the front desk when you check in."
+    "payCashNote": "Please pay in cash at the front desk when you check in.",
+    "paySaveQr": "Save QR code",
+    "qrSaved":"QR code saved to your photos",
+    "slipTitle": "Bank transfer payment slip",
+    "slipRoom": "Room",
+    "slipStay": "Stay",
+    "slipGuest": "Guest",
+    "slipDeadline": "Pay before",
+    "slipNote": "Scan with any banking app to pay.",
+    "qrSaveFailed":"Couldn't save the QR code",
+    "qrPermissionDenied":"Please allow photo access to save the QR code"
   },
   "profile": {
     "title": "Account",

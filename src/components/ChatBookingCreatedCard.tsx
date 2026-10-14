@@ -5,17 +5,21 @@ import { getBookingCode } from "@/utils/bookingQr";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
 import QRCode from "react-native-qrcode-svg";
+import { captureRef } from "react-native-view-shot";
 import { Card } from "./ui/Card";
 import { ThemedText } from "./themed-text";
 import { formatVND } from "@/utils/currency";
 import { Button } from "./ui/Button";
 import { CheckInPass } from "./CheckInPass";
+import { PaymentQrSlip } from "./PaymentQrSlip";
 import { Radius, Space } from "@/constants/theme";
 import { formatDate } from "@/utils/date";
+import { saveImageToLibrary } from "@/utils/saveQr";
+import { toast } from "@/store/toastStore";
 
 const PAYOS_POLL_INTERVAL_MS = 5000;
 // Khung QR luôn nền trắng (máy quét đọc tốt nhất), nên chữ phụ trong khung phải dùng màu
@@ -39,8 +43,11 @@ export function ChatBookingCreatedCard({
   const [paid, setPaid] = useState(false);
   const [checking, setChecking] = useState(isPayOS);
   const [expired, setExpired] = useState(
-    isPayOS && !!booking.expiredAt && Date.now() / 1000 > booking.expiredAt,
+    () =>
+      isPayOS && !!booking.expiredAt && Date.now() / 1000 > booking.expiredAt,
   );
+  // Phiếu thanh toán dựng ngoài màn hình (PaymentQrSlip) — chụp lại thành ảnh khi lưu.
+  const slipRef = useRef<View>(null);
 
   // Dữ liệu booking trong tin nhắn là ảnh chụp lúc vừa tạo đơn (luôn UNPAID). Hỏi trạng
   // thái thật mỗi lần thẻ hiện ra, KỂ CẢ khi QR đã hết hạn: khách có thể đã chuyển khoản
@@ -98,6 +105,21 @@ export function ChatBookingCreatedCard({
   const awaitingPayment = isPayOS && !paid;
   const showTicket = (!isPayOS || paid) && booking.status !== "CANCELLED";
   const tone = awaitingPayment ? theme.accentText : theme.success;
+  const handleSavePaymentQr = async () => {
+    try {
+      const uri = await captureRef(slipRef, {
+        format: "png",
+        quality: 1,
+        result: "tmpfile",
+      });
+      const result = await saveImageToLibrary(uri, `vika-payos-${code}.png`);
+      if (result === "saved") toast.success(t("chat.qrSaved"));
+      else toast.error(t("chat.qrPermissionDenied"));
+    } catch {
+      toast.error(t("chat.qrSaveFailed"));
+    }
+  };
+
   return (
     <Card
       style={[
@@ -120,7 +142,13 @@ export function ChatBookingCreatedCard({
           color={tone}
         />
         <View style={styles.flex}>
-          <ThemedText type="smallBold" style={{ color: tone }}>
+          <ThemedText
+            type="smallBold"
+            style={{ color: tone }}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.8}
+          >
             {t(
               awaitingPayment
                 ? "chat.bookingAwaitingTitle"
@@ -177,16 +205,31 @@ export function ChatBookingCreatedCard({
               size={160}
               backgroundColor="#FFFFFF"
               color="#111827"
+              quietZone={8}
             />
-            {booking.checkoutUrl ? (
-              <Button
-                label={t("chat.payOpenPage")}
-                size="sm"
-                onPress={() =>
-                  WebBrowser.openBrowserAsync(booking.checkoutUrl!)
-                }
-              />
-            ) : null}
+            <View style={styles.qrActions}>
+              <View style={styles.flex}>
+                <Button
+                  label={t("chat.paySaveQr")}
+                  variant="outline"
+                  size="sm"
+                  icon="download-outline"
+                  onPress={handleSavePaymentQr}
+                />
+              </View>
+              {booking.checkoutUrl ? (
+                <View style={styles.flex}>
+                  <Button
+                    label={t("chat.payOpenPage")}
+                    size="sm"
+                    onPress={() =>
+                      WebBrowser.openBrowserAsync(booking.checkoutUrl!)
+                    }
+                  />
+                </View>
+              ) : null}
+            </View>
+
             <View style={styles.inlineRow}>
               <ActivityIndicator size="small" color={QR_BOX_MUTED} />
               <ThemedText
@@ -195,6 +238,19 @@ export function ChatBookingCreatedCard({
               >
                 {t("chat.payWaiting")}
               </ThemedText>
+            </View>
+
+            {/* Đẩy ra ngoài màn hình thay vì ẩn: display:none thì không được vẽ (không
+                chụp được), opacity:0 thì ảnh chụp ra trong suốt. */}
+            <View style={styles.offscreen} pointerEvents="none">
+              <PaymentQrSlip
+                ref={slipRef}
+                qrCode={booking.qrCode}
+                amount={booking.totalAmount}
+                code={code}
+                expiredAt={booking.expiredAt}
+                proposal={proposal}
+              />
             </View>
           </View>
         ) : (
@@ -268,7 +324,7 @@ export function ChatBookingCreatedCard({
 }
 
 const styles = StyleSheet.create({
-  card: { gap: Space.md, borderWidth: 2 },
+  card: { gap: Space.md, borderWidth: 2, padding: Space.md },
   header: { flexDirection: "row", alignItems: "flex-start", gap: Space.md },
   flex: { flex: 1 },
   bold: { fontWeight: "700" },
@@ -293,4 +349,6 @@ const styles = StyleSheet.create({
     gap: Space.xs,
     minHeight: 28,
   },
+  qrActions: { flexDirection: "row", gap: Space.sm, alignSelf: "stretch" },
+  offscreen: { position: "absolute", left: -10000, top: 0 },
 });

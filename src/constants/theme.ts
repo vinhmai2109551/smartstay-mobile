@@ -6,7 +6,6 @@
 import "@/global.css";
 
 import { Platform } from "react-native";
-import { success } from "zod";
 
 // Palette mirrors the customer-facing web frontend (Tailwind: blue-600 primary,
 // gray scale, amber highlights). Pairs used for text are checked against WCAG AA.

@@ -359,7 +359,17 @@
     "payExpired": "Mã QR thanh toán đã hết hạn, quý khách vui lòng vào mục \"Đơn đặt phòng của tôi\" để tạo lại link thanh toán.",
     "payNoQr": "Không tạo được mã QR thanh toán lúc này, quý khách vui lòng vào mục \"Đơn đặt phòng của tôi\" để lấy lại mã hoặc liên hệ lễ tân.",
     "payReceived": "Đã nhận được thanh toán chuyển khoản",
-    "payCashNote": "Quý khách vui lòng thanh toán tiền mặt tại quầy lễ tân khi nhận phòng."
+    "payCashNote": "Quý khách vui lòng thanh toán tiền mặt tại quầy lễ tân khi nhận phòng.",
+    "paySaveQr": "Lưu mã QR",
+    "qrSaved": "Đã lưu mã QR vào thư viện ảnh",
+    "slipTitle": "Phiếu thanh toán chuyển khoản",
+    "slipRoom": "Phòng",
+    "slipStay": "Ngày ở",
+    "slipGuest": "Khách",
+    "slipDeadline": "Hạn thanh toán",
+    "slipNote": "Quét mã bằng ứng dụng ngân hàng bất kỳ để thanh toán.",
+    "qrSaveFailed": "Không lưu được mã QR",
+    "qrPermissionDenied": "Vui lòng cho phép truy cập thư viện ảnh để lưu mã QR"
   },
   "profile": {
     "title": "Tài khoản",
