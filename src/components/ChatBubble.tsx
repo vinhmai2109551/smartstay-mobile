@@ -3,19 +3,17 @@ import { router } from "expo-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Pressable, StyleSheet, useWindowDimensions, View } from "react-native";
-
 import { ChatBookingForm } from "@/components/ChatBookingForm";
-import { CheckInPass } from "@/components/CheckInPass";
 import { RoomTypeCard } from "@/components/RoomTypeCard";
 import { ThemedText } from "@/components/themed-text";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { StatusBadge } from "@/components/ui/StatusBadge";
 import { FontFamily, MaxContentWidth, Radius, Space } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
 import { ChatMessage, PendingBooking } from "@/types/chat";
 import { formatVND } from "@/utils/currency";
 import { formatDate } from "@/utils/date";
+import { ChatBookingCreatedCard } from "./ChatBookingCreatedCard";
 
 // Rooms shown before "Show n more" when a reply still lists many.
 const COLLAPSED_ROOMS = 2;
@@ -208,7 +206,9 @@ export function ChatBubble({
               )}
             </ThemedText>
           ) : null}
-          <View style={[styles.divider, { backgroundColor: theme.primaryBorder }]} />
+          <View
+            style={[styles.divider, { backgroundColor: theme.primaryBorder }]}
+          />
           <View style={styles.totalRow}>
             <ThemedText type="small" themeColor="textSecondary">
               {t("booking.total")}
@@ -257,47 +257,11 @@ export function ChatBubble({
       ) : null}
 
       {message.booking ? (
-        <Card style={[styles.card, { width: cardWidth }]}>
-          <View style={styles.bookingHeader}>
-            <ThemedText type="smallBold">{t("chat.bookingCard")}</ThemedText>
-            <StatusBadge status={message.booking.status} />
-          </View>
-          <ThemedText style={[styles.total, { color: theme.primary }]}>
-            {formatVND(message.booking.totalAmount)}
-          </ThemedText>
-          <Pressable
-            accessibilityRole="link"
-            onPress={() =>
-              router.push(`/booking/${message.booking!.bookingId}`)
-            }
-            hitSlop={8}
-            style={styles.link}
-          >
-            <ThemedText type="smallBold" themeColor="primary">
-              {t("chat.viewBookingDetail")}
-            </ThemedText>
-            <Ionicons name="arrow-forward" size={16} color={theme.primary} />
-          </Pressable>
-          {message.booking.status !== "CANCELLED" ? (
-            <>
-              <View
-                style={[styles.divider, { backgroundColor: theme.border }]}
-              />
-              <CheckInPass
-                variant="inline"
-                bookingId={message.booking.bookingId}
-                details={
-                  proposal
-                    ? [
-                        `${proposal.roomTypeName} · ${formatDate(proposal.checkIn, "DD/MM")} – ${formatDate(proposal.checkOut, "DD/MM/YYYY")}`,
-                        proposal.guestInfo.fullName,
-                      ]
-                    : []
-                }
-              />
-            </>
-          ) : null}
-        </Card>
+        <ChatBookingCreatedCard
+          booking={message.booking}
+          proposal={proposal ?? null}
+          width={cardWidth}
+        />
       ) : null}
     </View>
   );
