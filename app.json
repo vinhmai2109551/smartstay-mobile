@@ -46,6 +46,13 @@
       "expo-image",
       "expo-status-bar",
       "expo-web-browser",
+      [
+        "expo-media-library",
+        {
+          "savePhotosPermission": "Cho phép Vika Hotel lưu mã QR vào thư viện ảnh.",
+          "granularPermissions": ["photo"]
+        }
+      ],
       "expo-localization"
     ],
     "experiments": {

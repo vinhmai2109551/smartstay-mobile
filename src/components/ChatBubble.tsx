@@ -68,9 +68,12 @@ export function ChatBubble({
   const cardWidth = Math.round(
     Math.min(Math.min(width, MaxContentWidth) * 0.74, 320),
   );
-  // The booking form spans the whole chat column, like on the web — it has two fields
-  // per row and is cramped at card width. Matches the list's horizontal padding (chat.tsx).
+  // The booking form and the booking cards span the whole chat column, like on the web —
+  // their rows (dates, payment options) wrap at card width. Matches the list's horizontal
+  // padding (chat.tsx).
   const showForm = !!showBookingForm && !!message.bookingFormRequest;
+  const showProposalCard = !!showProposal && !!message.pendingBooking;
+  const wide = showForm || showProposalCard || !!message.booking;
   const formWidth = Math.min(width, MaxContentWidth) - Space.lg * 2;
 
   return (
@@ -78,13 +81,13 @@ export function ChatBubble({
       style={[
         styles.container,
         isUser ? styles.alignEnd : styles.alignStart,
-        showForm && styles.containerWide,
+        wide && styles.containerWide,
       ]}
     >
       <View
         style={[
           styles.bubble,
-          showForm && styles.bubbleNarrow,
+          wide && styles.bubbleNarrow,
           isUser
             ? [styles.bubbleUser, { backgroundColor: theme.primary }]
             : [
@@ -136,11 +139,12 @@ export function ChatBubble({
         </View>
       ) : null}
 
-      {showProposal && message.pendingBooking ? (
+      {showProposalCard && message.pendingBooking ? (
         <Card
           style={[
             styles.card,
-            { width: cardWidth },
+            styles.wideCard,
+            { width: formWidth },
             {
               borderWidth: 2,
               borderColor: theme.primaryBorder,
@@ -154,7 +158,7 @@ export function ChatBubble({
             </ThemedText>
           </View>
           {/* Same rows as the web's PendingBookingCard (AiChatWidgets.jsx). */}
-          <ThemedText type="small">
+          <ThemedText type="small" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
             <ThemedText type="small" themeColor="textSecondary">
               {t("chat.proposalRoomType")}{" "}
             </ThemedText>
@@ -162,7 +166,7 @@ export function ChatBubble({
               {message.pendingBooking.roomTypeName}
             </ThemedText>
           </ThemedText>
-          <ThemedText type="small">
+          <ThemedText type="small" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
             <ThemedText type="small" themeColor="textSecondary">
               {t("chat.proposalCheckIn")}{" "}
             </ThemedText>
@@ -179,7 +183,7 @@ export function ChatBubble({
             </ThemedText>
           </ThemedText>
           {message.pendingBooking.guestInfo?.fullName ? (
-            <ThemedText type="small">
+            <ThemedText type="small" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
               <ThemedText type="small" themeColor="textSecondary">
                 {t("chat.proposalGuest")}{" "}
               </ThemedText>
@@ -195,7 +199,7 @@ export function ChatBubble({
             </ThemedText>
           ) : null}
           {message.pendingBooking.paymentMethod ? (
-            <ThemedText type="small">
+            <ThemedText type="small" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
               <ThemedText type="small" themeColor="textSecondary">
                 {t("chat.proposalPayment")}{" "}
               </ThemedText>
@@ -260,7 +264,7 @@ export function ChatBubble({
         <ChatBookingCreatedCard
           booking={message.booking}
           proposal={proposal ?? null}
-          width={cardWidth}
+          width={formWidth}
         />
       ) : null}
     </View>
@@ -297,6 +301,8 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
   },
   card: { gap: Space.sm },
+  // Slightly tighter padding than a plain Card, so one-line rows fit on narrow phones.
+  wideCard: { padding: Space.md },
   cardHeader: { flexDirection: "row", alignItems: "center", gap: Space.sm },
   // cardIcon: {
   //   width: 28,

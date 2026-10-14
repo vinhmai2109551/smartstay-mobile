@@ -122,7 +122,13 @@ export function ChatBookingForm({
     >
       <View style={styles.header}>
         <View style={styles.flex}>
-          <ThemedText type="smallBold" style={{ color: theme.primary }}>
+          <ThemedText
+            type="smallBold"
+            style={{ color: theme.primary }}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.8}
+          >
             {t("chatForm.title")}
             {request.roomTypeName ? ` — ${request.roomTypeName}` : ""}
           </ThemedText>
@@ -212,9 +218,17 @@ export function ChatBookingForm({
                   size={16}
                   color={selected ? theme.primaryText : theme.textSecondary}
                 />
+                {/* One line, like the web's buttons: shrinks a little on narrow phones
+                    instead of wrapping "Tiền mặt tại quầy" onto two lines. */}
                 <ThemedText
                   type="smallBold"
-                  style={{ color: selected ? theme.primaryText : theme.text }}
+                  style={[
+                    styles.payLabel,
+                    { color: selected ? theme.primaryText : theme.text },
+                  ]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.75}
                 >
                   {option.label}
                 </ThemedText>
@@ -255,7 +269,9 @@ export function ChatBookingForm({
 }
 
 const styles = StyleSheet.create({
-  card: { gap: Space.md },
+  // Slightly tighter padding than a plain Card: the form spans the chat column and
+  // its two-per-row fields need the room.
+  card: { gap: Space.md, padding: Space.md },
   header: { flexDirection: "row", alignItems: "center", gap: Space.sm },
   flex: { flex: 1 },
   row: { flexDirection: "row", gap: Space.sm },
@@ -272,4 +288,5 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: Radius.md,
   },
+  payLabel: { flexShrink: 1, fontSize: 13 },
 });
