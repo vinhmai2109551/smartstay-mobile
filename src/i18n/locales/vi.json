@@ -325,7 +325,7 @@
     "confirmBookingCard": "Xác nhận đặt phòng",
     "bookingCard": "Đơn đặt phòng",
     "viewBookingDetail": "Xem chi tiết đơn",
-    "headerTitle": "Trợ lý Vika Hotel",
+    "headerTitle": "Trợ lý ảo Vika Hotel",
     "typing": "Đang soạn trả lời…",
     "readyToHelp": "Sẵn sàng hỗ trợ 24/7",
     "quickPromptsLabel": "Gợi ý câu hỏi",
@@ -369,7 +369,10 @@
     "slipDeadline": "Hạn thanh toán",
     "slipNote": "Quét mã bằng ứng dụng ngân hàng bất kỳ để thanh toán.",
     "qrSaveFailed": "Không lưu được mã QR",
-    "qrPermissionDenied": "Vui lòng cho phép truy cập thư viện ảnh để lưu mã QR"
+    "qrPermissionDenied": "Vui lòng cho phép truy cập thư viện ảnh để lưu mã QR",
+    "selectRoom": "Chọn phòng này",
+    "roomGuests": "{{count}} khách",
+    "perNight": "/đêm"
   },
   "profile": {
     "title": "Tài khoản",

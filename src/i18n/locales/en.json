@@ -361,15 +361,18 @@
     "payReceived": "Bank transfer received",
     "payCashNote": "Please pay in cash at the front desk when you check in.",
     "paySaveQr": "Save QR code",
-    "qrSaved":"QR code saved to your photos",
+    "qrSaved": "QR code saved to your photos",
     "slipTitle": "Bank transfer payment slip",
     "slipRoom": "Room",
     "slipStay": "Stay",
     "slipGuest": "Guest",
     "slipDeadline": "Pay before",
     "slipNote": "Scan with any banking app to pay.",
-    "qrSaveFailed":"Couldn't save the QR code",
-    "qrPermissionDenied":"Please allow photo access to save the QR code"
+    "qrSaveFailed": "Couldn't save the QR code",
+    "qrPermissionDenied": "Please allow photo access to save the QR code",
+    "selectRoom": "Choose this room",
+    "roomGuests": "{{count}} guests",
+    "perNight": "/night"
   },
   "profile": {
     "title": "Account",

@@ -40,7 +40,6 @@ import {
   readStoredConversationId,
   storeConversationId,
 } from "@/utils/aiChatHistory";
-import { pickRelevantRooms } from "@/utils/chatRooms";
 
 // The latest booking proposal shown before `index` — what an AI-created booking was made from.
 function findProposalBefore(messages: ChatMessage[], index: number) {
@@ -159,8 +158,7 @@ export default function ChatScreen() {
         {
           role: "MODEL",
           content: response.reply,
-          // Only the rooms the answer is about — see pickRelevantRooms.
-          rooms: pickRelevantRooms(response.reply, text, response.rooms),
+          rooms: response.rooms,
           promotions: response.promotions,
           pendingBooking: response.pendingBooking,
           booking: response.booking,
@@ -308,6 +306,9 @@ export default function ChatScreen() {
                 }
                 onConfirmBooking={handleConfirmBooking}
                 onCancelProposal={handleCancelProposal}
+                onSelectRoom={(roomName) =>
+                  sendText(`Tôi muốn đặt phòng ${roomName}`)
+                }
                 showBookingForm={
                   index === messages.length - 1 && dismissedFormAt !== index
                 }
