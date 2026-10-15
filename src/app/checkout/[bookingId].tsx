@@ -33,7 +33,10 @@ const RECENT_BANK_STORAGE_KEY = 'checkout.lastBankAppId';
 export default function CheckoutScreen() {
   const { t } = useTranslation();
   const theme = useTheme();
-  const steps = useMemo(() => [t('checkout.step1'), t('checkout.step2'), t('checkout.step3')], [t]);
+  const steps = useMemo(
+    () => [t("checkout.step1"), t("checkout.step2"), t("checkout.step3")],
+    [t],
+  );
   const shadows = useShadows();
   const { width } = useWindowDimensions();
   const { bookingId } = useLocalSearchParams<{ bookingId: string }>();
@@ -49,7 +52,9 @@ export default function CheckoutScreen() {
   const [recentBankAppId, setRecentBankAppId] = useState<string | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const qrSize = Math.round(Math.min(Math.min(width, MaxContentWidth) - Space['4xl'] * 2, 260));
+  const qrSize = Math.round(
+    Math.min(Math.min(width, MaxContentWidth) - Space["4xl"] * 2, 260),
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -63,7 +68,8 @@ export default function CheckoutScreen() {
         setLink(created);
         if (created.amount != null) setAmount(created.amount);
       } catch (err) {
-        if (!cancelled) setError(getApiErrorMessage(err, t('checkout.createLinkFailed')));
+        if (!cancelled)
+          setError(getApiErrorMessage(err, t("checkout.createLinkFailed")));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -115,7 +121,12 @@ export default function CheckoutScreen() {
       if (booking.paymentStatus === 'PAID') {
         setPaid(true);
         if (pollRef.current) clearInterval(pollRef.current);
-      } else if (Date.now() / 1000 > link.expiredAt) {
+      } else if (
+        // FAILED: the PayOS link expired/was cancelled — stop asking, or every poll makes
+        // the backend look it up again. expiredAt is missing for a reused existing link.
+        booking.paymentStatus === 'FAILED' ||
+        (link.expiredAt && Date.now() / 1000 > link.expiredAt)
+      ) {
         setExpired(true);
         if (pollRef.current) clearInterval(pollRef.current);
       }
@@ -172,32 +183,49 @@ export default function CheckoutScreen() {
   if (loading) {
     return (
       <ThemedView style={styles.loading}>
-        <Skeleton width={qrSize + Space['2xl']} height={qrSize + Space['2xl']} radius={Radius.lg} />
+        <Skeleton
+          width={qrSize + Space["2xl"]}
+          height={qrSize + Space["2xl"]}
+          radius={Radius.lg}
+        />
         <Skeleton width="60%" height={20} />
       </ThemedView>
     );
   }
-  if (error || !link) return <ErrorView message={error ?? t('checkout.createLinkMissing')} />;
+  if (error || !link)
+    return <ErrorView message={error ?? t("checkout.createLinkMissing")} />;
 
   const hasBankInfo = !!link.accountNumber && !!link.bin;
 
   if (paid) {
     return (
       <ThemedView style={styles.success}>
-        <Animated.View entering={ZoomIn.springify().damping(14)} style={[styles.successCircle, { backgroundColor: theme.primarySoft }]}>
-          <View style={[styles.successInner, { backgroundColor: theme.success }]}>
+        <Animated.View
+          entering={ZoomIn.springify().damping(14)}
+          style={[styles.successCircle, { backgroundColor: theme.primarySoft }]}
+        >
+          <View
+            style={[styles.successInner, { backgroundColor: theme.success }]}
+          >
             <Ionicons name="checkmark" size={44} color="#FFFFFF" />
           </View>
         </Animated.View>
         <View style={styles.successText}>
           <ThemedText type="title" style={styles.center}>
-            {t('checkout.successTitle')}
+            {t("checkout.successTitle")}
           </ThemedText>
-          <ThemedText type="body" themeColor="textSecondary" style={styles.center}>
-            {t('checkout.successSubtitle')}
+          <ThemedText
+            type="body"
+            themeColor="textSecondary"
+            style={styles.center}
+          >
+            {t("checkout.successSubtitle")}
           </ThemedText>
         </View>
-        <Button label={t('checkout.viewBooking')} onPress={() => router.replace(`/booking/${bookingId}`)} />
+        <Button
+          label={t("checkout.viewBooking")}
+          onPress={() => router.replace(`/booking/${bookingId}`)}
+        />
       </ThemedView>
     );
   }
@@ -207,14 +235,16 @@ export default function CheckoutScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.header}>
           <ThemedText type="title" style={styles.center}>
-            {t('checkout.scanTitle')}
+            {t("checkout.scanTitle")}
           </ThemedText>
           {amount != null ? (
             <View style={styles.amountBlock}>
               <ThemedText type="small" themeColor="textSecondary">
-                {t('checkout.amountLabel')}
+                {t("checkout.amountLabel")}
               </ThemedText>
-              <ThemedText style={[styles.amount, { color: theme.primary }]}>{formatVND(amount)}</ThemedText>
+              <ThemedText style={[styles.amount, { color: theme.primary }]}>
+                {formatVND(amount)}
+              </ThemedText>
             </View>
           ) : null}
         </View>
@@ -251,15 +281,24 @@ export default function CheckoutScreen() {
         <View
           style={[
             styles.statusPill,
-            { backgroundColor: expired ? `${theme.danger}14` : theme.primarySoft },
-          ]}>
+            {
+              backgroundColor: expired
+                ? `${theme.danger}14`
+                : theme.primarySoft,
+            },
+          ]}
+        >
           {expired ? (
             <Ionicons name="time-outline" size={16} color={theme.danger} />
           ) : (
             <ActivityIndicator size="small" color={theme.primary} />
           )}
-          <ThemedText type="small" themeColor={expired ? 'danger' : 'primary'} style={styles.flexShrink}>
-            {expired ? t('checkout.expired') : t('checkout.waiting')}
+          <ThemedText
+            type="small"
+            themeColor={expired ? "danger" : "primary"}
+            style={styles.flexShrink}
+          >
+            {expired ? t("checkout.expired") : t("checkout.waiting")}
           </ThemedText>
         </View>
 
@@ -352,10 +391,12 @@ export default function CheckoutScreen() {
         ) : null}
 
         <Card style={styles.steps}>
-          <ThemedText type="bodyBold">{t('checkout.instructions')}</ThemedText>
+          <ThemedText type="bodyBold">{t("checkout.instructions")}</ThemedText>
           {steps.map((step, index) => (
             <View key={step} style={styles.step}>
-              <View style={[styles.stepNumber, { backgroundColor: theme.primary }]}>
+              <View
+                style={[styles.stepNumber, { backgroundColor: theme.primary }]}
+              >
                 <ThemedText type="caption" style={{ color: theme.primaryText }}>
                   {index + 1}
                 </ThemedText>
@@ -368,7 +409,7 @@ export default function CheckoutScreen() {
         </Card>
 
         <Button
-          label={t('checkout.openCheckout')}
+          label={t("checkout.openCheckout")}
           icon="open-outline"
           variant="outline"
           onPress={() => WebBrowser.openBrowserAsync(link.checkoutUrl)}
@@ -390,28 +431,33 @@ export default function CheckoutScreen() {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   flexShrink: { flexShrink: 1 },
-  center: { textAlign: 'center' },
-  loading: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: Space.xl },
-  content: {
-    width: '100%',
-    maxWidth: MaxContentWidth,
-    alignSelf: 'center',
-    alignItems: 'stretch',
-    padding: Space.lg,
-    paddingTop: Space['2xl'],
+  center: { textAlign: "center" },
+  loading: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
     gap: Space.xl,
-    paddingBottom: Space['4xl'],
   },
-  header: { gap: Space.md, alignItems: 'center' },
-  amountBlock: { alignItems: 'center', gap: 2 },
+  content: {
+    width: "100%",
+    maxWidth: MaxContentWidth,
+    alignSelf: "center",
+    alignItems: "stretch",
+    padding: Space.lg,
+    paddingTop: Space["2xl"],
+    gap: Space.xl,
+    paddingBottom: Space["4xl"],
+  },
+  header: { gap: Space.md, alignItems: "center" },
+  amountBlock: { alignItems: "center", gap: 2 },
   amount: { fontFamily: FontFamily.bold, fontSize: 30, lineHeight: 38 },
   qrCard: {
-    alignSelf: 'center',
-    alignItems: 'center',
+    alignSelf: "center",
+    alignItems: "center",
     gap: Space.md,
     padding: Space.lg,
     borderRadius: Radius.lg,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
   },
   qrExpired: { opacity: 0.35 },
   qrMissingCard: { alignItems: 'center', gap: Space.sm },
@@ -428,25 +474,43 @@ const styles = StyleSheet.create({
     borderRadius: Radius.sm,
   },
   statusPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: Space.sm,
     paddingHorizontal: Space.lg,
     paddingVertical: Space.md,
     borderRadius: Radius.full,
   },
   steps: { gap: Space.md },
-  step: { flexDirection: 'row', alignItems: 'center', gap: Space.md },
-  stepNumber: { width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  step: { flexDirection: "row", alignItems: "center", gap: Space.md },
+  stepNumber: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   success: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Space['2xl'],
-    padding: Space['2xl'],
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Space["2xl"],
+    padding: Space["2xl"],
   },
-  successCircle: { width: 120, height: 120, borderRadius: 60, alignItems: 'center', justifyContent: 'center' },
-  successInner: { width: 84, height: 84, borderRadius: 42, alignItems: 'center', justifyContent: 'center' },
+  successCircle: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  successInner: {
+    width: 84,
+    height: 84,
+    borderRadius: 42,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   successText: { gap: Space.sm, maxWidth: 340 },
 });

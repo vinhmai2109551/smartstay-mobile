@@ -106,6 +106,7 @@ export function ChatBookingCreatedCard({
       try {
         const result = await paymentsApi.syncPayosStatus(booking.bookingId);
         if (result.paymentStatus === "PAID") setPaid(true);
+        else if (result.paymentStatus === "FAILED") setExpired(true);
       } catch {
         // bỏ qua lỗi mạng tạm thời
       }
