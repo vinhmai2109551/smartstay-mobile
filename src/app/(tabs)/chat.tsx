@@ -40,6 +40,7 @@ import {
   readStoredConversationId,
   storeConversationId,
 } from "@/utils/aiChatHistory";
+import { TFunction } from "i18next";
 
 // The latest booking proposal shown before `index` — what an AI-created booking was made from.
 function findProposalBefore(messages: ChatMessage[], index: number) {
@@ -48,6 +49,20 @@ function findProposalBefore(messages: ChatMessage[], index: number) {
     if (proposal) return proposal;
   }
   return null;
+}
+
+const AI_DAILY_QUOTA_EXCEEDED = "AI_DAILY_QUOTA_EXCEEDED";
+
+function getSendErrorMessage(error: unknown, t: TFunction) {
+  if (isAxiosError(error) && error.response?.status === 429) {
+    const data = error.response.data as
+      | { code?: string; message?: string }
+      | undefined;
+    return data?.code === AI_DAILY_QUOTA_EXCEEDED && data.message
+      ? data.message
+      : t("chat.tooFast");
+  }
+  return t("chat.sendFailed");
 }
 
 export default function ChatScreen() {
@@ -195,7 +210,7 @@ export default function ChatScreen() {
         ...prev,
         {
           role: "MODEL",
-          content: getApiErrorMessage(error, t("chat.sendFailed")),
+          content: getSendErrorMessage(error, t),
         },
       ]);
     } finally {
@@ -299,7 +314,7 @@ export default function ChatScreen() {
             keyboardShouldPersistTaps="handled"
             renderItem={({ item, index }) => (
               <ChatBubble
-                message={item}
+                message={index === 0 ? welcomeMessage : item}
                 confirming={
                   sending &&
                   item.pendingBooking?.proposalId === confirmingProposalId
