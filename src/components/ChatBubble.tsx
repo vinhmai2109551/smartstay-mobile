@@ -8,7 +8,7 @@ import { ThemedText } from "@/components/themed-text";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { FontFamily, MaxContentWidth, Radius, Space } from "@/constants/theme";
-import { useTheme } from "@/hooks/use-theme";
+import { useTheme, useShadows } from "@/hooks/use-theme";
 import { ChatMessage, PendingBooking } from "@/types/chat";
 import { formatVND } from "@/utils/currency";
 import { formatDate } from "@/utils/date";
@@ -68,6 +68,7 @@ export function ChatBubble({
     promotions.length > 0 ||
     rooms.length > 0;
   const formWidth = Math.min(width, MaxContentWidth) - Space.lg * 2;
+  const shadows = useShadows();
 
   return (
     <View
@@ -80,18 +81,28 @@ export function ChatBubble({
       <View
         style={[
           styles.bubble,
+          shadows.card,
           wide && styles.bubbleNarrow,
           isUser
             ? [styles.bubbleUser, { backgroundColor: theme.primary }]
             : [
                 styles.bubbleAssistant,
                 {
-                  backgroundColor: theme.backgroundElement,
+                  backgroundColor: theme.backgroundSelected,
                   borderColor: theme.border,
                 },
               ],
         ]}
       >
+        {!isUser ? (
+          <ThemedText
+            type="caption"
+            style={[styles.assistantLabel, { color: theme.primary }]}
+          >
+            {t("chat.assistantLabel")}
+          </ThemedText>
+        ) : null}
+
         {isUser ? (
           <ThemedText
             type="body"
@@ -306,15 +317,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: Space.lg,
     paddingVertical: Space.md,
   },
-
-  bubbleUser: { borderBottomRightRadius: Space.xs },
+  bubbleUser: { borderTopRightRadius: Space.xs },
   bubbleAssistant: {
-    borderBottomLeftRadius: Space.xs,
+    borderTopLeftRadius: Space.xs,
     borderWidth: StyleSheet.hairlineWidth,
   },
   flex: { flex: 1 },
   actions: { flexDirection: "row", gap: Space.sm },
-  bold: { fontFamily: FontFamily.bold },
   moreRooms: {
     width: "100%",
     flexDirection: "row",
@@ -357,4 +366,9 @@ const styles = StyleSheet.create({
   },
   roomGrid: { flexDirection: "row", flexWrap: "wrap", gap: Space.sm },
   userText: { fontSize: 15, lineHeight: 22 },
+  assistantLabel: {
+    fontFamily: FontFamily.bold,
+    fontSize: 11,
+    marginBottom: 2,
+  },
 });

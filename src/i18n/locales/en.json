@@ -373,7 +373,8 @@
     "roomGuests": "{{count}} guests",
     "perNight": "/night",
     "sendFailed": "Sorry, the virtual assistant is having trouble. Please try again later.",
-    "tooFast": "You're sending messages too fast. Please wait a few seconds and try again."
+    "tooFast": "You're sending messages too fast. Please wait a few seconds and try again.",
+    "assistantLabel": "Assistant"
   },
   "profile": {
     "title": "Account",

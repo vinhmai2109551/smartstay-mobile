@@ -373,7 +373,8 @@
     "roomGuests": "{{count}} khách",
     "perNight": "/đêm",
     "sendFailed": "Xin lỗi, trợ lý ảo đang gặp sự cố, quý khách vui lòng thử lại sau.",
-    "tooFast": "Quý khách gửi tin nhắn quá nhanh, vui lòng chờ vài giây rồi thử lại."
+    "tooFast": "Quý khách gửi tin nhắn quá nhanh, vui lòng chờ vài giây rồi thử lại.",
+    "assistantLabel": "Trợ lý ảo"
   },
   "profile": {
     "title": "Tài khoản",

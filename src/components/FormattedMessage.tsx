@@ -1,7 +1,7 @@
 import { Linking, StyleSheet, Text, View } from "react-native";
 
 import { ThemedText } from "@/components/themed-text";
-import { FontFamily, Space } from "@/constants/theme";
+import { FontFamily } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
 
 // [chữ](https://...) hoặc URL trần https://... — chỉ nhận http(s) để không mở được
