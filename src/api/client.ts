@@ -1,5 +1,5 @@
-import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
-import i18next from 'i18next';
+import axios, { AxiosError, create, isAxiosError, type InternalAxiosRequestConfig } from 'axios';
+import { t } from 'i18next';
 
 import { API_URL } from '@/config/env';
 import '@/i18n';
@@ -12,7 +12,7 @@ type RetryableRequestConfig = InternalAxiosRequestConfig & { _retry?: boolean };
 // cookie the backend sets on /auth/login, /auth/register, /auth/google and
 // /auth/refresh (see doc/API.md 0.2). On native, cookies are handled by the
 // OS network stack regardless of this flag.
-export const apiClient = axios.create({
+export const apiClient = create({
   baseURL: API_URL,
   timeout: 15000,
   withCredentials: true,
@@ -52,9 +52,15 @@ apiClient.interceptors.response.use(
     if (error.response?.status === 401 && originalRequest && !originalRequest._retry && !isAuthEndpoint) {
       originalRequest._retry = true;
 
-      refreshPromise = refreshPromise ?? refreshAccessToken();
+      if (!refreshPromise) {
+        // Nulled only once, by whichever call started the refresh — not by every
+        // caller that merely awaited the shared promise (that let a caller which
+        // settled a hair after the others start a redundant second refresh).
+        refreshPromise = refreshAccessToken().finally(() => {
+          refreshPromise = null;
+        });
+      }
       const newAccessToken = await refreshPromise;
-      refreshPromise = null;
 
       if (newAccessToken) {
         originalRequest.headers.set('Authorization', `Bearer ${newAccessToken}`);
@@ -67,8 +73,8 @@ apiClient.interceptors.response.use(
 );
 
 export function getApiErrorMessage(error: unknown, fallback?: string) {
-  const resolvedFallback = fallback ?? i18next.t('common.errorFallback');
-  if (axios.isAxiosError<ApiErrorBody>(error)) {
+  const resolvedFallback = fallback ?? t('common.errorFallback');
+  if (isAxiosError<ApiErrorBody>(error)) {
     const body = error.response?.data;
     if (Array.isArray(body?.message)) return body.message.join('\n');
     if (typeof body?.message === 'string') return body.message;

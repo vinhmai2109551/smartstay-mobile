@@ -14,8 +14,10 @@ import { useTranslation } from 'react-i18next';
 
 import { authApi } from '@/api/auth';
 import { NotificationToast } from '@/components/NotificationToast';
+import { ErrorView } from '@/components/ui/ErrorView';
 import { ToastHost } from '@/components/ui/ToastHost';
 import { TopOverlay } from '@/components/ui/TopOverlay';
+import { ENV } from '@/config/env';
 import { Colors, FontFamily } from '@/constants/theme';
 import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
 import { useEffectiveColorScheme } from '@/hooks/use-theme';
@@ -101,6 +103,14 @@ export default function RootLayout() {
     return null;
   }
 
+  if (ENV.isMisconfigured) {
+    return (
+      <ThemeProvider value={colorScheme === 'dark' ? DarkNavigationTheme : LightNavigationTheme}>
+        <ErrorView message={t('common.configErrorMessage')} />
+      </ThemeProvider>
+    );
+  }
+
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkNavigationTheme : LightNavigationTheme}>
       <Stack
@@ -137,6 +147,8 @@ export default function RootLayout() {
             name="notifications"
             options={{ headerShown: true, title: t('layout.notificationsTitle'), headerBackTitle: t('common.back') }}
           />
+          <Stack.Screen name="change-password" options={{ headerShown: false }} />
+          <Stack.Screen name="edit-profile" options={{ headerShown: false }} />
         </Stack.Protected>
 
         <Stack.Protected guard={!accessToken && !hasSeenOnboarding}>

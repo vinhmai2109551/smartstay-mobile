@@ -17,7 +17,6 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
-import { Button } from "@/components/ui/Button";
 import { Chip } from "@/components/ui/Chip";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorView } from "@/components/ui/ErrorView";
