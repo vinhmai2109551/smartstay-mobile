@@ -1,22 +1,22 @@
-import { Ionicons } from '@expo/vector-icons';
-import dayjs from 'dayjs';
-import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Ionicons } from "@expo/vector-icons";
+import dayjs from "dayjs";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Pressable, StyleSheet, View } from "react-native";
 
-import { DateField } from '@/components/DateField';
-import { Stepper } from '@/components/Stepper';
-import { ThemedText } from '@/components/themed-text';
-import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
-import { TextField } from '@/components/ui/TextField';
-import { Radius, Space } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
-import { useAuthStore } from '@/store/authStore';
-import { BookingFormRequest } from '@/types/chat';
-import { toIsoDate } from '@/utils/date';
+import { DateField } from "@/components/DateField";
+import { Stepper } from "@/components/Stepper";
+import { ThemedText } from "@/components/themed-text";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { TextField } from "@/components/ui/TextField";
+import { Radius, Space } from "@/constants/theme";
+import { useTheme } from "@/hooks/use-theme";
+import { useAuthStore } from "@/store/authStore";
+import { BookingFormRequest } from "@/types/chat";
+import { toIsoDate } from "@/utils/date";
 
-type PaymentMethod = 'CASH' | 'PAYOS';
+type PaymentMethod = "CASH" | "PAYOS";
 
 /**
  * The guest's details for an AI booking, asked for when the assistant calls
@@ -39,33 +39,48 @@ export function ChatBookingForm({
   const theme = useTheme();
   const user = useAuthStore((s) => s.user);
 
-  const today = dayjs().startOf('day');
-  const initialCheckIn = request.checkIn && dayjs(request.checkIn).isValid() ? dayjs(request.checkIn) : today;
+  const today = dayjs().startOf("day");
+  const initialCheckIn =
+    request.checkIn &&
+    dayjs(request.checkIn).isValid() &&
+    !dayjs(request.checkIn).isBefore(today)
+      ? dayjs(request.checkIn)
+      : today;
   const initialCheckOut =
-    request.checkOut && dayjs(request.checkOut).isAfter(initialCheckIn) ? dayjs(request.checkOut) : initialCheckIn.add(1, 'day');
+    request.checkOut && dayjs(request.checkOut).isAfter(initialCheckIn)
+      ? dayjs(request.checkOut)
+      : initialCheckIn.add(1, "day");
 
   const [checkIn, setCheckIn] = useState(initialCheckIn.toDate());
   const [checkOut, setCheckOut] = useState(initialCheckOut.toDate());
-  const [guests, setGuests] = useState(request.guests && request.guests > 0 ? request.guests : 2);
-  const [fullName, setFullName] = useState(user?.fullName ?? '');
-  const [phone, setPhone] = useState(user?.phone ?? '');
-  const [email, setEmail] = useState(user?.email ?? '');
+  const [guests, setGuests] = useState(
+    request.guests && request.guests > 0 ? request.guests : 2,
+  );
+  const [fullName, setFullName] = useState(user?.fullName ?? "");
+  const [phone, setPhone] = useState(user?.phone ?? "");
+  const [email, setEmail] = useState(user?.email ?? "");
   // No default, like the web: the guest has to pick how they'll pay.
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(
+    null,
+  );
 
   const changeCheckIn = (date: Date) => {
     setCheckIn(date);
     // Keep at least one night.
-    if (!dayjs(checkOut).isAfter(date, 'day')) setCheckOut(dayjs(date).add(1, 'day').toDate());
+    if (!dayjs(checkOut).isAfter(date, "day"))
+      setCheckOut(dayjs(date).add(1, "day").toDate());
   };
 
-  const canSubmit = !!fullName.trim() && !!phone.trim() && !!paymentMethod && !disabled;
+  const canSubmit =
+    !!fullName.trim() && !!phone.trim() && !!paymentMethod && !disabled;
 
   // Same sentence the web builds (handleSubmitBookingForm in AiChatbot.jsx) — the AI is
   // tuned to read it, so it stays in Vietnamese whatever the app language is.
   const handleSubmit = () => {
     if (!canSubmit) return;
-    const room = request.roomTypeName ? `phòng ${request.roomTypeName}` : 'phòng đã chọn';
+    const room = request.roomTypeName
+      ? `phòng ${request.roomTypeName}`
+      : "phòng đã chọn";
     const parts = [
       `Tôi muốn đặt ${room}`,
       `nhận phòng ngày ${toIsoDate(checkIn)}`,
@@ -75,46 +90,81 @@ export function ChatBookingForm({
       `số điện thoại ${phone.trim()}`,
     ];
     if (email.trim()) parts.push(`email ${email.trim()}`);
-    parts.push(`thanh toán bằng ${paymentMethod === 'PAYOS' ? 'chuyển khoản' : 'tiền mặt'}`);
-    onSubmit(`${parts.join(', ')}.`);
+    parts.push(
+      `thanh toán bằng ${paymentMethod === "PAYOS" ? "chuyển khoản" : "tiền mặt"}`,
+    );
+    onSubmit(`${parts.join(", ")}.`);
   };
 
-  const paymentOptions: { value: PaymentMethod; icon: keyof typeof Ionicons.glyphMap; label: string }[] = [
-    { value: 'CASH', icon: 'cash-outline', label: t('chatForm.payCash') },
-    { value: 'PAYOS', icon: 'qr-code-outline', label: t('chatForm.payTransfer') },
+  const paymentOptions: {
+    value: PaymentMethod;
+    icon: keyof typeof Ionicons.glyphMap;
+    label: string;
+  }[] = [
+    { value: "CASH", icon: "cash-outline", label: t("chatForm.payCash") },
+    {
+      value: "PAYOS",
+      icon: "qr-code-outline",
+      label: t("chatForm.payTransfer"),
+    },
   ];
 
   return (
-    <Card style={styles.card}>
+    <Card
+      style={[
+        styles.card,
+        {
+          borderWidth: 2,
+          borderColor: theme.primaryBorder,
+          backgroundColor: theme.primarySoft,
+        },
+      ]}
+    >
       <View style={styles.header}>
-        <View style={[styles.headerIcon, { backgroundColor: theme.primarySoft }]}>
-          <Ionicons name="create-outline" size={16} color={theme.primary} />
-        </View>
         <View style={styles.flex}>
-          <ThemedText type="smallBold">{t('chatForm.title')}</ThemedText>
-          {request.roomTypeName ? (
-            <ThemedText type="caption" themeColor="textSecondary">
-              {request.roomTypeName}
-            </ThemedText>
-          ) : null}
+          <ThemedText
+            type="smallBold"
+            style={{ color: theme.primary }}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.8}
+          >
+            {t("chatForm.title")}
+            {request.roomTypeName ? ` — ${request.roomTypeName}` : ""}
+          </ThemedText>
         </View>
       </View>
 
       <View style={styles.row}>
-        <DateField label={t('chatForm.checkIn')} value={checkIn} onChange={changeCheckIn} minimumDate={today.toDate()} />
         <DateField
-          label={t('chatForm.checkOut')}
+          label={t("chatForm.checkIn")}
+          value={checkIn}
+          onChange={changeCheckIn}
+          minimumDate={today.toDate()}
+          dense
+        />
+        <DateField
+          label={t("chatForm.checkOut")}
           value={checkOut}
           onChange={setCheckOut}
-          minimumDate={dayjs(checkIn).add(1, 'day').toDate()}
+          minimumDate={dayjs(checkIn).add(1, "day").toDate()}
+          dense
         />
       </View>
 
-      <Stepper label={t('chatForm.guests')} value={guests} onChange={setGuests} max={20} />
+      <Stepper
+        label={t("chatForm.guests")}
+        value={guests}
+        onChange={setGuests}
+        max={20}
+        icon="people-outline"
+        dense
+      />
 
       <TextField
         leftIcon="person-outline"
-        placeholder={t('chatForm.fullName')}
+        dense
+        placeholder={t("chatForm.fullName")}
         value={fullName}
         onChangeText={setFullName}
         autoComplete="name"
@@ -122,7 +172,8 @@ export function ChatBookingForm({
       />
       <TextField
         leftIcon="call-outline"
-        placeholder={t('chatForm.phone')}
+        dense
+        placeholder={t("chatForm.phone")}
         value={phone}
         onChangeText={setPhone}
         keyboardType="phone-pad"
@@ -130,7 +181,8 @@ export function ChatBookingForm({
       />
       <TextField
         leftIcon="mail-outline"
-        placeholder={t('chatForm.email')}
+        dense
+        placeholder={t("chatForm.email")}
         value={email}
         onChangeText={setEmail}
         keyboardType="email-address"
@@ -139,7 +191,9 @@ export function ChatBookingForm({
       />
 
       <View style={styles.gapSm}>
-        <ThemedText type="smallBold">{t('chatForm.paymentMethod')}</ThemedText>
+        <ThemedText type="caption" themeColor="textSecondary">
+          {t("chatForm.paymentMethod")}
+        </ThemedText>
         <View style={styles.row}>
           {paymentOptions.map((option) => {
             const selected = paymentMethod === option.value;
@@ -153,11 +207,29 @@ export function ChatBookingForm({
                   styles.payOption,
                   {
                     borderColor: selected ? theme.primary : theme.border,
-                    backgroundColor: selected ? theme.primarySoft : 'transparent',
+                    backgroundColor: selected
+                      ? theme.primary
+                      : theme.backgroundElement,
                   },
-                ]}>
-                <Ionicons name={option.icon} size={18} color={selected ? theme.primary : theme.textSecondary} />
-                <ThemedText type="smallBold" style={{ color: selected ? theme.primary : theme.text }}>
+                ]}
+              >
+                <Ionicons
+                  name={option.icon}
+                  size={16}
+                  color={selected ? theme.primaryText : theme.textSecondary}
+                />
+                {/* One line, like the web's buttons: shrinks a little on narrow phones
+                    instead of wrapping "Tiền mặt tại quầy" onto two lines. */}
+                <ThemedText
+                  type="smallBold"
+                  style={[
+                    styles.payLabel,
+                    { color: selected ? theme.primaryText : theme.text },
+                  ]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.75}
+                >
                   {option.label}
                 </ThemedText>
               </Pressable>
@@ -168,10 +240,28 @@ export function ChatBookingForm({
 
       <View style={styles.row}>
         <View style={styles.flex}>
-          <Button label={t('common.cancel')} variant="outline" size="sm" onPress={onCancel} disabled={disabled} />
+          <Button
+            label={t("chatForm.submit")}
+            size="sm"
+            onPress={handleSubmit}
+            disabled={!canSubmit}
+          />
         </View>
-        <View style={styles.flex}>
-          <Button label={t('chatForm.submit')} size="sm" icon="send" onPress={handleSubmit} disabled={!canSubmit} />
+        {/* White behind the outline button, like the web's "Huỷ" on the blue card. */}
+        <View
+          style={[
+            styles.flex,
+            styles.cancelWrap,
+            { backgroundColor: theme.backgroundElement },
+          ]}
+        >
+          <Button
+            label={t("common.cancel")}
+            variant="outline"
+            size="sm"
+            onPress={onCancel}
+            disabled={disabled}
+          />
         </View>
       </View>
     </Card>
@@ -179,21 +269,24 @@ export function ChatBookingForm({
 }
 
 const styles = StyleSheet.create({
-  card: { gap: Space.md },
-  header: { flexDirection: 'row', alignItems: 'center', gap: Space.sm },
-  headerIcon: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  // Slightly tighter padding than a plain Card: the form spans the chat column and
+  // its two-per-row fields need the room.
+  card: { gap: Space.md, padding: Space.md },
+  header: { flexDirection: "row", alignItems: "center", gap: Space.sm },
   flex: { flex: 1 },
-  row: { flexDirection: 'row', gap: Space.sm },
+  row: { flexDirection: "row", gap: Space.sm },
   gapSm: { gap: Space.sm },
+  cancelWrap: { borderRadius: Radius.full },
   payOption: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: Space.xs,
     minHeight: 44,
     paddingHorizontal: Space.sm,
     borderWidth: 1,
     borderRadius: Radius.md,
   },
+  payLabel: { flexShrink: 1, fontSize: 13 },
 });
