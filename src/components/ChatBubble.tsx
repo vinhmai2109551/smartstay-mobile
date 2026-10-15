@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Pressable, StyleSheet, useWindowDimensions, View } from "react-native";
 import { ChatBookingForm } from "@/components/ChatBookingForm";
-import { RoomTypeCard } from "@/components/RoomTypeCard";
 import { ThemedText } from "@/components/themed-text";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -16,22 +15,10 @@ import { formatDate } from "@/utils/date";
 import { ChatBookingCreatedCard } from "./ChatBookingCreatedCard";
 import { ChatPromotionList } from "./ChatPromotionList";
 import { ChatRoomCard } from "./ChatRoomCard";
+import { FormattedMessage } from "./FormattedMessage";
 
 // Rooms shown before "Show n more" when a reply still lists many.
 const COLLAPSED_ROOMS = 4;
-
-// Renders the **bold** spans the AI writes in markdown; everything else stays plain text.
-function renderInlineMarkdown(text: string) {
-  return text.split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
-    part.startsWith("**") && part.endsWith("**") && part.length > 4 ? (
-      <ThemedText key={i} style={styles.bold}>
-        {part.slice(2, -2)}
-      </ThemedText>
-    ) : (
-      part
-    ),
-  );
-}
 
 export function ChatBubble({
   message,
@@ -68,10 +55,6 @@ export function ChatBubble({
   const rooms = message.rooms ?? [];
   const visibleRooms = showAllRooms ? rooms : rooms.slice(0, COLLAPSED_ROOMS);
   const hiddenRooms = rooms.length - visibleRooms.length;
-  // Rich cards take ~3/4 of the screen, capped for tablets.
-  const cardWidth = Math.round(
-    Math.min(Math.min(width, MaxContentWidth) * 0.74, 320),
-  );
   // The booking form and the booking cards span the whole chat column, like on the web —
   // their rows (dates, payment options) wrap at card width. Matches the list's horizontal
   // padding (chat.tsx).
@@ -109,12 +92,16 @@ export function ChatBubble({
               ],
         ]}
       >
-        <ThemedText
-          type="body"
-          style={{ color: isUser ? theme.primaryText : theme.text }}
-        >
-          {isUser ? message.content : renderInlineMarkdown(message.content)}
-        </ThemedText>
+        {isUser ? (
+          <ThemedText
+            type="body"
+            style={[styles.userText, { color: theme.primaryText }]}
+          >
+            {message.content}
+          </ThemedText>
+        ) : (
+          <FormattedMessage text={message.content} />
+        )}
       </View>
 
       {rooms.length ? (
@@ -369,4 +356,5 @@ const styles = StyleSheet.create({
     minHeight: 28,
   },
   roomGrid: { flexDirection: "row", flexWrap: "wrap", gap: Space.sm },
+  userText: { fontSize: 15, lineHeight: 22 },
 });

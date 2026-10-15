@@ -16,7 +16,6 @@ import { isAxiosError } from "axios";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { aiChatApi } from "@/api/chat";
-import { getApiErrorMessage } from "@/api/client";
 import { AI_TAB_LIFT } from "@/components/AiTabButton";
 import { BrandMark } from "@/components/BrandMark";
 import { ChatBubble } from "@/components/ChatBubble";
