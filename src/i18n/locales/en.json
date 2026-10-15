@@ -369,9 +369,8 @@
     "copyLabel": "Copy {{label}}"
   },
   "chat": {
-    "welcomeMessage": "Hi! I'm Vika Hotel's AI concierge. What dates are you looking at, and for how many guests? I can help you find and book a room right here.",
+    "welcomeMessage": "Hello! I'm the Vika Hotel virtual assistant. I can help you find rooms, look up promotions and answer questions about our booking policies.",
     "placeholder": "Message to find and book a room...",
-    "sendFailed": "The AI concierge isn't responding right now, please try again.",
     "typingAccessibility": "The concierge is typing a reply",
     "confirmBookingMessage": "I agree to book with the details above.",
     "confirmBookingCard": "Confirm booking",
@@ -424,7 +423,9 @@
     "qrPermissionDenied": "Please allow photo access to save the QR code",
     "selectRoom": "Choose this room",
     "roomGuests": "{{count}} guests",
-    "perNight": "/night"
+    "perNight": "/night",
+    "sendFailed": "Sorry, the virtual assistant is having trouble. Please try again later.",
+    "tooFast": "You're sending messages too fast. Please wait a few seconds and try again."
   },
   "profile": {
     "title": "Account",

@@ -369,9 +369,8 @@
     "copyLabel": "Sao chép {{label}}"
   },
   "chat": {
-    "welcomeMessage": "Xin chào! Mình là trợ lý ảo của Vika Hotel. Bạn muốn tìm phòng theo ngày nào, cho bao nhiêu khách? Mình có thể tư vấn và đặt phòng giúp bạn ngay tại đây.",
+    "welcomeMessage": "Xin chào! Tôi là trợ lý ảo Vika Hotel, tôi có thể giúp quý khách tìm phòng, tra cứu khuyến mãi và giải đáp chính sách đặt phòng.",
     "placeholder": "Nhắn tin để tìm và đặt phòng...",
-    "sendFailed": "Trợ lý AI hiện chưa phản hồi được, vui lòng thử lại.",
     "typingAccessibility": "Trợ lý đang soạn trả lời.",
     "confirmBookingMessage": "Tôi đồng ý đặt phòng theo thông tin trên.",
     "confirmBookingCard": "Xác nhận đặt phòng",
@@ -424,7 +423,9 @@
     "qrPermissionDenied": "Vui lòng cho phép truy cập thư viện ảnh để lưu mã QR",
     "selectRoom": "Chọn phòng này",
     "roomGuests": "{{count}} khách",
-    "perNight": "/đêm"
+    "perNight": "/đêm",
+    "sendFailed": "Xin lỗi, trợ lý ảo đang gặp sự cố, quý khách vui lòng thử lại sau.",
+    "tooFast": "Quý khách gửi tin nhắn quá nhanh, vui lòng chờ vài giây rồi thử lại."
   },
   "profile": {
     "title": "Tài khoản",
