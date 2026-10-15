@@ -5,6 +5,7 @@ import { FlatList, RefreshControl, ScrollView, StyleSheet, useWindowDimensions, 
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { bookingsApi } from '@/api/bookings';
+import { reviewsApi } from '@/api/reviews';
 import { BookingCard } from '@/components/BookingCard';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -14,6 +15,7 @@ import { ErrorView } from '@/components/ui/ErrorView';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { MaxContentWidth, Radius, Space } from '@/constants/theme';
 import { useApi } from '@/hooks/useApi';
+import { useBookingUpdates } from '@/hooks/useBookingUpdates';
 import { useTheme } from '@/hooks/use-theme';
 import { BookingStatus } from '@/types/booking';
 
@@ -27,8 +29,21 @@ export default function BookingsScreen() {
   const { width } = useWindowDimensions();
   const contentWidth = Math.min(width, MaxContentWidth);
   const fetchBookings = useCallback(() => bookingsApi.my(), []);
-  const { data, loading, error, refetch, refreshing, refresh } = useApi(fetchBookings);
+  const { data, loading, error, refetch, refreshing, refresh } = useApi(fetchBookings, { refetchOnFocus: true });
   const [filter, setFilter] = useState<FilterKey>('ALL');
+  useBookingUpdates(refresh);
+  // Which bookings already have a review. Decorative — if it fails the cards simply
+  // offer "Write a review", and the detail screen re-checks before showing the form.
+  const fetchMyReviews = useCallback(() => reviewsApi.mine(), []);
+  const myReviews = useApi(fetchMyReviews, { refetchOnFocus: true });
+  const ratingByBooking = useMemo(
+    () => new Map((myReviews.data ?? []).map((review) => [review.bookingId, review.rating])),
+    [myReviews.data],
+  );
+  const onRefresh = () => {
+    refresh();
+    myReviews.refresh();
+  };
 
   const FILTERS: { key: FilterKey; label: string; statuses?: BookingStatus[] }[] = useMemo(
     () => [
@@ -57,7 +72,7 @@ export default function BookingsScreen() {
           keyExtractor={(item) => item.bookingId}
           contentContainerStyle={[styles.list, { width: contentWidth }]}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={theme.primary} colors={[theme.primary]} />
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} colors={[theme.primary]} />
           }
           ListHeaderComponent={
             <View style={styles.header}>
@@ -104,7 +119,14 @@ export default function BookingsScreen() {
           }
           renderItem={({ item }) => (
             <View style={styles.cardWrapper}>
-              <BookingCard booking={item} onPress={() => router.push(`/booking/${item.bookingId}`)} />
+              <BookingCard
+                booking={item}
+                onPress={() => router.push(`/booking/${item.bookingId}`)}
+                reviewRating={ratingByBooking.get(item.bookingId) ?? null}
+                onReview={() =>
+                  router.push({ pathname: '/booking/[id]', params: { id: item.bookingId, review: '1' } })
+                }
+              />
             </View>
           )}
         />

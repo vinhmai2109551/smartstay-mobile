@@ -13,7 +13,11 @@ import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { authApi } from '@/api/auth';
+import { NotificationToast } from '@/components/NotificationToast';
+import { ToastHost } from '@/components/ui/ToastHost';
+import { TopOverlay } from '@/components/ui/TopOverlay';
 import { Colors, FontFamily } from '@/constants/theme';
+import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
 import { useEffectiveColorScheme } from '@/hooks/use-theme';
 import { useAuthStore } from '@/store/authStore';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -75,12 +79,17 @@ export default function RootLayout() {
   // A font load failure falls back to system fonts rather than blocking the app.
   const fontsReady = fontsLoaded || !!fontError;
 
+  // Login responses only carry { userId, email, role }, so the full profile is
+  // fetched on startup and again whenever the user signs in. Keyed on the
+  // boolean so silent token refreshes don't refetch it.
+  const isLoggedIn = !!accessToken;
   useEffect(() => {
-    if (hasHydrated && accessToken) {
+    if (hasHydrated && isLoggedIn) {
       authApi.me().then(updateUser).catch(() => {});
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasHydrated]);
+  }, [hasHydrated, isLoggedIn, updateUser]);
+
+  useRealtimeNotifications(hasHydrated && isLoggedIn);
 
   useEffect(() => {
     if (hasHydrated && settingsHydrated && fontsReady) {
@@ -121,6 +130,10 @@ export default function RootLayout() {
             options={{ headerShown: true, title: t('layout.checkoutTitle'), presentation: 'modal' }}
           />
           <Stack.Screen
+            name="account"
+            options={{ headerShown: true, title: t('layout.accountTitle'), headerBackTitle: t('common.back') }}
+          />
+          <Stack.Screen
             name="notifications"
             options={{ headerShown: true, title: t('layout.notificationsTitle'), headerBackTitle: t('common.back') }}
           />
@@ -134,6 +147,12 @@ export default function RootLayout() {
           <Stack.Screen name="(auth)" />
         </Stack.Protected>
       </Stack>
+      {/* Above modal screens too (e.g. the booking sheet) — see TopOverlay. */}
+      <TopOverlay>
+        {isLoggedIn ? <NotificationToast /> : null}
+        {/* App-wide feedback toasts (errors, confirmations) — on auth screens too. */}
+        <ToastHost />
+      </TopOverlay>
     </ThemeProvider>
   );
 }

@@ -24,6 +24,8 @@ import { TextField } from '@/components/ui/TextField';
 import { FontFamily, MaxContentWidth, MinTouch, Radius, Space } from '@/constants/theme';
 import { useApi } from '@/hooks/useApi';
 import { useTheme } from '@/hooks/use-theme';
+import { useAuthStore } from '@/store/authStore';
+import { toast } from '@/store/toastStore';
 import { formatVND } from '@/utils/currency';
 import { formatDate, nightsBetween } from '@/utils/date';
 
@@ -50,15 +52,16 @@ export default function NewBookingScreen() {
   const fetchServices = useCallback(() => servicesApi.list(), []);
   const services = useApi(fetchServices);
 
-  const [fullName, setFullName] = useState('');
-  const [phone, setPhone] = useState('');
+  // Prefilled from the signed-in account; the guest can still edit them.
+  const user = useAuthStore((s) => s.user);
+  const [fullName, setFullName] = useState(user?.fullName ?? '');
+  const [phone, setPhone] = useState(user?.phone ?? '');
   const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'PAYOS'>('CASH');
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([]);
   const [promoCode, setPromoCode] = useState('');
   const [discountAmount, setDiscountAmount] = useState(0);
   const [promoMessage, setPromoMessage] = useState<string | null>(null);
   const [validatingPromo, setValidatingPromo] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const nights = useMemo(() => nightsBetween(params.checkIn, params.checkOut), [params.checkIn, params.checkOut]);
@@ -82,7 +85,12 @@ export default function NewBookingScreen() {
     setValidatingPromo(true);
     setPromoMessage(null);
     try {
-      const result = await promotionsApi.validate(promoCode.trim(), roomTotal + servicesTotal);
+      const result = await promotionsApi.validate(promoCode.trim(), {
+        roomTypeId: params.roomTypeId,
+        checkIn: params.checkIn,
+        checkOut: params.checkOut,
+        serviceAmount: servicesTotal,
+      });
       if (result.valid) {
         setDiscountAmount(result.discountAmount);
         setPromoMessage(t('booking.promoApplied', { amount: formatVND(result.discountAmount) }));
@@ -99,9 +107,8 @@ export default function NewBookingScreen() {
   };
 
   const handleSubmit = async () => {
-    setSubmitError(null);
     if (!fullName.trim() || !phone.trim()) {
-      setSubmitError(t('booking.requireFullNamePhone'));
+      toast.warning(t('booking.requireFullNamePhone'));
       return;
     }
 
@@ -126,7 +133,7 @@ export default function NewBookingScreen() {
         router.replace(`/booking/${booking.bookingId}`);
       }
     } catch (error) {
-      setSubmitError(getApiErrorMessage(error, t('booking.createFailed')));
+      toast.error(getApiErrorMessage(error, t('booking.createFailed')));
     } finally {
       setSubmitting(false);
     }
@@ -355,14 +362,6 @@ export default function NewBookingScreen() {
             </View>
           </Card>
 
-          {submitError ? (
-            <View style={[styles.errorBox, { backgroundColor: `${theme.danger}14` }]}>
-              <Ionicons name="alert-circle" size={18} color={theme.danger} />
-              <ThemedText type="small" themeColor="danger" style={styles.flexShrink}>
-                {submitError}
-              </ThemedText>
-            </View>
-          ) : null}
         </Animated.View>
       </ScrollView>
 
@@ -426,11 +425,4 @@ const styles = StyleSheet.create({
   priceRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: Space.sm },
   divider: { height: StyleSheet.hairlineWidth, marginVertical: Space.xs },
   total: { fontFamily: FontFamily.bold, fontSize: 18, lineHeight: 24 },
-  errorBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Space.sm,
-    padding: Space.md,
-    borderRadius: Radius.md,
-  },
 });

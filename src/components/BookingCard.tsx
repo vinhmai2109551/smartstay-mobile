@@ -12,7 +12,16 @@ import { Booking } from '@/types/booking';
 import { formatVND } from '@/utils/currency';
 import { formatDate, nightsBetween } from '@/utils/date';
 
-export function BookingCard({ booking, onPress }: { booking: Booking; onPress?: () => void }) {
+type BookingCardProps = {
+  booking: Booking;
+  onPress?: () => void;
+  /** Rating the guest gave this booking, or null when it has not been reviewed yet. */
+  reviewRating?: number | null;
+  /** Shown as a "Write a review" button on checked-out bookings that have no review. */
+  onReview?: () => void;
+};
+
+export function BookingCard({ booking, onPress, reviewRating, onReview }: BookingCardProps) {
   const { t } = useTranslation();
   const theme = useTheme();
   const shadows = useShadows();
@@ -67,6 +76,31 @@ export function BookingCard({ booking, onPress }: { booking: Booking; onPress?: 
         </View>
         <ThemedText style={[styles.total, { color: theme.primary }]}>{formatVND(booking.totalAmount)}</ThemedText>
       </View>
+
+      {booking.status === 'CHECKED_OUT' && reviewRating != null ? (
+        <View style={[styles.reviewed, { backgroundColor: theme.backgroundSelected }]}>
+          <Ionicons name="star" size={14} color={theme.warning} />
+          <ThemedText type="smallBold">{reviewRating.toFixed(1)}</ThemedText>
+          <ThemedText type="small" themeColor="textSecondary">
+            · {t('booking.reviewedBadge')}
+          </ThemedText>
+        </View>
+      ) : booking.status === 'CHECKED_OUT' && onReview ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t('booking.reviewAction')}
+          onPress={onReview}
+          hitSlop={4}
+          style={({ pressed }) => [
+            styles.reviewButton,
+            { borderColor: theme.primary, backgroundColor: pressed ? theme.primarySoft : 'transparent' },
+          ]}>
+          <Ionicons name="star-outline" size={16} color={theme.primary} />
+          <ThemedText type="smallBold" themeColor="primary">
+            {t('booking.reviewAction')}
+          </ThemedText>
+        </Pressable>
+      ) : null}
     </Pressable>
   );
 }
@@ -96,5 +130,23 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   dates: { flexDirection: 'row', alignItems: 'center', gap: Space.xs, flexShrink: 1 },
+  reviewed: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: Space.xs,
+    paddingHorizontal: Space.md,
+    paddingVertical: Space.xs,
+    borderRadius: Radius.full,
+  },
+  reviewButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Space.xs,
+    minHeight: 40,
+    borderWidth: 1,
+    borderRadius: Radius.full,
+  },
   total: { fontFamily: FontFamily.bold, fontSize: 16, lineHeight: 22 },
 });

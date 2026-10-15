@@ -1,27 +1,9 @@
-import { useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useNotificationStore } from '@/store/notificationStore';
 
-import { notificationsApi } from '@/api/notifications';
-
-/** Unread notification count, refreshed every time the calling screen gains focus. */
+/**
+ * Unread notification count for the bell badges. Kept current by the realtime
+ * socket (see useRealtimeNotifications), so no fetching is needed here.
+ */
 export function useUnreadNotifications() {
-  const [count, setCount] = useState(0);
-
-  useFocusEffect(
-    useCallback(() => {
-      let active = true;
-      notificationsApi
-        .unreadCount()
-        .then((result) => {
-          if (active) setCount(result.count);
-        })
-        // The badge is decorative — a failed request just leaves it hidden.
-        .catch(() => {});
-      return () => {
-        active = false;
-      };
-    }, []),
-  );
-
-  return count;
+  return useNotificationStore((s) => s.unreadCount);
 }

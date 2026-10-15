@@ -1,12 +1,13 @@
 import { apiClient } from './client';
-import { Paginated } from '@/types/common';
-import { CreateReviewDto, Review } from '@/types/review';
+import { CreateReviewDto, MyReview, Review } from '@/types/review';
 
 export const reviewsApi = {
-  create: (dto: CreateReviewDto) => apiClient.post<{ review: Review }>('/reviews', dto).then((r) => r.data.review),
+  create: (dto: CreateReviewDto) => apiClient.post<Review>('/reviews', dto).then((r) => r.data),
 
-  byRoomType: (roomTypeId: string, page = 1, limit = 10) =>
-    apiClient
-      .get<Paginated<Review> & { avgRating: number }>('/reviews', { params: { roomTypeId, page, limit } })
-      .then((r) => r.data),
+  // Newest first; the backend returns every review for the room type, unpaginated.
+  byRoomType: (roomTypeId: string) =>
+    apiClient.get<Review[]>('/reviews', { params: { roomTypeId } }).then((r) => r.data),
+
+  // The signed-in guest's own reviews — used to tell which bookings are already reviewed.
+  mine: () => apiClient.get<MyReview[]>('/reviews/me').then((r) => r.data),
 };

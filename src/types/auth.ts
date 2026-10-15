@@ -11,6 +11,8 @@ export type User = {
   role: UserRole;
   status?: UserStatus;
   mustChangePassword?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 // Refresh token is not returned in JSON — it is set as an httpOnly cookie by
@@ -24,6 +26,7 @@ export type LoginResponse = {
 export type LoginDto = {
   email: string;
   password: string;
+  turnstileToken: string;
 };
 
 export type GoogleLoginDto = {
@@ -52,9 +55,10 @@ export type ChangePasswordDto = {
   newPassword: string;
 };
 
+// null clears an optional field (the backend skips validation for null).
 export type UpdateProfileDto = {
   fullName?: string;
-  phone?: string;
-  address?: string;
-  idNumber?: string;
+  phone?: string | null;
+  address?: string | null;
+  idNumber?: string | null;
 };

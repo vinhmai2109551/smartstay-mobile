@@ -19,15 +19,15 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { OrDivider } from '@/components/ui/OrDivider';
 import { Screen } from '@/components/ui/Screen';
 import { TextField } from '@/components/ui/TextField';
-import { MinTouch, Radius, Space } from '@/constants/theme';
+import { MinTouch, Space } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { toast } from '@/store/toastStore';
 
 type FormValues = { fullName: string; email: string; phone: string; password: string; agree: boolean };
 
 export default function RegisterScreen() {
   const { t } = useTranslation();
   const theme = useTheme();
-  const [serverError, setServerError] = useState<string | null>(null);
   const [showGoogleHint, setShowGoogleHint] = useState(false);
 
   const schema = useMemo(
@@ -52,7 +52,6 @@ export default function RegisterScreen() {
   });
 
   const onSubmit = async (values: FormValues) => {
-    setServerError(null);
     try {
       const { fullName, email, phone, password } = values;
       // Step 1/2: this only sends an OTP to the email — the account is not
@@ -60,7 +59,7 @@ export default function RegisterScreen() {
       await authApi.register({ fullName, email, phone, password });
       router.push({ pathname: '/(auth)/verify-otp', params: { email } });
     } catch (error) {
-      setServerError(getApiErrorMessage(error, t('auth.register.registerFailed')));
+      toast.error(getApiErrorMessage(error, t('auth.register.registerFailed')));
     }
   };
 
@@ -198,14 +197,6 @@ export default function RegisterScreen() {
         </ThemedText>
       ) : null}
 
-      {serverError ? (
-        <View style={[styles.errorBox, { backgroundColor: `${theme.danger}14` }]}>
-          <Ionicons name="alert-circle" size={18} color={theme.danger} />
-          <ThemedText type="small" themeColor="danger" style={styles.agreeText}>
-            {serverError}
-          </ThemedText>
-        </View>
-      ) : null}
 
       <Button
         label={t('auth.register.registerButton')}
@@ -270,7 +261,6 @@ const styles = StyleSheet.create({
   fields: { gap: Space.lg },
   agreeRow: { flexDirection: 'row', alignItems: 'flex-start', gap: Space.md },
   agreeText: { flex: 1, flexShrink: 1 },
-  errorBox: { flexDirection: 'row', alignItems: 'center', gap: Space.sm, padding: Space.md, borderRadius: Radius.md },
   spacer: { flex: 1, minHeight: Space.lg },
   footer: {
     flexDirection: 'row',

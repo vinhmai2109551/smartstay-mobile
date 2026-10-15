@@ -31,7 +31,17 @@ export function Avatar({ name, size = 44, tone = 'primary' }: AvatarProps) {
       accessible={false}
       style={[styles.circle, { width: size, height: size, borderRadius: size / 2, backgroundColor: background }]}>
       {initials ? (
-        <ThemedText style={{ color: foreground, fontFamily: FontFamily.bold, fontSize: size * 0.36 }}>
+        // Explicit line height: ThemedText's default (24) is shorter than the glyphs on large
+        // avatars, which pushed the text box out of the circle and clipped it.
+        <ThemedText
+          style={{
+            color: foreground,
+            fontFamily: FontFamily.bold,
+            fontSize: Math.round(size * 0.36),
+            lineHeight: Math.round(size * 0.36 * 1.25),
+            includeFontPadding: false,
+            textAlign: 'center',
+          }}>
           {initials}
         </ThemedText>
       ) : (

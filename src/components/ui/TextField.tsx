@@ -14,6 +14,8 @@ type TextFieldProps = TextInputProps & {
   leftIcon?: keyof typeof Ionicons.glyphMap;
   /** Label rendered inside the field above the text, with the icon in a round badge. */
   inlineLabel?: boolean;
+  /** Smaller field and text, for forms inside chat cards. */
+  dense?: boolean;
 };
 
 export function TextField({
@@ -22,6 +24,7 @@ export function TextField({
   hint,
   leftIcon,
   inlineLabel = false,
+  dense = false,
   style,
   onFocus,
   onBlur,
@@ -48,6 +51,7 @@ export function TextField({
         styles.input,
         inlineLabel && styles.inputInline,
         multiline && styles.inputMultiline,
+        dense && styles.inputDense,
         { color: theme.text },
         style,
       ]}
@@ -71,6 +75,7 @@ export function TextField({
           styles.field,
           inlineLabel && styles.fieldInline,
           multiline && styles.fieldMultiline,
+          dense && styles.fieldDense,
           {
             borderColor,
             // Thicker border on focus/error so the state isn't conveyed by colour alone.
@@ -87,7 +92,12 @@ export function TextField({
             <Ionicons name={leftIcon} size={20} color={error ? theme.danger : focused ? theme.primary : theme.text} />
           </View>
         ) : leftIcon ? (
-          <Ionicons name={leftIcon} size={20} color={iconColor} style={styles.icon} />
+          <Ionicons
+            name={leftIcon}
+            size={dense ? 16 : 20}
+            color={iconColor}
+            style={dense ? styles.iconDense : styles.icon}
+          />
         ) : null}
 
         {inlineLabel ? (
@@ -156,8 +166,15 @@ const styles = StyleSheet.create({
     minHeight: 110,
     paddingVertical: Space.md,
   },
+  fieldDense: {
+    minHeight: MinTouch,
+    paddingHorizontal: Space.md,
+  },
   icon: {
     marginRight: Space.md,
+  },
+  iconDense: {
+    marginRight: Space.sm,
   },
   iconBadge: {
     width: 42,
@@ -185,6 +202,11 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.regular,
     fontSize: 16,
     paddingVertical: Space.md,
+  },
+  inputDense: {
+    minHeight: MinTouch - 2,
+    fontSize: 14,
+    paddingVertical: Space.sm,
   },
   inputInline: {
     flex: 0,

@@ -65,7 +65,8 @@
       "googleNotConfigured": "{{envName}} is not set in .env — see the instructions in .env to enable Google sign-in.",
       "continueWithGoogle": "Continue with Google",
       "noAccount": "Don't have an account?",
-      "registerNow": "Sign up now"
+      "registerNow": "Sign up now",
+      "waitVerification": "Please wait for the security check to finish."
     },
     "register": {
       "headerTitle": "Create account",
@@ -123,7 +124,8 @@
     "newBookingTitle": "Book a room",
     "bookingDetailTitle": "Booking details",
     "checkoutTitle": "Checkout",
-    "notificationsTitle": "Notifications"
+    "notificationsTitle": "Notifications",
+    "accountTitle": "Account details"
   },
   "home": {
     "greeting": "Hello",
@@ -133,6 +135,9 @@
     "searchTitle": "When would you like to stay?",
     "searchDate": "Pick dates",
     "searchGuests": "Guests",
+    "searchDatesLabel": "Dates",
+    "searchAddGuests": "Add guests",
+    "searchFieldsAccessibility": "Choose dates and guests",
     "searchAccessibility": "Search for available rooms",
     "featuredRooms": "Featured rooms",
     "experienceTitle": "The Vika Hotel experience",
@@ -252,6 +257,7 @@
     "cancelFailed": "Couldn't cancel the booking.",
     "reviewTitle": "How was your stay?",
     "reviewSubtitle": "Your review helps Vika Hotel serve you better.",
+    "reviewRatingLabel": "Star rating",
     "reviewRating1": "Poor",
     "reviewRating2": "Fair",
     "reviewRating3": "Okay",
@@ -262,6 +268,12 @@
     "reviewSubmit": "Submit review",
     "reviewFailed": "Couldn't submit the review.",
     "reviewThanks": "Thanks for your review!",
+    "reviewYours": "Your review",
+    "reviewHotelReply": "Reply from Vika Hotel",
+    "reviewCommentHint": "Write at least {{min}} characters to submit.",
+    "reviewCommentCount": "{{count}}/{{max}} characters",
+    "reviewAction": "Write a review",
+    "reviewedBadge": "Reviewed",
     "listTitle": "Bookings",
     "listSubtitle": "Keep track of your stays.",
     "filterAll": "All",
@@ -284,7 +296,8 @@
       "PAID": "Paid",
       "UNPAID": "Unpaid",
       "FAILED": "Failed"
-    }
+    },
+    "cancelSuccess": "Your booking has been cancelled."
   },
   "checkout": {
     "createLinkFailed": "Couldn't start the payment.",
@@ -308,7 +321,7 @@
     "placeholder": "Message to find and book a room...",
     "sendFailed": "The AI concierge isn't responding right now, please try again.",
     "typingAccessibility": "The concierge is typing a reply",
-    "confirmBookingMessage": "Confirm booking",
+    "confirmBookingMessage": "I agree to book with the details above.",
     "confirmBookingCard": "Confirm booking",
     "bookingCard": "Booking",
     "viewBookingDetail": "View booking details",
@@ -322,7 +335,41 @@
     "quickPrompt2": "Any promotions running?",
     "quickPrompt3": "A spacious room for a family of 4",
     "quickPrompt4": "Suggest your best-value room",
-    "pendingBookingDates": "{{checkIn}} – {{checkOut}} · {{nights}} nights"
+    "proposalRoomType": "Room type:",
+    "proposalCheckIn": "Check-in:",
+    "proposalCheckOut": "Check-out:",
+    "proposalNights": "({{nights}} nights)",
+    "proposalGuest": "Guest:",
+    "proposalDiscount": "Discount: -{{amount}}",
+    "proposalPayment": "Payment:",
+    "payCashFull": "Cash at the front desk",
+    "payTransferFull": "Bank transfer (QR code)",
+    "showMoreRooms": "Show {{count}} more rooms",
+    "cancelProposalMessage": "I don't agree, please cancel this proposal.",
+    "newConversation": "New conversation",
+    "cancelBookingFormMessage": "I don't want to fill in the form, I'm not booking for now.",
+    "bookingSuccessTitle": "Booking confirmed!",
+    "bookingAwaitingTitle": "Booking received - awaiting payment",
+    "bookingCode": "Booking code: {{code}}",
+    "bookingTotal": "Total: {{amount}}",
+    "payScanTitle": "Scan to pay by bank transfer",
+    "payOpenPage": "Open payment page",
+    "payWaiting": "Waiting for payment confirmation, your booking pass will appear as soon as we receive it...",
+    "payChecking": "Checking payment status...",
+    "payExpired": "The payment QR code has expired. Please go to \"My bookings\" to create a new payment link.",
+    "payNoQr": "We couldn't create a payment QR code right now. Please go to \"My bookings\" to get a new one or contact reception.",
+    "payReceived": "Bank transfer received",
+    "payCashNote": "Please pay in cash at the front desk when you check in.",
+    "paySaveQr": "Save QR code",
+    "qrSaved":"QR code saved to your photos",
+    "slipTitle": "Bank transfer payment slip",
+    "slipRoom": "Room",
+    "slipStay": "Stay",
+    "slipGuest": "Guest",
+    "slipDeadline": "Pay before",
+    "slipNote": "Scan with any banking app to pay.",
+    "qrSaveFailed":"Couldn't save the QR code",
+    "qrPermissionDenied":"Please allow photo access to save the QR code"
   },
   "profile": {
     "title": "Account",
@@ -348,10 +395,11 @@
     "themeDark": "Dark",
     "themeSystem": "System",
     "languageVi": "Tiếng Việt",
-    "languageEn": "English"
+    "languageEn": "English",
+    "accountDetails": "Account details"
   },
   "notifications": {
-    "markAllRead": "Mark all read",
+    "markAllRead": "Mark all as read",
     "filterAll": "All",
     "filterUnread": "Unread",
     "unreadPrefix": "Unread. ",
@@ -360,6 +408,76 @@
     "emptyUnreadDescription": "No unread notifications left.",
     "emptyAllTitle": "No notifications",
     "emptyAllDescription": "Updates about your bookings and payments will show up here.",
-    "viewBooking": "View booking"
+    "viewBooking": "View booking",
+    "unreadSummary": "You have {{count}} unread notifications",
+    "groupToday": "Today",
+    "groupYesterday": "Yesterday",
+    "groupThisWeek": "This week",
+    "groupEarlier": "Earlier",
+    "toastHint": "Opens the notification"
+  },
+  "toast": {
+    "successTitle": "Success",
+    "errorTitle": "Something went wrong",
+    "warningTitle": "Heads up",
+    "infoTitle": "Notice"
+  },
+  "checkInPass": {
+    "title": "Check-in pass",
+    "hint": "Show this code at reception to check in",
+    "qrLabel": "Check-in QR code for booking {{code}}",
+    "expandHint": "Opens the QR code full screen",
+    "codeLabel": "Booking code",
+    "copy": "Copy",
+    "copyCode": "Copy booking code",
+    "codeCopied": "Booking code copied"
+  },
+  "chatForm": {
+    "title": "Booking details",
+    "checkIn": "Check-in",
+    "checkOut": "Check-out",
+    "guests": "Guests",
+    "fullName": "Full name",
+    "phone": "Phone number",
+    "email": "Email (optional)",
+    "paymentMethod": "Payment method",
+    "payCash": "Cash at the front desk",
+    "payTransfer": "Bank transfer (QR)",
+    "submit": "Confirm details"
+  },
+  "account": {
+    "fullName": "Full name",
+    "email": "Email",
+    "phone": "Phone number",
+    "idNumber": "ID card / Passport",
+    "idNumberHint": "Speeds up check-in at reception",
+    "address": "Address",
+    "memberSince": "Member since",
+    "updatedAt": "Last updated",
+    "notProvided": "Not provided",
+    "sectionPersonal": "Personal details",
+    "sectionAccount": "Account",
+    "edit": "Edit details",
+    "editTitle": "Edit personal details",
+    "emailLocked": "Your sign-in email can’t be changed",
+    "save": "Save changes",
+    "saved": "Account details updated",
+    "saveFailed": "Couldn’t update your details",
+    "loadFailed": "Couldn’t load your account",
+    "roles": {
+      "CUSTOMER": "Guest",
+      "STAFF": "Staff",
+      "ADMIN": "Administrator"
+    },
+    "status": {
+      "Active": "Active",
+      "Locked": "Locked"
+    },
+    "errors": {
+      "fullName": "Name must be 2–100 characters",
+      "phone": "Invalid phone number (e.g. 0912345678)",
+      "idNumber": "ID number must be 6–20 letters or digits",
+      "address": "Address can be at most 255 characters"
+    }
   }
 }

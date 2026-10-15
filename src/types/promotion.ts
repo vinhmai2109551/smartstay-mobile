@@ -13,6 +13,13 @@ export type Promotion = {
   isActive?: boolean;
 };
 
+export type ValidatePromotionParams = {
+  roomTypeId: string;
+  checkIn: string;
+  checkOut: string;
+  serviceAmount?: number;
+};
+
 export type ValidatePromotionResponse = {
   valid: boolean;
   discountAmount: number;

@@ -1,12 +1,12 @@
 import { apiClient } from './client';
-import { Paginated } from '@/types/common';
-import { AppNotification } from '@/types/notification';
+import { NotificationPage } from '@/types/notification';
 
+// Must match PAGE_SIZE in the backend NotificationService.
+export const NOTIFICATION_PAGE_SIZE = 20;
+
+// Always the signed-in user's own notifications — the backend takes the user from the token.
 export const notificationsApi = {
-  list: (isRead?: boolean, page = 1) =>
-    apiClient
-      .get<Paginated<AppNotification>>('/notifications', { params: { isRead, page } })
-      .then((r) => r.data),
+  list: (page = 1) => apiClient.get<NotificationPage>('/notifications', { params: { page } }).then((r) => r.data),
 
   unreadCount: () => apiClient.get<{ count: number }>('/notifications/unread-count').then((r) => r.data),
 
