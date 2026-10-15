@@ -14,3 +14,15 @@ export function getBookingQrPayload(booking: Pick<Booking, 'bookingId'>) {
 export function getBookingCode(bookingId: string) {
   return bookingId.slice(0, 8).toUpperCase();
 }
+
+/**
+ * Whether the check-in QR should be shown: the booking must be staff-confirmed
+ * (CONFIRMED) or already mid-stay (CHECKED_IN), and either payable at the desk (CASH)
+ * or already settled (PAYOS + PAID). False for PENDING (not yet confirmed), CANCELLED,
+ * CHECKED_OUT, or an unpaid PAYOS booking.
+ */
+export function canShowCheckInPass(booking: Pick<Booking, 'status' | 'paymentMethod' | 'paymentStatus'>): boolean {
+  const isConfirmedOrStaying = booking.status === 'CONFIRMED' || booking.status === 'CHECKED_IN';
+  const isPayable = booking.paymentMethod === 'CASH' || booking.paymentStatus === 'PAID';
+  return isConfirmedOrStaying && isPayable;
+}

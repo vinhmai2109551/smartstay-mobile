@@ -1,32 +1,34 @@
-import { Ionicons } from "@expo/vector-icons";
-import { router, useLocalSearchParams } from "expo-router";
-import * as WebBrowser from "expo-web-browser";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useTranslation } from "react-i18next";
-import {
-  ActivityIndicator,
-  ScrollView,
-  StyleSheet,
-  useWindowDimensions,
-  View,
-} from "react-native";
-import QRCode from "react-native-qrcode-svg";
-import Animated, { ZoomIn } from "react-native-reanimated";
+import { Ionicons } from '@expo/vector-icons';
+import * as Clipboard from 'expo-clipboard';
+import * as Haptics from 'expo-haptics';
+import * as Linking from 'expo-linking';
+import { router, useLocalSearchParams } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { ActivityIndicator, AppState, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import QRCode from 'react-native-qrcode-svg';
+import Animated, { ZoomIn } from 'react-native-reanimated';
 
-import { getApiErrorMessage } from "@/api/client";
-import { paymentsApi } from "@/api/payments";
-import { ThemedText } from "@/components/themed-text";
-import { ThemedView } from "@/components/themed-view";
-import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
-import { ErrorView } from "@/components/ui/ErrorView";
-import { Skeleton } from "@/components/ui/Skeleton";
-import { FontFamily, MaxContentWidth, Radius, Space } from "@/constants/theme";
-import { useShadows, useTheme } from "@/hooks/use-theme";
-import { CreatePayosLinkResponse } from "@/types/payment";
-import { formatVND } from "@/utils/currency";
+import { getApiErrorMessage } from '@/api/client';
+import { paymentsApi } from '@/api/payments';
+import { fetchVietQrBankApps, buildBankDeeplink, findBankNameByBin, VietQrBankApp } from '@/api/vietqrBanks';
+import { BankPickerSheet } from '@/components/BankPickerSheet';
+import { ThemedText } from '@/components/themed-text';
+import { ThemedView } from '@/components/themed-view';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import { ErrorView } from '@/components/ui/ErrorView';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { FontFamily, MaxContentWidth, Radius, Space } from '@/constants/theme';
+import { useShadows, useTheme } from '@/hooks/use-theme';
+import { persistedStorage } from '@/store/persistedStorage';
+import { toast } from '@/store/toastStore';
+import { CreatePayosLinkResponse } from '@/types/payment';
+import { formatVND } from '@/utils/currency';
 
 const POLL_INTERVAL_MS = 4000;
+const RECENT_BANK_STORAGE_KEY = 'checkout.lastBankAppId';
 
 export default function CheckoutScreen() {
   const { t } = useTranslation();
@@ -44,6 +46,10 @@ export default function CheckoutScreen() {
   const [link, setLink] = useState<CreatePayosLinkResponse | null>(null);
   const [paid, setPaid] = useState(false);
   const [expired, setExpired] = useState(false);
+  const [bankApps, setBankApps] = useState<VietQrBankApp[]>([]);
+  const [bankAppsLoading, setBankAppsLoading] = useState(false);
+  const [bankSheetVisible, setBankSheetVisible] = useState(false);
+  const [recentBankAppId, setRecentBankAppId] = useState<string | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const qrSize = Math.round(
@@ -60,6 +66,7 @@ export default function CheckoutScreen() {
         const created = await paymentsApi.createPayosLink(bookingId);
         if (cancelled) return;
         setLink(created);
+        if (created.amount != null) setAmount(created.amount);
       } catch (err) {
         if (!cancelled)
           setError(getApiErrorMessage(err, t("checkout.createLinkFailed")));
@@ -75,31 +82,103 @@ export default function CheckoutScreen() {
   }, [bookingId]);
 
   useEffect(() => {
+    let cancelled = false;
+    Promise.resolve(persistedStorage.getItem(RECENT_BANK_STORAGE_KEY)).then((value) => {
+      if (!cancelled && value) setRecentBankAppId(value);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!link?.accountNumber || !link?.bin) return;
+    let cancelled = false;
+
+    async function loadBanks() {
+      setBankAppsLoading(true);
+      try {
+        const apps = await fetchVietQrBankApps();
+        if (!cancelled) setBankApps(apps);
+      } catch {
+        // ignore — bank name lookup/picker just won't be available this session
+      } finally {
+        if (!cancelled) setBankAppsLoading(false);
+      }
+    }
+
+    loadBanks();
+    return () => {
+      cancelled = true;
+    };
+  }, [link?.accountNumber, link?.bin]);
+
+  const syncStatus = useCallback(async () => {
+    if (!link) return;
+    try {
+      const booking = await paymentsApi.syncPayosStatus(bookingId);
+      setAmount(booking.totalAmount);
+      if (booking.paymentStatus === 'PAID') {
+        setPaid(true);
+        if (pollRef.current) clearInterval(pollRef.current);
+      } else if (
+        // FAILED: the PayOS link expired/was cancelled — stop asking, or every poll makes
+        // the backend look it up again. expiredAt is missing for a reused existing link.
+        booking.paymentStatus === 'FAILED' ||
+        (link.expiredAt && Date.now() / 1000 > link.expiredAt)
+      ) {
+        setExpired(true);
+        if (pollRef.current) clearInterval(pollRef.current);
+      }
+    } catch {
+      // ignore transient polling errors
+    }
+  }, [link, bookingId]);
+
+  useEffect(() => {
     if (!link) return;
 
-    pollRef.current = setInterval(async () => {
-      try {
-        const booking = await paymentsApi.syncPayosStatus(bookingId);
-        setAmount(booking.totalAmount);
-        if (booking.paymentStatus === "PAID") {
-          setPaid(true);
-          if (pollRef.current) clearInterval(pollRef.current);
-        } else if (
-          booking.paymentStatus === "FAILED" ||
-          (link.expiredAt && Date.now() / 1000 > link.expiredAt)
-        ) {
-          setExpired(true);
-          if (pollRef.current) clearInterval(pollRef.current);
-        }
-      } catch {
-        // ignore transient polling errors
-      }
-    }, POLL_INTERVAL_MS);
+    pollRef.current = setInterval(syncStatus, POLL_INTERVAL_MS);
 
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
     };
-  }, [link, bookingId]);
+  }, [link, syncStatus]);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'active' && link && !paid && !expired) {
+        syncStatus();
+      }
+    });
+    return () => subscription.remove();
+  }, [link, paid, expired, syncStatus]);
+
+  const bankName = useMemo(() => findBankNameByBin(bankApps, link?.bin), [bankApps, link?.bin]);
+
+  const copyToClipboard = useCallback(
+    async (value: string) => {
+      await Clipboard.setStringAsync(value);
+      Haptics.selectionAsync();
+      toast.success(t('checkout.copied'));
+    },
+    [t],
+  );
+
+  const handleSelectBank = useCallback(
+    async (app: VietQrBankApp) => {
+      setBankSheetVisible(false);
+      if (!link) return;
+      try {
+        await Linking.openURL(buildBankDeeplink(app.appId, link));
+        setRecentBankAppId(app.appId);
+        persistedStorage.setItem(RECENT_BANK_STORAGE_KEY, app.appId);
+      } catch {
+        toast.error(t('checkout.openBankAppFailed'));
+      }
+    },
+    [link, t],
+  );
 
   if (loading) {
     return (
@@ -115,6 +194,8 @@ export default function CheckoutScreen() {
   }
   if (error || !link)
     return <ErrorView message={error ?? t("checkout.createLinkMissing")} />;
+
+  const hasBankInfo = !!link.accountNumber && !!link.bin;
 
   if (paid) {
     return (
@@ -168,44 +249,34 @@ export default function CheckoutScreen() {
           ) : null}
         </View>
 
+        {/* QR codes must stay dark-on-white to scan reliably, even in dark mode. */}
         {link.qrCode ? (
-          // QR codes must stay dark-on-white to scan reliably, even in dark mode.
-          <View
-            style={[
-              styles.qrCard,
-              shadows.floating,
-              expired && styles.qrExpired,
-            ]}
-          >
-            <QRCode
-              value={link.qrCode}
-              size={qrSize}
-              backgroundColor="#FFFFFF"
-              color="#111827"
-            />
+          <View style={[styles.qrCard, shadows.floating, expired && styles.qrExpired]}>
+            <QRCode value={link.qrCode} size={qrSize} backgroundColor="#FFFFFF" color="#111827" />
             <View style={styles.payosRow}>
               <Ionicons name="shield-checkmark" size={14} color="#047857" />
               <ThemedText type="caption" style={styles.payosText}>
-                {t("checkout.payosSecure")}
+                {t('checkout.payosSecure')}
               </ThemedText>
             </View>
           </View>
         ) : (
-          // The link was created earlier (e.g. booking through the AI chat) and PayOS doesn't
-          // return its QR again — only its checkout page, which shows the QR. Polling below
-          // still picks up the payment once it's made there.
-          <Card style={styles.noQr}>
-            <Ionicons name="qr-code-outline" size={32} color={theme.primary} />
-            <ThemedText type="small" style={styles.center}>
-              {t("checkout.qrUnavailable")}
+          <Card style={styles.qrMissingCard}>
+            <Ionicons name="qr-code-outline" size={22} color={theme.textSecondary} />
+            <ThemedText type="small" themeColor="textSecondary" style={styles.center}>
+              {t('checkout.qrUnavailable')}
             </ThemedText>
-            <Button
-              label={t("checkout.openCheckout")}
-              icon="open-outline"
-              onPress={() => WebBrowser.openBrowserAsync(link.checkoutUrl)}
-            />
           </Card>
         )}
+
+        {hasBankInfo ? (
+          <Button
+            label={t('checkout.openBankApp')}
+            icon="business-outline"
+            accessibilityLabel={t('checkout.openBankApp')}
+            onPress={() => setBankSheetVisible(true)}
+          />
+        ) : null}
 
         <View
           style={[
@@ -231,6 +302,94 @@ export default function CheckoutScreen() {
           </ThemedText>
         </View>
 
+        {hasBankInfo ? (
+          <Card style={styles.transferCard}>
+            <ThemedText type="bodyBold">{t('checkout.transferInfoTitle')}</ThemedText>
+
+            <View style={styles.transferRow}>
+              <ThemedText type="caption" themeColor="textSecondary">
+                {t('checkout.bankNameLabel')}
+              </ThemedText>
+              <ThemedText type="smallBold" style={styles.flexShrink}>
+                {bankName ?? link.bin}
+              </ThemedText>
+            </View>
+
+            <View style={styles.transferRow}>
+              <ThemedText type="caption" themeColor="textSecondary">
+                {t('checkout.accountNameLabel')}
+              </ThemedText>
+              <ThemedText type="smallBold" style={styles.flexShrink}>
+                {link.accountName}
+              </ThemedText>
+            </View>
+
+            <View style={styles.transferRow}>
+              <ThemedText type="caption" themeColor="textSecondary">
+                {t('checkout.accountNumberLabel')}
+              </ThemedText>
+              <View style={styles.copyValue}>
+                <ThemedText type="smallBold" style={styles.flexShrink}>
+                  {link.accountNumber}
+                </ThemedText>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={t('checkout.copyLabel', { label: t('checkout.accountNumberLabel') })}
+                  hitSlop={10}
+                  onPress={() => link.accountNumber && copyToClipboard(link.accountNumber)}>
+                  <Ionicons name="copy-outline" size={18} color={theme.primary} />
+                </Pressable>
+              </View>
+            </View>
+
+            <View style={styles.transferRow}>
+              <ThemedText type="caption" themeColor="textSecondary">
+                {t('checkout.amountLabel')}
+              </ThemedText>
+              <View style={styles.copyValue}>
+                <ThemedText type="smallBold" style={styles.flexShrink}>
+                  {formatVND(amount ?? link.amount)}
+                </ThemedText>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={t('checkout.copyLabel', { label: t('checkout.amountLabel') })}
+                  hitSlop={10}
+                  onPress={() => {
+                    const value = amount ?? link.amount;
+                    if (value != null) copyToClipboard(String(value));
+                  }}>
+                  <Ionicons name="copy-outline" size={18} color={theme.primary} />
+                </Pressable>
+              </View>
+            </View>
+
+            <View style={styles.transferRow}>
+              <ThemedText type="caption" themeColor="textSecondary">
+                {t('checkout.transferContentLabel')}
+              </ThemedText>
+              <View style={styles.copyValue}>
+                <ThemedText type="smallBold" style={styles.flexShrink}>
+                  {link.description}
+                </ThemedText>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={t('checkout.copyLabel', { label: t('checkout.transferContentLabel') })}
+                  hitSlop={10}
+                  onPress={() => link.description && copyToClipboard(link.description)}>
+                  <Ionicons name="copy-outline" size={18} color={theme.primary} />
+                </Pressable>
+              </View>
+            </View>
+
+            <View style={[styles.transferNote, { backgroundColor: theme.accentSoft }]}>
+              <Ionicons name="alert-circle-outline" size={16} color={theme.accentText} />
+              <ThemedText type="caption" themeColor="accentText" style={styles.flexShrink}>
+                {t('checkout.transferContentNote')}
+              </ThemedText>
+            </View>
+          </Card>
+        ) : null}
+
         <Card style={styles.steps}>
           <ThemedText type="bodyBold">{t("checkout.instructions")}</ThemedText>
           {steps.map((step, index) => (
@@ -249,15 +408,22 @@ export default function CheckoutScreen() {
           ))}
         </Card>
 
-        {link.qrCode ? (
-          <Button
-            label={t("checkout.openCheckout")}
-            icon="open-outline"
-            variant="outline"
-            onPress={() => WebBrowser.openBrowserAsync(link.checkoutUrl)}
-          />
-        ) : null}
+        <Button
+          label={t("checkout.openCheckout")}
+          icon="open-outline"
+          variant="outline"
+          onPress={() => WebBrowser.openBrowserAsync(link.checkoutUrl)}
+        />
       </ScrollView>
+
+      <BankPickerSheet
+        visible={bankSheetVisible}
+        onClose={() => setBankSheetVisible(false)}
+        banks={bankApps}
+        loading={bankAppsLoading}
+        recentAppId={recentBankAppId}
+        onSelect={handleSelectBank}
+      />
     </ThemedView>
   );
 }
@@ -294,9 +460,19 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
   },
   qrExpired: { opacity: 0.35 },
-  noQr: { alignItems: "center", gap: Space.md },
-  payosRow: { flexDirection: "row", alignItems: "center", gap: Space.xs },
-  payosText: { color: "#374151" },
+  qrMissingCard: { alignItems: 'center', gap: Space.sm },
+  payosRow: { flexDirection: 'row', alignItems: 'center', gap: Space.xs },
+  payosText: { color: '#374151' },
+  transferCard: { gap: Space.md },
+  transferRow: { gap: 2 },
+  copyValue: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Space.sm },
+  transferNote: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Space.xs,
+    padding: Space.sm,
+    borderRadius: Radius.sm,
+  },
   statusPill: {
     flexDirection: "row",
     alignItems: "center",

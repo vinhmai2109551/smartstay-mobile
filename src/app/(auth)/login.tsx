@@ -190,6 +190,13 @@ export default function LoginScreen() {
               )}
             />
 
+            <Link href="/(auth)/forgot-password" asChild>
+              <Pressable accessibilityRole="link" hitSlop={8} style={styles.forgotLink}>
+                <ThemedText type="smallBold" themeColor="primary">
+                  {t('auth.login.forgotPassword')}
+                </ThemedText>
+              </Pressable>
+            </Link>
 
             <TurnstileWidget action="login" onTokenChange={setTurnstileToken} resetKey={turnstileResetKey} />
 
@@ -240,7 +247,6 @@ export default function LoginScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  flexShrink: { flexShrink: 1 },
   scroll: {
     flexGrow: 1,
     width: '100%',
@@ -261,6 +267,7 @@ const styles = StyleSheet.create({
     padding: Space.xl,
     gap: Space.lg,
   },
+  forgotLink: { alignSelf: 'flex-end' },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
