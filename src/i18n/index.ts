@@ -1,4 +1,7 @@
-import i18next from 'i18next';
+// Aliased: eslint's react-hooks rule flags any top-level call named `use`/`useXxx`
+// as a Rules-of-Hooks violation (React 19's own `use()` API), even though this is
+// i18next's unrelated plugin-registration method.
+import i18next, { changeLanguage, use as registerI18nextPlugin } from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
 import { useSettingsStore } from '@/store/settingsStore';
@@ -6,7 +9,7 @@ import { setDateLocale } from '@/utils/date';
 import en from './locales/en.json';
 import vi from './locales/vi.json';
 
-i18next.use(initReactI18next).init({
+registerI18nextPlugin(initReactI18next).init({
   resources: {
     vi: { translation: vi },
     en: { translation: en },
@@ -23,7 +26,7 @@ setDateLocale(useSettingsStore.getState().language);
 // updates once storage loads) and the language switcher in Tài khoản.
 useSettingsStore.subscribe((state, prevState) => {
   if (state.language !== prevState.language) {
-    i18next.changeLanguage(state.language);
+    changeLanguage(state.language);
     setDateLocale(state.language);
   }
 });

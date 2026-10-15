@@ -313,9 +313,9 @@ export default function ProfileScreen() {
             />
           </Card>
 
-          {/* <ThemedText type="caption" themeColor="textSecondary" style={styles.version}>
-            {t('profile.version', { version: Constants.expoConfig?.version ?? '1.0.0' })}
-          </ThemedText> */}
+          <ThemedText type="caption" themeColor="textSecondary" style={styles.version}>
+            {t("profile.version", { version: Constants.expoConfig?.version ?? "1.0.0" })}
+          </ThemedText>
         </View>
       </ScrollView>
 
