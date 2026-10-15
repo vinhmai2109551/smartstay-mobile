@@ -15,9 +15,10 @@ import { formatVND } from "@/utils/currency";
 import { formatDate } from "@/utils/date";
 import { ChatBookingCreatedCard } from "./ChatBookingCreatedCard";
 import { ChatPromotionList } from "./ChatPromotionList";
+import { ChatRoomCard } from "./ChatRoomCard";
 
 // Rooms shown before "Show n more" when a reply still lists many.
-const COLLAPSED_ROOMS = 2;
+const COLLAPSED_ROOMS = 4;
 
 // Renders the **bold** spans the AI writes in markdown; everything else stays plain text.
 function renderInlineMarkdown(text: string) {
@@ -43,6 +44,7 @@ export function ChatBubble({
   busy,
   proposal,
   showProposal,
+  onSelectRoom,
 }: {
   message: ChatMessage;
   onConfirmBooking?: (proposalId: string) => void;
@@ -56,6 +58,7 @@ export function ChatBubble({
   // The proposal this booking was created from, for the room/dates/name on the full-screen QR.
   proposal?: PendingBooking | null;
   showProposal?: boolean;
+  onSelectRoom?: (roomName: string) => void;
 }) {
   const { t } = useTranslation();
   const theme = useTheme();
@@ -76,7 +79,11 @@ export function ChatBubble({
   const showProposalCard = !!showProposal && !!message.pendingBooking;
   const promotions = message.promotions ?? [];
   const wide =
-    showForm || showProposalCard || !!message.booking || promotions.length > 0;
+    showForm ||
+    showProposalCard ||
+    !!message.booking ||
+    promotions.length > 0 ||
+    rooms.length > 0;
   const formWidth = Math.min(width, MaxContentWidth) - Space.lg * 2;
 
   return (
@@ -111,15 +118,19 @@ export function ChatBubble({
       </View>
 
       {rooms.length ? (
-        <View style={[styles.cards, { width: cardWidth }]}>
+        <View style={[styles.roomGrid, { width: formWidth }]}>
           {visibleRooms.map((roomType) => (
-            <RoomTypeCard
+            <ChatRoomCard
               key={roomType.roomTypeId}
               roomType={roomType}
-              imageHeight={140}
-              onPress={() => router.push(`/room/${roomType.roomTypeId}`)}
+              // 2 cột, trừ khoảng cách giữa 2 thẻ.
+              width={(formWidth - Space.sm) / 2}
+              disabled={busy}
+              onSelect={() => onSelectRoom?.(roomType.name)}
+              onOpen={() => router.push(`/room/${roomType.roomTypeId}`)}
             />
           ))}
+
           {hiddenRooms > 0 ? (
             <Pressable
               accessibilityRole="button"
@@ -308,16 +319,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: Space.lg,
     paddingVertical: Space.md,
   },
+
   bubbleUser: { borderBottomRightRadius: Space.xs },
   bubbleAssistant: {
     borderBottomLeftRadius: Space.xs,
     borderWidth: StyleSheet.hairlineWidth,
   },
-  cards: { gap: Space.md },
   flex: { flex: 1 },
   actions: { flexDirection: "row", gap: Space.sm },
   bold: { fontFamily: FontFamily.bold },
   moreRooms: {
+    width: "100%",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -356,4 +368,5 @@ const styles = StyleSheet.create({
     gap: Space.xs,
     minHeight: 28,
   },
+  roomGrid: { flexDirection: "row", flexWrap: "wrap", gap: Space.sm },
 });
