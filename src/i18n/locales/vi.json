@@ -314,7 +314,8 @@
     "step2": "Chọn quét mã QR và quét mã bên trên",
     "step3": "Xác nhận chuyển khoản — đơn sẽ tự cập nhật",
     "instructions": "Hướng dẫn",
-    "openCheckout": "Mở trang thanh toán"
+    "openCheckout": "Mở trang thanh toán",
+    "qrUnavailable": "Mở trang thanh toán PayOS để xem mã QR và hoàn tất chuyển khoản. Đơn sẽ tự cập nhật sau khi thanh toán."
   },
   "chat": {
     "welcomeMessage": "Xin chào! Tôi là trợ lý ảo Vika Hotel, tôi có thể giúp quý khách tìm phòng, tra cứu khuyến mãi và giải đáp chính sách đặt phòng.",

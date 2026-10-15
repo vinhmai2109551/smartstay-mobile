@@ -314,7 +314,8 @@
     "step2": "Choose scan QR and scan the code above",
     "step3": "Confirm the transfer — your order updates automatically",
     "instructions": "How to pay",
-    "openCheckout": "Open payment page"
+    "openCheckout": "Open payment page",
+    "qrUnavailable": "Open the PayOS payment page to see the QR code and complete the transfer. Your booking updates automatically once paid."
   },
   "chat": {
     "welcomeMessage": "Hello! I'm the Vika Hotel virtual assistant. I can help you find rooms, look up promotions and answer questions about our booking policies.",
