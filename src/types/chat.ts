@@ -1,4 +1,5 @@
 import { AvailableRoomType } from "./room";
+import { BookingStatus } from "./booking";
 import { Promotion } from "./promotion";
 
 export type PendingBooking = {
@@ -21,7 +22,7 @@ export type PendingBooking = {
 
 export type ConfirmedBooking = {
   bookingId: string;
-  status: string;
+  status: BookingStatus;
   totalAmount: number;
   paymentMethod: "CASH" | "PAYOS";
   qrCode?: string;

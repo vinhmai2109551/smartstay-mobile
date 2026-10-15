@@ -1,7 +1,10 @@
+import { bookingsApi } from "@/api/bookings";
 import { paymentsApi } from "@/api/payments";
+import { useBookingUpdates } from "@/hooks/useBookingUpdates";
 import { useTheme } from "@/hooks/use-theme";
 import { ConfirmedBooking, PendingBooking } from "@/types/chat";
-import { getBookingCode } from "@/utils/bookingQr";
+import { BookingStatus } from "@/types/booking";
+import { canShowCheckInPass, getBookingCode } from "@/utils/bookingQr";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
@@ -46,8 +49,23 @@ export function ChatBookingCreatedCard({
     () =>
       isPayOS && !!booking.expiredAt && Date.now() / 1000 > booking.expiredAt,
   );
+  // Dữ liệu booking trong tin nhắn là ảnh chụp lúc vừa tạo đơn — status có thể đã đổi
+  // (lễ tân xác nhận đơn CASH chẳng hạn) nếu khách vẫn đang xem lại thẻ này trong chat.
+  const [liveStatus, setLiveStatus] = useState<BookingStatus>(booking.status);
   // Phiếu thanh toán dựng ngoài màn hình (PaymentQrSlip) — chụp lại thành ảnh khi lưu.
   const slipRef = useRef<View>(null);
+
+  useBookingUpdates(() => {
+    bookingsApi
+      .detail(booking.bookingId)
+      .then((fresh) => {
+        setLiveStatus(fresh.status);
+        if (fresh.paymentStatus === "PAID") setPaid(true);
+      })
+      .catch(() => {
+        // Lỗi mạng tạm thời: giữ trạng thái hiện có, event sau sẽ thử lại.
+      });
+  });
 
   // Dữ liệu booking trong tin nhắn là ảnh chụp lúc vừa tạo đơn (luôn UNPAID). Hỏi trạng
   // thái thật mỗi lần thẻ hiện ra, KỂ CẢ khi QR đã hết hạn: khách có thể đã chuyển khoản
@@ -103,8 +121,20 @@ export function ChatBookingCreatedCard({
   ]);
 
   const awaitingPayment = isPayOS && !paid;
-  const showTicket = (!isPayOS || paid) && booking.status !== "CANCELLED";
-  const tone = awaitingPayment ? theme.accentText : theme.success;
+  const showCheckInPass = canShowCheckInPass({
+    status: liveStatus,
+    paymentMethod: booking.paymentMethod,
+    paymentStatus: paid ? "PAID" : "UNPAID",
+  });
+  // CASH booking the hotel hasn't confirmed yet — PAYOS unpaid already has its own
+  // scan/expired/checking UI below, so this only covers the "waiting on staff" gap.
+  const awaitingConfirmation =
+    !awaitingPayment &&
+    !showCheckInPass &&
+    liveStatus !== "CANCELLED" &&
+    liveStatus !== "CHECKED_OUT";
+  const tone =
+    awaitingPayment || awaitingConfirmation ? theme.accentText : theme.success;
   const handleSavePaymentQr = async () => {
     try {
       const uri = await captureRef(slipRef, {
@@ -126,18 +156,24 @@ export function ChatBookingCreatedCard({
         styles.card,
         {
           width,
-          borderColor: awaitingPayment
-            ? theme.accentBorder
-            : theme.successBorder,
-          backgroundColor: awaitingPayment
-            ? theme.accentSoft
-            : theme.successSoft,
+          borderColor:
+            awaitingPayment || awaitingConfirmation
+              ? theme.accentBorder
+              : theme.successBorder,
+          backgroundColor:
+            awaitingPayment || awaitingConfirmation
+              ? theme.accentSoft
+              : theme.successSoft,
         },
       ]}
     >
       <View style={styles.header}>
         <Ionicons
-          name={awaitingPayment ? "time-outline" : "checkmark-circle"}
+          name={
+            awaitingPayment || awaitingConfirmation
+              ? "time-outline"
+              : "checkmark-circle"
+          }
           size={24}
           color={tone}
         />
@@ -150,7 +186,7 @@ export function ChatBookingCreatedCard({
             minimumFontScale={0.8}
           >
             {t(
-              awaitingPayment
+              awaitingPayment || awaitingConfirmation
                 ? "chat.bookingAwaitingTitle"
                 : "chat.bookingSuccessTitle",
             )}
@@ -269,7 +305,22 @@ export function ChatBookingCreatedCard({
           </View>
         )
       ) : null}
-      {showTicket ? (
+      {awaitingConfirmation ? (
+        <View
+          style={[
+            styles.notice,
+            {
+              backgroundColor: theme.accentSoft,
+              borderColor: theme.accentBorder,
+            },
+          ]}
+        >
+          <ThemedText type="caption" style={{ color: theme.accentText }}>
+            {t("booking.checkInLockedConfirmation")}
+          </ThemedText>
+        </View>
+      ) : null}
+      {showCheckInPass ? (
         <>
           {isPayOS ? (
             <View style={styles.inlineRow}>

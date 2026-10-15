@@ -30,11 +30,10 @@ import { useTheme } from '@/hooks/use-theme';
 import { toast } from '@/store/toastStore';
 import { formatVND } from '@/utils/currency';
 import { Review, REVIEW_COMMENT_MAX, REVIEW_COMMENT_MIN } from '@/types/review';
-import { getBookingCode } from '@/utils/bookingQr';
+import { canShowCheckInPass, getBookingCode } from '@/utils/bookingQr';
 import { formatDate, nightsBetween } from '@/utils/date';
 
 const CANCELLABLE_STATUSES = new Set(['PENDING', 'CONFIRMED']);
-const CHECK_IN_PASS_STATUSES = new Set(['PENDING', 'CONFIRMED']);
 const RATING_KEYS = ['', 'reviewRating1', 'reviewRating2', 'reviewRating3', 'reviewRating4', 'reviewRating5'] as const;
 
 type IconName = keyof typeof Ionicons.glyphMap;
@@ -128,6 +127,16 @@ export default function BookingDetailScreen() {
   const nights = nightsBetween(booking.checkInDate, booking.checkOutDate);
   const isPaid = booking.paymentStatus === 'PAID';
   const needsPayment = booking.paymentMethod === 'PAYOS' && booking.paymentStatus === 'UNPAID' && booking.status !== 'CANCELLED';
+  const showCheckInPass = canShowCheckInPass(booking);
+  // Why the pass isn't ready yet — no card at all once the stay is over (checked
+  // out/cancelled), since there's nothing left to wait for.
+  const checkInLockedReason = showCheckInPass
+    ? null
+    : booking.paymentMethod === 'PAYOS' && booking.paymentStatus !== 'PAID' && booking.status !== 'CANCELLED'
+      ? 'payment'
+      : booking.status === 'PENDING'
+        ? 'confirmation'
+        : null;
 
   const priceLines: { label: string; value: number; tone?: 'success' }[] = [
     { label: t('booking.roomAmountRow', { nights }), value: booking.roomAmount },
@@ -204,8 +213,8 @@ export default function BookingDetailScreen() {
           </View>
         </Card>
 
-        {/* Shown until the guest has checked in — that's when reception needs to scan it. */}
-        {CHECK_IN_PASS_STATUSES.has(booking.status) ? (
+        {/* Shown once confirmed/payable — that's when reception needs to scan it. */}
+        {showCheckInPass ? (
           <CheckInPass
             bookingId={booking.bookingId}
             details={[
@@ -213,6 +222,17 @@ export default function BookingDetailScreen() {
               booking.guestInfo.fullName,
             ]}
           />
+        ) : checkInLockedReason ? (
+          <Card style={styles.checkInLocked} elevation="none">
+            <Ionicons name="lock-closed-outline" size={18} color={theme.textSecondary} />
+            <ThemedText type="small" themeColor="textSecondary" style={styles.flexShrink}>
+              {t(
+                checkInLockedReason === 'payment'
+                  ? 'booking.checkInLockedPayment'
+                  : 'booking.checkInLockedConfirmation',
+              )}
+            </ThemedText>
+          </Card>
         ) : null}
 
         <Card style={styles.section}>
@@ -415,6 +435,7 @@ const styles = StyleSheet.create({
     borderRadius: Radius.full,
   },
   section: { gap: Space.md },
+  checkInLocked: { flexDirection: 'row', alignItems: 'center', gap: Space.md },
   infoRow: { flexDirection: 'row', alignItems: 'center', gap: Space.md },
   infoIcon: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   lineRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: Space.sm },
