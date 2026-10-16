@@ -19,10 +19,10 @@ giai đoạn, dừng lại chờ xác nhận trước khi sang giai đoạn kế
 - [x] B3. README, .env.example, scripts, tên app (đã chọn: "Vika Hotel")
 
 ### Giai đoạn C — Sửa nghiệp vụ đặt phòng & thanh toán
-- [ ] C1. Mã khuyến mãi bị treo
-- [ ] C2. Số khách + form bằng Zod
-- [ ] C3. Giá tạm tính
-- [ ] C4. Luồng thanh toán PayOS (usePayosCheckout)
+- [x] C1. Mã khuyến mãi bị treo
+- [x] C2. Số khách + form bằng Zod (numberOfGuests: chỉ thêm type, không gửi)
+- [x] C3. Giá tạm tính (không có endpoint báo giá — đổi nhãn + chú thích)
+- [x] C4. Luồng thanh toán PayOS (usePayosCheckout)
 
 ### Giai đoạn D — Độ bền, tính năng còn thiếu, UX
 - [ ] D1. useApi chống race
@@ -395,11 +395,202 @@ opt-in toastOnRefreshError flag on useApi, and align PromoTicket's copy
 feedback with the haptic+toast pattern used elsewhere.
 ```
 
+### C1. Mã khuyến mãi bị treo — ✅
+
+Thêm `appliedPromoCode: string | null` trong `booking/new.tsx` — chỉ khác
+`null` ngay sau một `handleValidatePromo()` thành công, cho đúng mã đang có
+trong ô nhập lúc đó. Bị reset về `null` (+ `discountAmount = 0` + thông báo
+"Danh sách dịch vụ đã thay đổi, vui lòng áp dụng lại mã") ở 2 nơi: `toggleService`
+(không dùng `useEffect`, đúng như prompt yêu cầu) và khi sửa ô mã sau khi đã áp
+(`handlePromoCodeChange`). Khi submit: `promotionCode: appliedPromoCode &&
+appliedPromoCode === promoCode.trim() ? appliedPromoCode : undefined` — chỉ gửi
+đúng khi còn khớp với ô nhập hiện tại.
+
+**File đã đổi:** `src/app/booking/new.tsx`, `src/i18n/locales/vi.json`/`en.json`
+(key mới `booking.promoNeedsReapply`).
+
+**Cách test:** đặt phòng → áp mã khuyến mãi hợp lệ (giảm giá hiện ra) → tick
+thêm 1 dịch vụ → phải thấy ngay thông báo "Danh sách dịch vụ đã thay đổi..." và
+tổng tiền tự bỏ phần giảm giá → nếu bấm Đặt luôn mà không áp lại mã, đơn tạo ra
+**không có** `promotionCode`. Tương tự khi sửa chữ trong ô mã sau khi đã áp.
+
+**Commit message đề xuất:**
+```
+fix(booking): invalidate the applied promo when services or the code change
+
+discountAmount stayed applied (and was submitted) even after changing the
+service selection or editing the code field, so the booking could be created
+with a discount that no longer matched what the backend would compute. Track
+the exact code the discount is for and clear it whenever either changes.
+```
+
+### C2. Số khách + form bằng Zod — ✅
+
+**Số khách:** đọc `docs/API.md` (repo backend sibling) mục 5.1 `POST /bookings`
+— body chỉ có `roomTypeId, checkIn, checkOut, guestInfo{fullName,phone,email},
+extraServiceIds, promotionCode, paymentMethod`, **không có field số khách nào**.
+`guests` hiện tại chỉ dùng hiển thị, không hề gửi lên server. Đã hỏi, bạn chọn
+"chỉ thêm type + TODO, không gửi" — đã thêm `numberOfGuests?: number` vào
+`CreateBookingDto` (`src/types/booking.ts`) kèm comment TODO giải thích rõ chưa
+xác nhận với backend; **không** đụng vào payload `bookingsApi.create()` thật.
+
+**Form fullName/phone:** chuyển sang `react-hook-form` + `zod`, theo đúng
+pattern của `login.tsx` (Controller + zodResolver + `errors.<field>?.message`
+đổ vào `TextField`). `fullName`: `trim().min(2).max(100)`. `phone`: dùng
+`phoneSchema()` mới trong `src/utils/validation.ts` — bỏ hết khoảng trắng rồi
+khớp `^(0|\+84)(3|5|7|8|9)\d{8}$` (đúng đầu số di động VN còn cấp). Submit
+button giờ dùng `isSubmitting` từ `useForm` thay cho state `submitting` riêng.
+Xoá key i18n không còn dùng: `booking.requireFullNamePhone` (thay bằng lỗi
+field inline qua 2 key mới `booking.fullNameInvalid`, `booking.phoneInvalid`).
+
+**File đã đổi:** `src/utils/validation.ts` (mới), `src/types/booking.ts`,
+`src/app/booking/new.tsx`, `src/i18n/locales/vi.json`/`en.json`.
+
+**Chưa đụng:** `register.tsx` (phone chỉ check `min(8)`, lỏng hơn) và
+`account.tsx` (`PHONE_PATTERN = /^(0|\+84)\d{9,10}$/`, không giới hạn đầu số) —
+không nằm trong phạm vi C2, không tự sửa. `phoneSchema()` đã đặt sẵn trong
+`validation.ts` để 2 chỗ đó dùng lại sau nếu cần.
+
+**Cách test:** bỏ trống họ tên hoặc gõ 1 ký tự → lỗi inline dưới ô, không submit
+được. Gõ số điện thoại đầu số lạ (vd `021xxxxxxx`) hoặc có khoảng trắng
+(`090 123 4567`) → báo lỗi / hoặc tự làm sạch khoảng trắng rồi submit đúng số.
+
+**Commit message đề xuất:**
+```
+refactor(booking): move guest-info form to react-hook-form + zod
+
+Guest name/phone were validated with a single toast on submit instead of
+inline field errors like every other form in the app. Reuse the login.tsx
+pattern and a shared Vietnamese phone schema; also record that the create-
+booking endpoint has no guest-count field yet, without guessing one.
+```
+
+### C3. Giá tạm tính — ✅ (nhánh: không có endpoint báo giá)
+
+Đã grep `docs/API.md` (repo backend sibling) tìm quote/preview/price/estimate —
+chỉ thấy `GET /bookings/:id/checkout-preview` (xem trước hoá đơn **trả phòng**
+của một đơn ĐÃ TẠO — phụ thu trễ giờ + dịch vụ, dùng lúc check-out, không liên
+quan tới việc ước tính giá TRƯỚC KHI tạo đơn mới). → Không có endpoint báo giá
+cho màn đặt phòng mới. Đi nhánh: đổi nhãn.
+
+- `booking/new.tsx`: nhãn "Tổng" → "Tạm tính" (`booking.estimatedTotal`, dùng
+  lại ở cả dòng tổng trong Card phân tích giá và ở `BottomBar`), thêm chú thích
+  nhỏ "Giá cuối cùng được xác nhận sau khi tạo đơn." (`booking.estimatedTotalNote`)
+  ngay dưới dòng tổng.
+- Xoá key `booking.totalToPay` (không còn nơi nào dùng sau khi đổi).
+- **Không đổi** `booking.total` — key này dùng ở `booking/[id].tsx` (đơn đã tạo,
+  số liệu server) và `ChatBubble.tsx` (thẻ đề xuất đặt phòng của AI, cũng là số
+  server tính) — cả hai đúng là "Tổng" thật, không phải tạm tính, nên giữ
+  nguyên, không gộp nhầm với key mới.
+- Xác nhận lại (không cần sửa code): `booking/[id].tsx`, `components/BookingCard.tsx`,
+  `components/ChatBookingCreatedCard.tsx` đều đã hiển thị `totalAmount` lấy
+  trực tiếp từ response server (`Booking`/`ConfirmedBooking`), không tính lại ở
+  client — đúng yêu cầu, không cần đổi gì thêm.
+
+**File đã đổi:** `src/app/booking/new.tsx`, `src/i18n/locales/vi.json`/`en.json`.
+
+**Cách test:** vào màn đặt phòng mới → dòng tổng tiền giờ ghi "Tạm tính" kèm
+chú thích nhỏ bên dưới, ở cả khối chi tiết giá và thanh dưới cùng. Các màn khác
+(chi tiết đơn, thẻ đơn trong "Đơn của tôi", thẻ đặt phòng trong chat) vẫn ghi
+"Tổng" như cũ.
+
+**Commit message đề xuất:**
+```
+fix(booking): label the pre-booking total as an estimate
+
+There's no quote/preview endpoint for a booking that hasn't been created yet
+(only a checkout-preview for an existing one), so the new-booking total is a
+client-side calculation that can drift from what the backend actually charges.
+Label it "Tạm tính" with a note instead of implying it's final.
+```
+
+### C4. Luồng thanh toán PayOS (usePayosCheckout) — ✅
+
+Tách toàn bộ vòng đời link PayOS ra `src/hooks/usePayosCheckout.ts` — trả về
+đúng `{ phase, link, amount, error, regenerate }` như yêu cầu, `phase` là
+`'loading'|'waiting'|'paid'|'expired'|'failed'|'error'`.
+
+- **Amount có ngay:** lấy `created.amount` từ response tạo link nếu có; nếu
+  không (link cũ tái dùng, không kèm amount), gọi `syncPayosStatus` **một lần
+  ngay lập tức** (không chờ 4s đầu) — nếu lúc đó đã `PAID`/`FAILED` thì vào
+  thẳng `paid`/`failed`, không hiện QR rồi phải đổi ngay.
+- **Hết hạn bằng `setTimeout` riêng:** một effect riêng tính
+  `delay = link.expiredAt * 1000 - Date.now()` rồi `setTimeout` đúng lúc đó
+  chuyển sang `expired` — không còn phải chờ tới lượt poll 4s kế tiếp mới
+  nhận ra đã hết hạn. **Đơn vị `expiredAt` là giây** (epoch giây, đã xác nhận
+  lại qua `docs/API.md` mục 8.1: "`expiredAt`: epoch giây, link sống ~15
+  phút"), nhân 1000 mới ra ms.
+- **`failed` tách riêng khỏi `expired`:** trước đây cả 2 trường hợp (hết giờ
+  và `paymentStatus: FAILED` từ backend) đều gộp chung vào 1 biến `expired`.
+  Giờ `failed` có màn riêng (icon dấu X, "Thanh toán không thành công") với
+  nút **"Xem đơn"** (`router.replace('/booking/:id')`); `expired` có nút
+  **"Tạo mã mới"** gọi `regenerate()` — khi hết hạn, màn còn ẩn hẳn QR/nút mở
+  app ngân hàng/khối chuyển khoản/hướng dẫn (dùng link đã chết thì vô nghĩa),
+  chỉ còn pill "Mã QR đã hết hạn" + nút tạo mã mới.
+- **Poll tạm dừng khi app ở background:** effect poll giờ phụ thuộc cả
+  `phase === 'waiting'` **và** `appIsActive` (theo dõi qua `AppState`) — rời
+  app thì effect cleanup tự `clearInterval`, không poll vô ích. Quay lại active
+  thì `sync()` gọi ngay 1 lần (không chờ tick kế) rồi poll khởi động lại.
+- **Dọn timer/listener khi unmount:** toàn bộ viết lại theo kiểu khai báo —
+  mỗi `useEffect` tự `return` cleanup riêng (`clearInterval`/`clearTimeout`/
+  `subscription.remove()`), không còn `useRef` thủ công nào phải tự nhớ dọn.
+- **Sửa exhaustive-deps không dùng eslint-disable:** 2 chỗ gặp lỗi MỚI (không
+  phải exhaustive-deps mà là `react-hooks/set-state-in-effect`, rule chặn gọi
+  `setState` đồng bộ ngay trong thân effect):
+  1. Effect gọi `createLink()` lúc mount — bọc trong hàm `async function run()`
+     khai báo ngay trong effect rồi gọi `run()` (cùng kiểu đã dùng ở
+     `ChatBookingCreatedCard.tsx` từ A1) — ESLint chỉ lần theo hàm khai báo
+     cục bộ, không soi được vào bên trong hàm `useCallback` được truyền tới.
+  2. Effect lên lịch hết hạn: bỏ nhánh rẽ `if (delay <= 0) setPhase('expired')`
+     đồng bộ, thay bằng `Math.max(0, delay)` rồi luôn dùng `setTimeout` (dù 0ms
+     vẫn là bất đồng bộ, không bị rule này soi).
+  Cảnh báo `exhaustive-deps` CŨ ở file này (thiếu `t`) tự nhiên biến mất vì
+  effect gốc gây ra nó đã không còn tồn tại sau khi viết lại.
+- **TODO thêm:** comment ngay trong `createLink()` hỏi backend endpoint
+  `POST /payments/payos/:bookingId/link` có idempotent không (gọi lại —
+  `regenerate()` hoặc remount màn — cho đơn đã có link có trả về đúng link cũ
+  hay tạo thêm 1 payment intent mới).
+
+**File đã đổi:** `src/hooks/usePayosCheckout.ts` (mới),
+`src/app/checkout/[bookingId].tsx` (dùng hook, bớt đi toàn bộ state/effect
+vòng đời link; giữ nguyên các phần không liên quan: chọn app ngân hàng, copy
+clipboard, khối thông tin chuyển khoản), `src/i18n/locales/vi.json`/`en.json`
+(key mới `checkout.regenerateLink`, `checkout.failedTitle`,
+`checkout.failedSubtitle`; sửa `checkout.expired` — bỏ câu "vui lòng quay lại
+tạo đơn mới" đã sai từ khi có nút "Tạo mã mới").
+
+**Cách test thủ công:**
+1. Vào thanh toán 1 đơn PAYOS mới → thấy QR + số tiền hiện ngay (không trễ 4s).
+2. Chờ hết hạn (hoặc sửa tạm `expiredAt` ngắn lại để test nhanh) → đúng lúc hết
+   hạn (không phải tới tick poll kế) chuyển sang "Mã QR đã hết hạn" + nút "Tạo
+   mã mới", ẩn hết QR/chuyển khoản/hướng dẫn. Bấm nút → tạo lại link mới, về
+   lại trạng thái chờ bình thường.
+3. Đưa app xuống nền (Home) rồi mở lại trong lúc đang chờ thanh toán → đồng bộ
+   lại ngay khi mở app, không phải chờ.
+4. Giả lập/chờ backend trả `paymentStatus: FAILED` → màn hiện "Thanh toán
+   không thành công" + nút "Xem đơn", khác với màn hết hạn.
+5. Tạo link lỗi (vd tắt mạng lúc vào màn) → `ErrorView` giờ có nút thử lại gọi
+   đúng `regenerate` (trước đây không có nút thử lại nào ở bước này).
+
+**Commit message đề xuất:**
+```
+refactor(checkout): extract PayOS link lifecycle into usePayosCheckout
+
+The checkout screen managed loading/polling/expiry entirely with ad-hoc state
+and a single "expired" flag that conflated time-based expiry with an explicit
+backend FAILED status. Move that lifecycle into a hook with a proper phase
+enum, expire exactly at expiredAt via its own timer instead of waiting for the
+next 4s poll, pause polling while backgrounded, and give failed/expired their
+own screens (view booking vs. regenerate a new link).
+```
+
 ## Điểm chờ quyết định (⏸)
 
 - **A3 — lưu refresh token:** đã hỏi, bạn chọn (b) giữ cookie. Xem mục A3 và
   `docs/backend-requests.md`.
 - **B3 — tên app:** đã hỏi, bạn chọn "Vika Hotel". Xem mục B3.
+- **C2 — numberOfGuests:** đã hỏi, bạn chọn chỉ thêm type + TODO, không gửi
+  lên server. Xem mục C2.
 
 ## Phát hiện thêm (ngoài phạm vi, chưa sửa)
 
