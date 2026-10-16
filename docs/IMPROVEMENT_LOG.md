@@ -332,6 +332,69 @@ set app.json's display name, drop the dead reset-project script, and translate
 .env.example's comments to Vietnamese.
 ```
 
+### Rà soát "nhìn chuyên nghiệp hơn" (ngoài kế hoạch A–E) — ✅ cả 5 việc
+
+Bạn yêu cầu đọc lại toàn bộ code, tìm chỗ cần nâng cấp cho chuyên nghiệp hơn.
+Đã đọc các màn chưa từng đụng trong phiên này (Trang chủ, Tìm phòng, Đơn của
+tôi, Chi tiết phòng, Đặt phòng mới, Onboarding) + component dùng chung
+(HeroCarousel, BookingCard, RoomTypeCard, PromoTicket, StatusBadge,
+SectionHeader) + quét `console.log`/`TODO`/`Alert.alert`/màu hex cứng toàn repo.
+Nhận xét chung: nền tảng đã khá chuyên nghiệp (token nhất quán, dark mode không
+rò màu cứng, skeleton/empty/error state đều đặn, animation tôn trọng "Reduce
+Motion", không có code rác). 5 việc cụ thể bạn chọn làm luôn:
+
+1. **Khung tìm kiếm Trang chủ không còn "giả"** — thêm `src/store/searchPrefsStore.ts`
+   (Zustand, chỉ lưu trong phiên, không persist) ghi lại ngày/số khách của lần
+   tìm gần nhất. `search.tsx` ghi vào đây sau khi tìm thành công, và đọc ra làm
+   giá trị mặc định khi mở lại màn (thay vì luôn ngày mai/mốt). `(tabs)/index.tsx`
+   hiện đúng ngày/số khách đã tìm thay vì chữ tĩnh "Chọn ngày"/"Thêm khách".
+2. **Lỗi tìm phòng chuyển sang `toast.error`** thay vì dòng chữ đỏ tĩnh trong
+   card — đồng nhất với cách báo lỗi còn lại của app (`(tabs)/search.tsx`).
+3. **Pull-to-refresh không còn nuốt lỗi âm thầm** — `useApi.ts` thêm option
+   `toastOnRefreshError` (mặc định `false`, không đổi hành vi chỗ nào chưa bật).
+   Bật ở 3 nơi dữ liệu chính: `roomTypes`+`promotions` (Trang chủ), `bookings`
+   (Đơn của tôi), `booking` (chi tiết đơn). **Cố ý không bật** cho `myReviews` ở
+   cả 2 nơi dùng nó — giữ đúng thiết kế "decorative, im lặng nếu lỗi" đã có sẵn
+   trong comment gốc.
+4. **`PromoTicket` copy mã khuyến mãi** giờ có haptic (`Haptics.selectionAsync`)
+   + `toast.success` giống mọi chỗ copy khác trong app (CheckInPass, đổi mật
+   khẩu...), bỏ state `copied`/đổi icon-tại-chỗ cũ (giờ dư thừa vì đã có toast).
+5. **Skeleton cho `PromoTicket`** khi `promotions.loading` — trước đó không có
+   gì hiện ra, nội dung "nhảy" vào khi mạng chậm. (Kiểm tra lại: `ExperienceGallery`
+   là ảnh demo tĩnh, không gọi API, nên không cần skeleton — bỏ ý ban đầu về
+   gallery, chỉ còn đúng promo ticket.)
+
+**File đã đổi:** `src/store/searchPrefsStore.ts` (mới), `src/app/(tabs)/search.tsx`,
+`src/app/(tabs)/index.tsx`, `src/app/(tabs)/bookings.tsx`, `src/app/booking/[id].tsx`,
+`src/hooks/useApi.ts`, `src/components/PromoTicket.tsx`.
+
+**Không có key i18n mới** — toàn bộ tái dùng key có sẵn (`common.guest`,
+`home.searchDate`, `home.searchAddGuests`, `promo.copied`).
+
+**Cách test thủ công:**
+1. Trang chủ → kéo xuống làm mới trong lúc tắt mạng → thấy toast lỗi (trước đây im lặng).
+2. Tìm phòng với ngày/số khách bất kỳ → bấm Tìm → thành công → quay lại Trang
+   chủ → ô tìm kiếm hiện đúng ngày + số khách vừa tìm (không phải chữ tĩnh).
+3. Mở lại tab Tìm phòng → ngày/số khách giữ nguyên lần tìm trước (không phải
+   luôn ngày mai/mốt + 2 khách).
+4. Tắt mạng rồi bấm Tìm phòng → thấy toast đỏ (không phải dòng chữ trong card).
+5. Trang chủ lúc đang tải khuyến mãi → thấy khối skeleton xám nhấp nháy thay vì
+   khoảng trống/nhảy layout.
+6. Có khuyến mãi đang chạy → bấm vào vé khuyến mãi → rung nhẹ + toast "Đã sao
+   chép" (không còn icon đổi thành dấu tick tại chỗ).
+
+**Commit message đề xuất:**
+```
+feat(ux): reflect real search state on home and surface silent failures
+
+The home search card always showed static placeholder text, refresh failures
+on home/bookings/booking-detail had no visible sign once data was already
+loaded, and the search screen's error used a different pattern (inline text)
+than the rest of the app (toast). Add a session-only search-prefs store, an
+opt-in toastOnRefreshError flag on useApi, and align PromoTicket's copy
+feedback with the haptic+toast pattern used elsewhere.
+```
+
 ## Điểm chờ quyết định (⏸)
 
 - **A3 — lưu refresh token:** đã hỏi, bạn chọn (b) giữ cookie. Xem mục A3 và
@@ -339,6 +402,12 @@ set app.json's display name, drop the dead reset-project script, and translate
 - **B3 — tên app:** đã hỏi, bạn chọn "Vika Hotel". Xem mục B3.
 
 ## Phát hiện thêm (ngoài phạm vi, chưa sửa)
+
+- **(sau merge dev #21) `src/utils/chatRooms.ts` (`pickRelevantRooms`) không còn
+  được dùng ở đâu nữa** — `chat.tsx` giờ hiện thẳng `response.rooms` từ backend,
+  không lọc qua hàm này. Liên quan trực tiếp tới task E1 (kế hoạch test ban đầu
+  có nêu test `pickRelevantRooms`) — khi tới E1 cần bỏ hàm này khỏi danh sách
+  test hoặc hỏi lại nếu vẫn muốn giữ hàm (hiện là dead code).
 
 - **(B3) `account.tsx` và `edit-profile.tsx` có thể trùng chức năng:** cả hai
   đều cho sửa `fullName`/`phone`/`address` qua `usersApi.updateMe`; `account.tsx`

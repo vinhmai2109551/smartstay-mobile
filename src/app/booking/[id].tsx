@@ -44,7 +44,10 @@ export default function BookingDetailScreen() {
   const { id, review: focusReview } = useLocalSearchParams<{ id: string; review?: string }>();
   const fetchBooking = useCallback(() => bookingsApi.detail(id), [id]);
   // Staff confirm / check-in from the admin side, so reload whenever the screen is shown again.
-  const { data: booking, loading, error, refetch, refreshing, refresh } = useApi(fetchBooking, { refetchOnFocus: true });
+  const { data: booking, loading, error, refetch, refreshing, refresh } = useApi(fetchBooking, {
+    refetchOnFocus: true,
+    toastOnRefreshError: true,
+  });
   // Pushed over the socket when staff act on the booking, so the status changes live.
   useBookingUpdates(refresh);
   const fetchMyReviews = useCallback(() => reviewsApi.mine(), []);
@@ -378,6 +381,7 @@ export default function BookingDetailScreen() {
         confirmLabel={t('booking.cancelConfirm')}
         cancelLabel={t('booking.cancelDismiss')}
         destructive
+        animated={false}
         loading={cancelling}
         onConfirm={handleConfirmCancel}
         onCancel={() => setShowCancelConfirm(false)}

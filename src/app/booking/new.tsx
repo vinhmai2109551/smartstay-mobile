@@ -60,6 +60,10 @@ export default function NewBookingScreen() {
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([]);
   const [promoCode, setPromoCode] = useState('');
   const [discountAmount, setDiscountAmount] = useState(0);
+  // The exact code the last successful validate() was for — null whenever the
+  // applied discount no longer reflects what's on screen (services or the code
+  // changed since), so a stale discount can never be submitted.
+  const [appliedPromoCode, setAppliedPromoCode] = useState<string | null>(null);
   const [promoMessage, setPromoMessage] = useState<string | null>(null);
   const [validatingPromo, setValidatingPromo] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -78,6 +82,20 @@ export default function NewBookingScreen() {
 
   const toggleService = (id: string) => {
     setSelectedServiceIds((prev) => (prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]));
+    if (appliedPromoCode) {
+      setAppliedPromoCode(null);
+      setDiscountAmount(0);
+      setPromoMessage(t('booking.promoNeedsReapply'));
+    }
+  };
+
+  const handlePromoCodeChange = (value: string) => {
+    setPromoCode(value);
+    if (appliedPromoCode) {
+      setAppliedPromoCode(null);
+      setDiscountAmount(0);
+      setPromoMessage(t('booking.promoNeedsReapply'));
+    }
   };
 
   const handleValidatePromo = async () => {
@@ -93,13 +111,16 @@ export default function NewBookingScreen() {
       });
       if (result.valid) {
         setDiscountAmount(result.discountAmount);
+        setAppliedPromoCode(promoCode.trim());
         setPromoMessage(t('booking.promoApplied', { amount: formatVND(result.discountAmount) }));
       } else {
         setDiscountAmount(0);
+        setAppliedPromoCode(null);
         setPromoMessage(t('booking.promoInvalid'));
       }
     } catch (error) {
       setDiscountAmount(0);
+      setAppliedPromoCode(null);
       setPromoMessage(getApiErrorMessage(error, t('booking.promoInvalid')));
     } finally {
       setValidatingPromo(false);
@@ -124,7 +145,7 @@ export default function NewBookingScreen() {
           phone: phone.trim(),
         },
         extraServiceIds: selectedServiceIds,
-        promotionCode: discountAmount > 0 ? promoCode.trim() : undefined,
+        promotionCode: appliedPromoCode && appliedPromoCode === promoCode.trim() ? appliedPromoCode : undefined,
         paymentMethod,
       });
       if (paymentMethod === 'PAYOS') {
@@ -268,7 +289,7 @@ export default function NewBookingScreen() {
                   leftIcon="ticket-outline"
                   autoCapitalize="characters"
                   value={promoCode}
-                  onChangeText={setPromoCode}
+                  onChangeText={handlePromoCodeChange}
                 />
               </View>
               <Button

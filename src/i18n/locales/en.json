@@ -249,6 +249,7 @@
     "promoApply": "Apply",
     "promoApplied": "Applied successfully, {{amount}} off",
     "promoInvalid": "Invalid promo code.",
+    "promoNeedsReapply": "Services changed, please apply the code again",
     "paymentMethod": "Payment method",
     "paymentCash": "Cash at the hotel",
     "paymentCashDescription": "Pay when you check in",

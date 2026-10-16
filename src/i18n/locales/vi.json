@@ -249,6 +249,7 @@
     "promoApply": "Áp dụng",
     "promoApplied": "Áp dụng thành công, giảm {{amount}}",
     "promoInvalid": "Mã khuyến mãi không hợp lệ.",
+    "promoNeedsReapply": "Danh sách dịch vụ đã thay đổi, vui lòng áp dụng lại mã",
     "paymentMethod": "Phương thức thanh toán",
     "paymentCash": "Tiền mặt tại khách sạn",
     "paymentCashDescription": "Thanh toán khi nhận phòng",

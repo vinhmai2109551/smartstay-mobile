@@ -28,7 +28,9 @@ import { useApi } from '@/hooks/useApi';
 import { useUnreadNotifications } from '@/hooks/useUnreadNotifications';
 import { useShadows, useTheme } from '@/hooks/use-theme';
 import { useAuthStore } from '@/store/authStore';
+import { useSearchPrefsStore } from '@/store/searchPrefsStore';
 import { RoomType } from '@/types/room';
+import { formatDate } from '@/utils/date';
 
 const GUTTER = Space.lg;
 const CAROUSEL_GAP = Space.md;
@@ -64,11 +66,19 @@ export default function HomeScreen() {
   const user = useAuthStore((s) => s.user);
   const unreadCount = useUnreadNotifications();
   const heroSlides = useMemo(() => getHomeHeroSlides(t), [t]);
+  const lastCheckIn = useSearchPrefsStore((s) => s.checkIn);
+  const lastCheckOut = useSearchPrefsStore((s) => s.checkOut);
+  const lastGuests = useSearchPrefsStore((s) => s.guests);
+  const searchDateLabel =
+    lastCheckIn && lastCheckOut
+      ? `${formatDate(lastCheckIn, 'DD/MM')} – ${formatDate(lastCheckOut, 'DD/MM')}`
+      : t('home.searchDate');
+  const searchGuestsLabel = lastGuests ? t('common.guest', { count: lastGuests }) : t('home.searchAddGuests');
 
   const fetchRoomTypes = useCallback(() => roomTypesApi.list(), []);
-  const roomTypes = useApi(fetchRoomTypes);
+  const roomTypes = useApi(fetchRoomTypes, { toastOnRefreshError: true });
   const fetchPromotions = useCallback(() => promotionsApi.listActive(), []);
-  const promotions = useApi(fetchPromotions);
+  const promotions = useApi(fetchPromotions, { toastOnRefreshError: true });
 
   // Content is capped and centred on tablets; everything below derives from this width.
   const contentWidth = Math.min(windowWidth, MaxContentWidth);
@@ -151,16 +161,18 @@ export default function HomeScreen() {
             styles.searchFields,
             { borderColor: theme.border, backgroundColor: theme.background, opacity: pressed ? 0.8 : 1 },
           ]}>
-          <SearchField icon="calendar-outline" label={t('home.searchDatesLabel')} value={t('home.searchDate')} />
+          <SearchField icon="calendar-outline" label={t('home.searchDatesLabel')} value={searchDateLabel} />
           <View style={[styles.searchDivider, { backgroundColor: theme.border }]} />
-          <SearchField icon="people-outline" label={t('home.searchGuests')} value={t('home.searchAddGuests')} />
+          <SearchField icon="people-outline" label={t('home.searchGuests')} value={searchGuestsLabel} />
         </Pressable>
         <Button label={t('home.searchAccessibility')} icon="search" onPress={goToSearch} />
       </Animated.View>
 
       <PerkRow />
 
-      {promotion ? (
+      {promotions.loading ? (
+        <Skeleton height={96} radius={Radius.lg} />
+      ) : promotion ? (
         <Animated.View entering={FadeInDown.duration(500).delay(300)}>
           <PromoTicket promotion={promotion} />
         </Animated.View>
