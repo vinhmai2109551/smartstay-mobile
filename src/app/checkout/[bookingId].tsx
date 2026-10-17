@@ -1,19 +1,19 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
-import * as Linking from 'expo-linking';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, AppState, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
+import { captureRef } from 'react-native-view-shot';
 import Animated, { ZoomIn } from 'react-native-reanimated';
 
 import { getApiErrorMessage } from '@/api/client';
 import { paymentsApi } from '@/api/payments';
-import { fetchVietQrBankApps, buildBankDeeplink, findBankNameByBin, VietQrBankApp } from '@/api/vietqrBanks';
-import { BankPickerSheet } from '@/components/BankPickerSheet';
+import { fetchVietQrBankApps, findBankNameByBin, VietQrBankApp } from '@/api/vietqrBanks';
+import { PaymentQrSlip } from '@/components/PaymentQrSlip';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Button } from '@/components/ui/Button';
@@ -22,13 +22,13 @@ import { ErrorView } from '@/components/ui/ErrorView';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { FontFamily, MaxContentWidth, Radius, Space } from '@/constants/theme';
 import { useShadows, useTheme } from '@/hooks/use-theme';
-import { persistedStorage } from '@/store/persistedStorage';
 import { toast } from '@/store/toastStore';
 import { CreatePayosLinkResponse } from '@/types/payment';
+import { getBookingCode } from '@/utils/bookingQr';
 import { formatVND } from '@/utils/currency';
+import { saveImageToLibrary } from '@/utils/saveQr';
 
 const POLL_INTERVAL_MS = 4000;
-const RECENT_BANK_STORAGE_KEY = 'checkout.lastBankAppId';
 
 export default function CheckoutScreen() {
   const { t } = useTranslation();
@@ -47,9 +47,8 @@ export default function CheckoutScreen() {
   const [paid, setPaid] = useState(false);
   const [expired, setExpired] = useState(false);
   const [bankApps, setBankApps] = useState<VietQrBankApp[]>([]);
-  const [bankAppsLoading, setBankAppsLoading] = useState(false);
-  const [bankSheetVisible, setBankSheetVisible] = useState(false);
-  const [recentBankAppId, setRecentBankAppId] = useState<string | null>(null);
+  // Phiếu thanh toán dựng ngoài màn hình (PaymentQrSlip) — chụp lại thành ảnh khi lưu.
+  const slipRef = useRef<View>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const qrSize = Math.round(
@@ -82,28 +81,15 @@ export default function CheckoutScreen() {
   }, [bookingId]);
 
   useEffect(() => {
-    let cancelled = false;
-    Promise.resolve(persistedStorage.getItem(RECENT_BANK_STORAGE_KEY)).then((value) => {
-      if (!cancelled && value) setRecentBankAppId(value);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
     if (!link?.accountNumber || !link?.bin) return;
     let cancelled = false;
 
     async function loadBanks() {
-      setBankAppsLoading(true);
       try {
         const apps = await fetchVietQrBankApps();
         if (!cancelled) setBankApps(apps);
       } catch {
-        // ignore — bank name lookup/picker just won't be available this session
-      } finally {
-        if (!cancelled) setBankAppsLoading(false);
+        // ignore — the bank row just shows the BIN this session
       }
     }
 
@@ -165,20 +151,18 @@ export default function CheckoutScreen() {
     [t],
   );
 
-  const handleSelectBank = useCallback(
-    async (app: VietQrBankApp) => {
-      setBankSheetVisible(false);
-      if (!link) return;
-      try {
-        await Linking.openURL(buildBankDeeplink(app.appId, link));
-        setRecentBankAppId(app.appId);
-        persistedStorage.setItem(RECENT_BANK_STORAGE_KEY, app.appId);
-      } catch {
-        toast.error(t('checkout.openBankAppFailed'));
-      }
-    },
-    [link, t],
-  );
+  // Cùng cách lưu với thẻ đặt phòng trong chat (ChatBookingCreatedCard): chụp phiếu
+  // thanh toán dựng sẵn ngoài màn hình rồi lưu vào thư viện ảnh.
+  const handleSaveQr = async () => {
+    try {
+      const uri = await captureRef(slipRef, { format: 'png', quality: 1, result: 'tmpfile' });
+      const result = await saveImageToLibrary(uri, `vika-payos-${getBookingCode(bookingId)}.png`);
+      if (result === 'saved') toast.success(t('chat.qrSaved'));
+      else toast.error(t('chat.qrPermissionDenied'));
+    } catch {
+      toast.error(t('chat.qrSaveFailed'));
+    }
+  };
 
   if (loading) {
     return (
@@ -269,13 +253,27 @@ export default function CheckoutScreen() {
           </Card>
         )}
 
-        {hasBankInfo ? (
-          <Button
-            label={t('checkout.openBankApp')}
-            icon="business-outline"
-            accessibilityLabel={t('checkout.openBankApp')}
-            onPress={() => setBankSheetVisible(true)}
-          />
+        {link.qrCode ? (
+          <>
+            <Button
+              label={t('chat.paySaveQr')}
+              icon="download-outline"
+              disabled={expired}
+              onPress={handleSaveQr}
+            />
+            {/* Đẩy ra ngoài màn hình thay vì ẩn: display:none thì không được vẽ (không
+                chụp được), opacity:0 thì ảnh chụp ra trong suốt. */}
+            <View style={styles.offscreen} pointerEvents="none">
+              <PaymentQrSlip
+                ref={slipRef}
+                qrCode={link.qrCode}
+                amount={amount ?? link.amount ?? 0}
+                code={getBookingCode(bookingId)}
+                expiredAt={link.expiredAt}
+                proposal={null}
+              />
+            </View>
+          </>
         ) : null}
 
         <View
@@ -416,14 +414,6 @@ export default function CheckoutScreen() {
         />
       </ScrollView>
 
-      <BankPickerSheet
-        visible={bankSheetVisible}
-        onClose={() => setBankSheetVisible(false)}
-        banks={bankApps}
-        loading={bankAppsLoading}
-        recentAppId={recentBankAppId}
-        onSelect={handleSelectBank}
-      />
     </ThemedView>
   );
 }
@@ -460,6 +450,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
   },
   qrExpired: { opacity: 0.35 },
+  offscreen: { position: 'absolute', left: -10000, top: 0 },
   qrMissingCard: { alignItems: 'center', gap: Space.sm },
   payosRow: { flexDirection: 'row', alignItems: 'center', gap: Space.xs },
   payosText: { color: '#374151' },
