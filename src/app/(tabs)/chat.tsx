@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import * as Crypto from "expo-crypto";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -30,8 +31,10 @@ import {
   Radius,
   Space,
 } from "@/constants/theme";
+import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { useTheme } from "@/hooks/use-theme";
 import { ChatMessage } from "@/types/chat";
+import { toast } from "@/store/toastStore";
 import { useAuthStore } from "@/store/authStore";
 import {
   buildMessagesFromHistory,
@@ -68,7 +71,7 @@ export default function ChatScreen() {
   const { t } = useTranslation();
   const theme = useTheme();
   const welcomeMessage = useMemo<ChatMessage>(
-    () => ({ role: "MODEL", content: t("chat.welcomeMessage") }),
+    () => ({ id: "welcome", role: "MODEL", content: t("chat.welcomeMessage") }),
     [t],
   );
   const quickPrompts = useMemo(
@@ -90,6 +93,7 @@ export default function ChatScreen() {
   const listRef = useRef<FlatList>(null);
   const userId = useAuthStore((s) => s.user?.userId);
   const [loadingHistory, setLoadingHistory] = useState(false);
+  const isOnline = useNetworkStatus();
 
   // Resume the last conversation, like the web widget does after a reload. This tab only
   // exists while signed in and unmounts on sign-out, so the chat never leaks across users.
@@ -170,6 +174,7 @@ export default function ChatScreen() {
       setMessages((prev) => [
         ...prev,
         {
+          id: Crypto.randomUUID(),
           role: "MODEL",
           content: response.reply,
           rooms: response.rooms,
@@ -208,6 +213,7 @@ export default function ChatScreen() {
       setMessages((prev) => [
         ...prev,
         {
+          id: Crypto.randomUUID(),
           role: "MODEL",
           content: getSendErrorMessage(error, t),
         },
@@ -222,7 +228,11 @@ export default function ChatScreen() {
   const sendText = (raw: string) => {
     const text = raw.trim();
     if (!text || sending) return;
-    setMessages((prev) => [...prev, { role: "USER", content: text }]);
+    if (!isOnline) {
+      toast.error(t("chat.offlineBlocked"));
+      return;
+    }
+    setMessages((prev) => [...prev, { id: Crypto.randomUUID(), role: "USER", content: text }]);
     setInput("");
     scrollToEnd();
     send(text);
@@ -230,18 +240,26 @@ export default function ChatScreen() {
 
   const handleCancelProposal = (proposalId: string) => {
     if (sending) return;
+    if (!isOnline) {
+      toast.error(t("chat.offlineBlocked"));
+      return;
+    }
 
     const cancelText = t("chat.cancelProposalMessage");
-    setMessages((prev) => [...prev, { role: "USER", content: cancelText }]);
+    setMessages((prev) => [...prev, { id: Crypto.randomUUID(), role: "USER", content: cancelText }]);
     scrollToEnd();
     send(cancelText, { cancelProposalId: proposalId });
   };
 
   const handleConfirmBooking = (proposalId: string) => {
     if (sending) return;
+    if (!isOnline) {
+      toast.error(t("chat.offlineBlocked"));
+      return;
+    }
     setConfirmingProposalId(proposalId);
     const confirmText = t("chat.confirmBookingMessage");
-    setMessages((prev) => [...prev, { role: "USER", content: confirmText }]);
+    setMessages((prev) => [...prev, { id: Crypto.randomUUID(), role: "USER", content: confirmText }]);
     scrollToEnd();
     send(confirmText, { confirmProposalId: proposalId });
   };
@@ -260,7 +278,7 @@ export default function ChatScreen() {
     sendText(t("chat.cancelBookingFormMessage"));
   };
 
-  const canSend = !sending && !!input.trim();
+  const canSend = !sending && !!input.trim() && isOnline;
   const showQuickPrompts = messages.length === 1 && !sending;
 
   return (
@@ -308,7 +326,7 @@ export default function ChatScreen() {
           <FlatList
             ref={listRef}
             data={messages}
-            keyExtractor={(_, index) => String(index)}
+            keyExtractor={(item) => item.id}
             contentContainerStyle={styles.list}
             keyboardShouldPersistTaps="handled"
             renderItem={({ item, index }) => (

@@ -1,12 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
-import { useEffect, useState } from 'react';
+import * as Haptics from 'expo-haptics';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { FontFamily, Radius, Space } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { toast } from '@/store/toastStore';
 import { Promotion } from '@/types/promotion';
 import { formatVND } from '@/utils/currency';
 
@@ -20,22 +21,16 @@ const NOTCH = 18;
 export function PromoTicket({ promotion }: PromoTicketProps) {
   const { t } = useTranslation();
   const theme = useTheme();
-  const [copied, setCopied] = useState(false);
 
   const discountLabel =
     promotion.discountType === 'PERCENTAGE'
       ? t('promo.discountPercent', { percent: promotion.discountValue })
       : t('promo.discountAmount', { amount: formatVND(promotion.discountValue) });
 
-  useEffect(() => {
-    if (!copied) return;
-    const timer = setTimeout(() => setCopied(false), 2000);
-    return () => clearTimeout(timer);
-  }, [copied]);
-
   const handleCopy = async () => {
     await Clipboard.setStringAsync(promotion.code);
-    setCopied(true);
+    Haptics.selectionAsync();
+    toast.success(t('promo.copied'));
   };
 
   return (
@@ -70,12 +65,12 @@ export function PromoTicket({ promotion }: PromoTicketProps) {
 
       <View style={styles.right}>
         <ThemedText type="caption" style={{ color: theme.primaryText }}>
-          {copied ? t('promo.copied') : t('promo.codeLabel')}
+          {t('promo.codeLabel')}
         </ThemedText>
         <ThemedText style={[styles.code, { color: theme.primaryText }]} numberOfLines={1} adjustsFontSizeToFit>
           {promotion.code}
         </ThemedText>
-        <Ionicons name={copied ? 'checkmark' : 'copy-outline'} size={16} color={theme.primaryText} />
+        <Ionicons name="copy-outline" size={16} color={theme.primaryText} />
       </View>
     </Pressable>
   );

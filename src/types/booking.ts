@@ -65,6 +65,11 @@ export type CreateBookingDto = {
   extraServiceIds?: string[];
   promotionCode?: string;
   paymentMethod?: PaymentMethod;
+  // TODO: not confirmed with backend yet — POST /bookings currently has no guest-count
+  // field in its body (see docs/API.md 5.1). The guest count collected in booking/new.tsx
+  // is only ever shown to the user, never sent. Do NOT start sending this until backend
+  // confirms a field name and that an extra unknown field won't 400 under DTO whitelisting.
+  numberOfGuests?: number;
 };
 
 export type AddBookingServiceDto = {

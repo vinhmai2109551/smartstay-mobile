@@ -73,11 +73,17 @@ apiClient.interceptors.response.use(
 );
 
 export function getApiErrorMessage(error: unknown, fallback?: string) {
-  const resolvedFallback = fallback ?? t('common.errorFallback');
   if (isAxiosError<ApiErrorBody>(error)) {
+    // The body's own message always wins when there is one, whatever the status/code.
     const body = error.response?.data;
     if (Array.isArray(body?.message)) return body.message.join('\n');
     if (typeof body?.message === 'string') return body.message;
+
+    // No body to read a message from — classify what actually happened instead of
+    // falling straight to the generic fallback.
+    if (error.code === 'ERR_NETWORK') return t('common.errorNetwork');
+    if (error.code === 'ECONNABORTED') return t('common.errorTimeout');
+    if (error.response && error.response.status >= 500) return t('common.errorServer');
   }
-  return resolvedFallback;
+  return fallback ?? t('common.errorFallback');
 }

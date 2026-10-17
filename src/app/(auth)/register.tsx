@@ -22,6 +22,7 @@ import { TextField } from '@/components/ui/TextField';
 import { MinTouch, Space } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { toast } from '@/store/toastStore';
+import { passwordSchema } from '@/utils/validation';
 
 type FormValues = { fullName: string; email: string; phone: string; password: string; agree: boolean };
 
@@ -36,7 +37,7 @@ export default function RegisterScreen() {
         fullName: z.string().min(1, t('auth.register.fullNameRequired')),
         email: z.string().min(1, t('auth.emailRequired')).email(t('auth.emailInvalid')),
         phone: z.string().min(8, t('auth.register.phoneInvalid')),
-        password: z.string().min(6, t('auth.register.passwordMinLength')),
+        password: passwordSchema(t('auth.register.passwordMinLength')),
         agree: z.boolean().refine((v) => v === true, t('auth.register.agreeRequired')),
       }),
     [t],
@@ -168,7 +169,17 @@ export default function RegisterScreen() {
         name="agree"
         render={({ field: { onChange, value } }) => (
           <View style={styles.agreeRow}>
-            <Checkbox checked={value} onChange={onChange} />
+            <Checkbox
+              checked={value}
+              onChange={onChange}
+              accessibilityLabel={[
+                t('auth.register.agreePrefix'),
+                t('auth.register.agreeTerms'),
+                t('auth.register.agreeAnd'),
+                t('auth.register.agreePrivacy'),
+                t('auth.register.agreeSuffix'),
+              ].join(' ')}
+            />
             <Text style={styles.agreeText}>
               <ThemedText type="small" themeColor="textSecondary">
                 {t('auth.register.agreePrefix')}{' '}

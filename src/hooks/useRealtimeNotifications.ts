@@ -1,3 +1,4 @@
+import NetInfo from '@react-native-community/netinfo';
 import { useEffect } from 'react';
 import { AppState } from 'react-native';
 import { io } from 'socket.io-client';
@@ -45,8 +46,20 @@ export function useRealtimeNotifications(enabled: boolean) {
       else socket.connect();
     });
 
+    // NetInfo fires once immediately with the current state on subscribe — skip that
+    // one and only react to real transitions (going offline then back online).
+    let hasReportedOnce = false;
+    const netInfoUnsubscribe = NetInfo.addEventListener((netState) => {
+      if (!hasReportedOnce) {
+        hasReportedOnce = true;
+        return;
+      }
+      if (netState.isConnected) fetch();
+    });
+
     return () => {
       appState.remove();
+      netInfoUnsubscribe();
       socket.disconnect();
       // Signing out must not leave the previous user's notifications around.
       reset();

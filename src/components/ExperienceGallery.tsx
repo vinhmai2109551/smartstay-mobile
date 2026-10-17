@@ -27,7 +27,8 @@ function Tile({ index, style, tiles }: { index: number; style: object; tiles: Re
   const tile = tiles[index];
   return (
     <Animated.View entering={FadeInDown.duration(500).delay(index * 90)} style={[styles.tile, style]}>
-      <Image source={tile.image} style={StyleSheet.absoluteFill} contentFit="cover" transition={200} />
+      {/* Decorative — the label caption below already names the photo. */}
+      <Image source={tile.image} style={StyleSheet.absoluteFill} contentFit="cover" transition={200} accessible={false} />
       <LinearGradient
         colors={['transparent', 'rgba(0,0,0,0.65)']}
         locations={[0.45, 1]}

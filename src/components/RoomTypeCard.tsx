@@ -43,8 +43,16 @@ export function RoomTypeCard({ roomType, onPress, imageHeight = 200 }: RoomTypeC
         { backgroundColor: theme.backgroundElement, opacity: pressed ? 0.94 : 1 },
       ]}>
       <View style={[styles.imageWrap, { height: imageHeight }]}>
+        {/* Image is decorative — the Pressable's own accessibilityLabel already describes this card. */}
         {image ? (
-          <Image source={image} style={StyleSheet.absoluteFill} contentFit="cover" transition={200} />
+          <Image
+            source={image}
+            style={StyleSheet.absoluteFill}
+            contentFit="cover"
+            transition={200}
+            cachePolicy="memory-disk"
+            accessible={false}
+          />
         ) : (
           <View style={[StyleSheet.absoluteFill, styles.placeholder, { backgroundColor: theme.backgroundSelected }]}>
             <Ionicons name="bed-outline" size={36} color={theme.textSecondary} />

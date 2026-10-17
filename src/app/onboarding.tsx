@@ -95,7 +95,8 @@ export default function OnboardingScreen() {
         getItemLayout={(_, i) => ({ length: width, offset: width * i, index: i })}
         renderItem={({ item }) => (
           <View style={[styles.slide, { width }]}>
-            <Image source={item.image} style={StyleSheet.absoluteFill} contentFit="cover" transition={300} />
+            {/* Decorative — the title/subtitle below already say what this slide is about. */}
+            <Image source={item.image} style={StyleSheet.absoluteFill} contentFit="cover" transition={300} accessible={false} />
             <LinearGradient
               colors={['rgba(0,0,0,0.35)', 'transparent', 'rgba(0,0,0,0.85)']}
               locations={[0, 0.35, 0.8]}
