@@ -72,6 +72,11 @@ export type AiConversationMessage = {
 // A local chat-bubble entry — mirrors SendChatMessageResponse's structured
 // fields so the UI can render room/promotion/booking cards under a reply.
 export type ChatMessage = {
+  // Stable across re-renders AND reloads: the backend's own messageId when rebuilt
+  // from history (buildMessagesFromHistory), a fresh client-generated id otherwise
+  // (see chat.tsx) — never the array index, so FlatList doesn't recycle a bubble's
+  // local state (e.g. "show all rooms") onto a different message.
+  id: string;
   role: ChatRole;
   content: string;
   rooms?: AvailableRoomType[] | null;

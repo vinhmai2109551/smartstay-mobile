@@ -34,22 +34,41 @@ export function useApi<T>(
     setError(null);
   }
 
-  const load = useCallback(
-    () =>
-      fetcher()
-        .then((result) => {
-          setData(result);
-          setError(null);
-          return null;
-        })
-        .catch((err) => {
-          const message = getApiErrorMessage(err);
-          setError(message);
-          return message;
-        })
-        .finally(() => setLoading(false)),
-    [fetcher],
-  );
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  // Bumped on every load() call. A response only applies once it resolves if it's
+  // still the most recently dispatched one — otherwise an older request that
+  // happens to resolve later (refetch() racing a focus refetch, fetcher changing
+  // twice in a row, ...) could overwrite what a newer one already set.
+  const requestIdRef = useRef(0);
+
+  const load = useCallback(() => {
+    const requestId = ++requestIdRef.current;
+    const isCurrent = () => mountedRef.current && requestIdRef.current === requestId;
+
+    return fetcher()
+      .then((result) => {
+        if (!isCurrent()) return null;
+        setData(result);
+        setError(null);
+        return null;
+      })
+      .catch((err) => {
+        if (!isCurrent()) return null;
+        const message = getApiErrorMessage(err);
+        setError(message);
+        return message;
+      })
+      .finally(() => {
+        if (isCurrent()) setLoading(false);
+      });
+  }, [fetcher]);
 
   useEffect(() => {
     load();

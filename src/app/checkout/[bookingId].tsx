@@ -21,7 +21,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { FontFamily, MaxContentWidth, Radius, Space } from '@/constants/theme';
 import { usePayosCheckout } from '@/hooks/usePayosCheckout';
 import { useShadows, useTheme } from '@/hooks/use-theme';
-import { persistedStorage } from '@/store/persistedStorage';
+import { plainStorage } from '@/store/persistedStorage';
 import { toast } from '@/store/toastStore';
 import { formatVND } from '@/utils/currency';
 
@@ -44,7 +44,7 @@ export default function CheckoutScreen() {
 
   useEffect(() => {
     let cancelled = false;
-    Promise.resolve(persistedStorage.getItem(RECENT_BANK_STORAGE_KEY)).then((value) => {
+    Promise.resolve(plainStorage.getItem(RECENT_BANK_STORAGE_KEY)).then((value) => {
       if (!cancelled && value) setRecentBankAppId(value);
     });
     return () => {
@@ -92,7 +92,7 @@ export default function CheckoutScreen() {
       try {
         await Linking.openURL(buildBankDeeplink(app.appId, link));
         setRecentBankAppId(app.appId);
-        persistedStorage.setItem(RECENT_BANK_STORAGE_KEY, app.appId);
+        plainStorage.setItem(RECENT_BANK_STORAGE_KEY, app.appId);
       } catch {
         toast.error(t('checkout.openBankAppFailed'));
       }

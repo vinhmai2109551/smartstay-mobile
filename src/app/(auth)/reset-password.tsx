@@ -16,6 +16,7 @@ import { TextField } from '@/components/ui/TextField';
 import { Space } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { toast } from '@/store/toastStore';
+import { passwordSchema } from '@/utils/validation';
 
 type FormValues = { newPassword: string; confirmPassword: string };
 
@@ -29,7 +30,7 @@ export default function ResetPasswordScreen() {
     () =>
       z
         .object({
-          newPassword: z.string().min(6, t('auth.register.passwordMinLength')),
+          newPassword: passwordSchema(t('auth.register.passwordMinLength')),
           confirmPassword: z.string().min(1, t('auth.passwordRequired')),
         })
         .refine((data) => data.newPassword === data.confirmPassword, {

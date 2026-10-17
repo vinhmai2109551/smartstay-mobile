@@ -50,6 +50,7 @@ export function ChatRoomCard({
             style={styles.image}
             contentFit="cover"
             transition={200}
+            cachePolicy="memory-disk"
           />
         ) : (
           <View

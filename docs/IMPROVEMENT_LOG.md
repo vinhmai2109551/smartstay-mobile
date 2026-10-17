@@ -25,13 +25,13 @@ giai đoạn, dừng lại chờ xác nhận trước khi sang giai đoạn kế
 - [x] C4. Luồng thanh toán PayOS (usePayosCheckout)
 
 ### Giai đoạn D — Độ bền, tính năng còn thiếu, UX
-- [ ] D1. useApi chống race
-- [ ] D2. Tách lưu trữ (secureStorage/plainStorage)
-- [ ] D3. Quên mật khẩu
-- [ ] D4. Error Boundary
-- [ ] D5. Mất mạng
-- [ ] D6. Accessibility
-- [ ] D7. Hiệu năng danh sách
+- [x] D1. useApi chống race
+- [x] D2. Tách lưu trữ (secureStorage/plainStorage)
+- [x] D3. Quên mật khẩu
+- [x] D4. Error Boundary
+- [x] D5. Mất mạng
+- [x] D6. Accessibility
+- [x] D7. Hiệu năng danh sách
 
 ### Giai đoạn E — Kiểm thử & CI
 - [ ] E1. Jest
@@ -584,6 +584,418 @@ next 4s poll, pause polling while backgrounded, and give failed/expired their
 own screens (view booking vs. regenerate a new link).
 ```
 
+### D1. useApi chống race — ✅
+
+Thêm `requestIdRef` (tăng dần, mỗi lần `load()` chạy) + `mountedRef` (set
+`false` lúc unmount) trong `src/hooks/useApi.ts`. Một request chỉ được phép
+`setData`/`setError`/`setLoading(false)` nếu nó vẫn là request **mới nhất**
+được gọi (`requestIdRef.current === requestId` của chính nó) **và** component
+còn mounted — nên 1 request cũ chạy chậm, lỡ resolve SAU một request mới hơn
+(refetch() đua với refocus, đổi `fetcher` 2 lần liên tiếp...), không còn ghi đè
+dữ liệu mới hơn mà request sau đã set.
+
+**Không đổi API trả về** (`{ data, loading, error, refetch, refreshing,
+refresh }`) và **không đổi hành vi `refetchOnFocus`** — đúng yêu cầu. Không
+thêm thư viện.
+
+**File đã đổi:** `src/hooks/useApi.ts`.
+
+**Cách test thủ công:** khó tái hiện race tay trong UI bình thường (cần mạng
+chậm + thao tác rất nhanh) — cách chắc ăn nhất là test đơn vị ở E1 (giả 2
+fetcher, 1 chậm 1 nhanh, gọi gần nhau, assert state cuối đúng theo request mới
+nhất) — mình sẽ thêm vào danh sách test khi tới E1. Tạm thời đã xác nhận không
+đổi hành vi bình thường qua `tsc`/`lint` sạch và đọc lại logic tay.
+
+**Commit message đề xuất:**
+```
+fix(useApi): ignore stale responses from superseded requests
+
+A slower in-flight request resolving after a newer one (refetch racing a
+focus refetch, the fetcher changing twice in quick succession) could
+overwrite fresher state with stale data. Tag each load() call with an id and
+only apply its result while it's still the latest one in flight.
+```
+
+### D2. Tách lưu trữ (secureStorage/plainStorage) — ✅
+
+Cài `@react-native-async-storage/async-storage` bằng `npx expo install` (bản
+2.2.0, tương thích SDK 57). **Không cần config plugin/dev client** — khác với
+`expo-media-library` trước đó, AsyncStorage chạy được ngay trong Expo Go.
+
+- `src/store/persistedStorage.ts`: export `secureStorage` (giữ đúng logic cũ:
+  `expo-secure-store` trên native / `localStorage` trên web — chỉ nên dùng cho
+  bí mật) và `plainStorage` (thẳng `AsyncStorage`, tự có bản web riêng nên
+  không cần rẽ nhánh Platform). `persistedStorage` giữ lại làm alias
+  `@deprecated` trỏ sang `secureStorage`, không ai còn import tên cũ nữa
+  (đã kiểm bằng grep) — chỉ giữ phòng hờ.
+- **Chỉ access token nằm trong SecureStore** (key mới `smartstay-access-token`,
+  cập nhật trực tiếp trong `setSession`/`setAccessToken`/`clearSession`, không
+  qua `persist` middleware vì chỉ là 1 chuỗi, không cần bọc JSON blob).
+  `user`, `hasSeenOnboarding` (store Auth), toàn bộ `settingsStore`, và lịch sử
+  hội thoại AI (`aiChatHistory.ts`) chuyển sang `plainStorage`. Tên key hiện có
+  (`smartstay-auth`, `smartstay-settings`, `vika-ai-conversation.<userId>`,
+  `checkout.lastBankAppId`) **giữ nguyên** — chỉ đổi NƠI LƯU, không đổi tên.
+- **Migration 1 lần** từ blob `smartstay-auth` cũ trong SecureStore (lúc đó
+  gộp cả `accessToken`+`user`+`hasSeenOnboarding`): `onRehydrateStorage` của
+  `authStore` kiểm tra key mới trước; nếu chưa có mới đọc blob cũ, lấy luôn cả
+  3 field (không chỉ token) áp vào store ngay trong phiên hiện tại — để người
+  đang đăng nhập không bị đăng xuất **và** vẫn thấy đúng tên/thông tin của họ
+  ngay, không phải chờ `GET /auth/me` chạy lại mới có. Xoá blob cũ sau khi đọc
+  — hàm migration tự "hết tác dụng" từ lần chạy thứ 2 trở đi (không cần cờ
+  đánh dấu đã migrate riêng).
+- `hasHydrated` (authStore) chỉ bật `true` sau khi **cả 2 nửa** xong: rehydrate
+  `plainStorage` (zustand tự gọi `onRehydrateStorage` sau khi xong) **và**
+  bước đọc/migrate token từ SecureStore (await trong cùng callback đó).
+
+**File đã đổi:** `package.json`/`package-lock.json`, `src/store/persistedStorage.ts`,
+`src/store/authStore.ts`, `src/store/settingsStore.ts`, `src/utils/aiChatHistory.ts`,
+`src/app/checkout/[bookingId].tsx` (đổi `persistedStorage` → `plainStorage` cho
+"ngân hàng dùng gần nhất", không nhạy cảm).
+
+**Cách test thủ công:**
+1. **Trước khi cập nhật code này** (hoặc giả lập): đăng nhập, đóng app.
+2. Cập nhật lên bản có D2, mở lại app → **vẫn đăng nhập**, vẫn thấy đúng tên
+   (không phải màn trắng/tên rỗng rồi mới hiện).
+3. Xoá hẳn app cài lại (fresh install) → đăng nhập bình thường, đăng xuất vào
+   lại, đổi theme/ngôn ngữ, chat với AI rồi tắt mở lại app → lịch sử chat,
+   theme, ngôn ngữ đều giữ đúng.
+
+**Commit message đề xuất:**
+```
+refactor(storage): split secure (token) and plain (everything else) storage
+
+persistedStorage put the access token, user profile, settings, and AI chat
+history all through SecureStore — the OS keychain is unnecessary overhead for
+anything that isn't a secret. Add plainStorage (AsyncStorage) for the rest,
+keep secureStorage for just the token, and migrate the one existing combined
+blob once so a signed-in guest isn't logged out by the switch.
+```
+
+### D3. Quên mật khẩu — ✅
+
+**Phần đã có từ trước (xác nhận lại, không làm lại):** luồng
+`forgot-password.tsx` (email) → `verify-reset-otp.tsx` (OTP, dùng `OtpInput`,
+cùng phong cách `verify-otp.tsx`) → `reset-password.tsx` (mật khẩu mới) → về
+`login` kèm toast — đã làm ở phiên trước, vẫn còn nguyên. Link "Quên mật
+khẩu?" ở `login.tsx` cũng đã có. Đọc lại `ForgotPasswordDto`/`VerifyResetOtpDto`/
+`ResetPasswordDto` (`types/auth.ts`) — **không field nào cần `turnstileToken`**,
+nên không cần (và không nên) gắn `TurnstileWidget` vào 3 màn này.
+
+**Việc mới làm trong D3 — gộp schema mật khẩu dùng chung:** đọc lại
+`docs/API.md` (repo backend) thì phát hiện `register`/`reset-password` và
+`change-password` **không cùng quy tắc** như câu lệnh ban đầu ngỡ:
+- `register` (mục 1.1) + `reset-password` (mục 1.3): tối thiểu **6** ký tự.
+- `change-password` (mục 6.x): tối thiểu **8** ký tự, **phải có cả chữ và
+  số** — khác hẳn, không thể dùng chung 1 schema.
+
+→ Tạo **2** schema riêng trong `src/utils/validation.ts`: `passwordSchema()`
+(min 6, dùng ở `register.tsx` + `reset-password.tsx`) và `strongPasswordSchema()`
+(min 8 + bắt buộc có chữ VÀ số, dùng ở `change-password.tsx`).
+
+**Phát hiện và sửa luôn 1 bug thật:** `change-password.tsx` trước đây dùng
+`useState` thủ công, chỉ check `newPassword.length >= 8` — **không hề kiểm
+tra có chữ+số** như backend yêu cầu. Người dùng gõ mật khẩu 8 số (vd
+`11111111`) vẫn qua được validate ở app, rồi mới bị backend trả 400 khó hiểu.
+Đã chuyển hẳn màn này sang `react-hook-form` + `zod` (giống pattern
+`reset-password.tsx`), dùng `strongPasswordSchema()`, lỗi hiện inline đúng
+field. Tiện tay dùng luôn key i18n `profile.newPasswordHint` ("Tối thiểu 8 ký
+tự, có cả chữ và số") đang **mồ côi** (có sẵn trong file dịch, chưa chỗ nào
+gọi) làm vừa hint vừa message lỗi.
+
+**File đã đổi:** `src/utils/validation.ts` (thêm `passwordSchema`,
+`strongPasswordSchema`), `src/app/(auth)/register.tsx`, `src/app/(auth)/reset-password.tsx`
+(cả 2 chỉ đổi sang gọi `passwordSchema()`, hành vi y như cũ — min 6, không
+đổi gì người dùng thấy được), `src/app/change-password.tsx` (viết lại hoàn
+toàn phần form, giữ nguyên giao diện/hero navy/security tip card).
+
+**Cách test thủ công:**
+1. Đổi mật khẩu → gõ mật khẩu mới toàn số (vd `12345678`, đủ 8 ký tự) → phải
+   thấy lỗi inline ngay (trước đây sẽ cho qua, chỉ bị backend từ chối sau).
+2. Gõ mật khẩu mới hợp lệ (có chữ+số, ≥8 ký tự) nhưng xác nhận gõ sai → lỗi
+   "Mật khẩu xác nhận không khớp" ở đúng ô xác nhận.
+3. Đăng ký tài khoản / đặt lại mật khẩu quên: mật khẩu 6 ký tự (không cần chữ
+   số) vẫn qua được như trước — không đổi hành vi 2 màn này.
+
+**Commit message đề xuất:**
+```
+fix(auth): enforce change-password's real letter+digit rule client-side
+
+change-password only checked length >= 8, missing the letter-and-digit
+requirement the backend actually enforces — an all-digit 8-character password
+passed client validation and then failed on submit with a confusing 400.
+Move the screen to react-hook-form + zod with a dedicated strongPasswordSchema,
+and share a separate, weaker passwordSchema (min 6) between register and
+reset-password, since their backend rule is genuinely different.
+```
+
+### D4. Error Boundary — ✅
+
+Dùng đúng cơ chế có sẵn của Expo Router (không tự viết class component bọc
+tay): một file route/layout export 1 named export `ErrorBoundary` thì Router
+tự wrap nó bằng error boundary thật, truyền `{ error, retry }` — không cần tự
+quản lý `componentDidCatch`.
+
+- `src/components/ui/AppErrorFallback.tsx` (mới) — màn fallback chung. **Không
+  dùng `useTranslation`/`useTheme`/font tuỳ biến nào** — chữ tiếng Việt viết
+  thẳng, màu/size hardcode — vì chính cái hỏng có thể LÀ 1 trong các hook đó,
+  hoặc i18n/font chưa kịp sẵn sàng lúc lỗi xảy ra (ví dụ lỗi ngay lúc khởi
+  động). Nút "Thử lại" gọi `retry()` của Router; nút "Về trang chủ" tự
+  `router.replace('/')`. **Chỉ `__DEV__`** mới hiện `error.message` +
+  `error.stack` (cuộn được) trong khung đỏ; bản production chỉ thấy câu chung.
+- `src/utils/logger.ts` (mới) — `logError(error, context?)`, hiện tại chỉ
+  `console.error` khi `__DEV__`; có TODO ghi rõ chỗ gắn Sentry/Bugsnag sau này
+  (gọi `Sentry.captureException(...)` thay thân hàm, chỗ gọi không cần đổi).
+  `AppErrorFallback` tự gọi `logError(error)` 1 lần mỗi khi nhận lỗi mới
+  (qua `useEffect` khoá theo `error`), không phải tự thêm ở từng layout.
+- `src/app/_layout.tsx` — export `ErrorBoundary` → bắt lỗi **toàn app** (layout
+  gốc, bọc hết mọi thứ).
+- `src/app/(tabs)/_layout.tsx` — export `ErrorBoundary` riêng → lỗi render
+  trong 1 tab không kéo sập toàn app; màn ngoài tabs (auth, modal...) vẫn có
+  boundary gốc ở trên lo.
+- **Nút throw lỗi test (DEV-only):** thêm vào cuối màn Hồ sơ
+  (`(tabs)/profile.tsx`) — MenuRow "[DEV] Test Error Boundary" (icon
+  `bug-outline`, màu danger), chỉ hiện khi `__DEV__`. Bấm vào set state rồi
+  **throw ngay trong thân render** (không throw trong `onPress` trực tiếp —
+  React error boundary KHÔNG bắt được lỗi throw trong event handler, chỉ bắt
+  lỗi throw lúc render/lifecycle).
+
+  **⚠️ PHẢI XOÁ nút này (và state/if đi kèm) trước khi nộp bài** — tìm bằng
+  comment `"DEV-ONLY"` trong `(tabs)/profile.tsx`.
+
+**File đã đổi:** `src/components/ui/AppErrorFallback.tsx` (mới),
+`src/utils/logger.ts` (mới), `src/app/_layout.tsx`, `src/app/(tabs)/_layout.tsx`,
+`src/app/(tabs)/profile.tsx`.
+
+**Cách test thủ công:** vào Hồ sơ (bản dev) → cuộn xuống cuối → bấm "[DEV] Test
+Error Boundary" → phải thấy màn lỗi thay cho tab Hồ sơ (không phải app bị
+crash/đóng hẳn, không phải màn trắng), có khung đỏ hiện đúng message
+"Test error from the dev-only button..." + stack trace cuộn được, nút "Thử
+lại" bấm vào quay lại Hồ sơ bình thường (state reset), nút "Về trang chủ" đưa
+về tab Trang chủ. Chuyển app sang production build (`__DEV__` false) thì
+không thấy nút test này, và nếu CÓ lỗi khác xảy ra thì màn fallback chỉ hiện
+câu chung, không rò `error.stack`.
+
+**Commit message đề xuất:**
+```
+feat(errors): add an ErrorBoundary fallback via Expo Router's convention
+
+A render error anywhere used to crash the whole app with no recovery path.
+Export ErrorBoundary from the root and tabs layouts (Expo Router wires these
+up as real error boundaries automatically) with a self-contained fallback
+that doesn't depend on theme/i18n/fonts, a logError() stub for a future crash
+reporter, and a dev-only button in Hồ sơ to verify it actually catches.
+```
+
+### D5. Mất mạng — ✅
+
+Cài `@react-native-community/netinfo` bằng `npx expo install`.
+
+- `src/hooks/useNetworkStatus.ts` (mới) — trả `boolean`; `NetInfo`'s
+  `isConnected` là `null` lúc chưa có báo cáo đầu tiên (hoặc đôi khi mơ hồ) —
+  coi `null` là **online** (đúng yêu cầu), vì hiện banner offline sai còn tệ
+  hơn thiếu banner đúng trong chốc lát.
+- `src/components/ui/OfflineBanner.tsx` (mới) — banner cố định ở đỉnh màn hình
+  (trong `TopOverlay`, z-index 1900 — dưới `ToastHost` 1 chút để toast quan
+  trọng không bị che). Mất mạng → đỏ "Mất kết nối mạng", hiện mãi tới khi có
+  mạng lại. Có mạng lại → xanh "Đã kết nối lại" đúng 2 giây rồi tự ẩn. Có
+  `accessibilityRole="alert"` + `accessibilityLiveRegion="polite"`, padding
+  theo `insets.top`.
+- `src/api/client.ts` — `getApiErrorMessage` giờ phân loại khi **không có
+  message từ body**: `error.code === 'ERR_NETWORK'` → lỗi mạng,
+  `'ECONNABORTED'` → timeout, `status >= 500` → lỗi server. **Message từ body
+  luôn được ưu tiên trước** (không đổi hành vi cũ khi backend có trả message).
+- `src/hooks/useRealtimeNotifications.ts` — thêm `NetInfo.addEventListener`
+  song song với `AppState` listener có sẵn: có mạng lại (bỏ qua lần gọi đầu
+  tiên lúc subscribe, chỉ phản ứng với chuyển trạng thái THẬT) → gọi lại
+  `fetch()` của `notificationStore`. **Không tự retry các request POST** —
+  đúng yêu cầu, chỉ refetch dữ liệu đọc (GET).
+- `src/app/(tabs)/chat.tsx` — `canSend` thêm điều kiện `isOnline` (nút gửi mờ
+  đi khi mất mạng); `sendText`/`handleCancelProposal`/`handleConfirmBooking`
+  đều chặn sớm + `toast.error(t('chat.offlineBlocked'))` trước khi kịp đẩy
+  bong bóng "của tôi" lên màn (tránh hiện tin đã gửi nhưng thực ra bị chặn).
+
+**File đã đổi:** `package.json`/`package-lock.json`,
+`src/hooks/useNetworkStatus.ts` (mới), `src/components/ui/OfflineBanner.tsx`
+(mới), `src/api/client.ts`, `src/app/_layout.tsx`,
+`src/hooks/useRealtimeNotifications.ts`, `src/app/(tabs)/chat.tsx`,
+`src/i18n/locales/vi.json`/`en.json` (key mới: `common.errorNetwork/errorTimeout/
+errorServer/offline/reconnected`, `chat.offlineBlocked`).
+
+**Cách test thủ công:**
+1. Bật chế độ máy bay → banner đỏ "Mất kết nối mạng" hiện ngay ở đỉnh màn,
+   không tự ẩn.
+2. Tắt chế độ máy bay → banner đổi xanh "Đã kết nối lại" đúng 2 giây rồi mất;
+   màn Thông báo tự load lại (không cần kéo refresh tay).
+3. Đang offline, mở tab Chat AI → nút gửi mờ đi; gõ rồi bấm nút bàn phím
+   "gửi" (submit) → thấy toast đỏ, tin không bị đẩy lên khung chat.
+4. Tắt backend (không tắt wifi) rồi gọi 1 API bất kỳ không có body lỗi rõ →
+   thấy đúng câu phân loại (mạng/timeout/server) thay vì câu chung mơ hồ.
+
+**Commit message đề xuất:**
+```
+feat(network): add offline banner, classify network errors, block chat sends
+
+getApiErrorMessage fell back to a generic message for ERR_NETWORK/timeout/5xx
+responses with no body, the app gave no visible sign of being offline besides
+individual failed requests, and the chat screen would happily queue a message
+it could never send. Add a NetInfo-backed banner, classify those error codes
+(still preferring the body's own message when there is one), refetch
+notifications on reconnect, and block chat sends while offline.
+```
+
+### D6. Accessibility — ✅
+
+**Quét toàn repo** (59 `Pressable` trong 41 file, trừ `ui/Button.tsx` theo yêu
+cầu). Kết quả: codebase vốn đã khá chuẩn — chỉ **2 lỗ hổng thật**:
+
+| File | Dòng | Thiếu gì |
+|---|---|---|
+| `components/DateField.tsx` | 69 | backdrop đóng modal chọn ngày (iOS) có `accessibilityLabel` nhưng thiếu `accessibilityRole` |
+| `components/ui/Checkbox.tsx` (qua chỗ dùng ở `register.tsx`) | — | checkbox "đồng ý điều khoản" chỉ icon, không có `accessibilityLabel` nào được truyền vào |
+
+Đã sửa cả 2: thêm `accessibilityRole="button"` cho backdrop; checkbox đồng ý
+điều khoản ở `register.tsx` giờ nhận `accessibilityLabel` ghép từ đúng các
+key i18n đang hiển thị (`agreePrefix`+`agreeTerms`+`agreeAnd`+`agreePrivacy`+
+`agreeSuffix`) — ghép từ key có sẵn thay vì thêm key mới, để nhãn luôn khớp
+đúng chữ hiển thị nếu sau này đổi.
+
+**4 component nêu tên trong prompt (Checkbox/Chip/Stepper/StarRatingInput):**
+kiểm tra lại thì **cả 4 đã có sẵn** đầy đủ `accessibilityRole`,
+`accessibilityState`/`accessibilityValue`, và hitSlop đủ 44pt (`Checkbox`:
+24pt+hitSlop 10 mỗi bên; `Chip`: minHeight 36pt+hitSlop 4; `Stepper`: nút
+thường 44pt, nút dense 28pt+hitSlop 8; `StarRatingInput`: có cả
+`accessibilityActions` increment/decrement cho VoiceOver/TalkBack) — không
+cần sửa gì, chỉ xác nhận.
+
+**`accessible={false}` cho ảnh trang trí:** `HeroCarousel` (slide hero, caption
+chữ đã nói hết), `ExperienceGallery` (mỗi ảnh có label caption riêng),
+`onboarding.tsx` (ảnh nền, title/subtitle đã nói hết), `RoomTypeCard`/
+`BookingCard`/`FeaturedRoomCard` (ảnh thumbnail nằm trong Pressable đã có
+`accessibilityLabel` đầy đủ mô tả cả thẻ — ảnh bên trong giờ không bị đọc
+trùng/thừa nữa).
+
+**Liên kết label/lỗi cho `TextField`:** trước đây `accessibilityLabel` chỉ là
+`label`, màn hình đọc không biết field đang lỗi gì ngoài nhìn chữ đỏ. Giờ ghép
+`label` + `error` (hoặc `hint` nếu không lỗi) thành 1 câu, vd "Số điện thoại.
+Số điện thoại không hợp lệ." — áp dụng cho MỌI `TextField` trong app cùng lúc
+(sửa 1 chỗ ở component chung).
+
+**Live region cho toast:** đã có sẵn từ trước (`ToastHost.tsx`:
+`accessibilityRole="alert"` + `accessibilityLiveRegion="polite"`) — xác nhận
+lại, không cần sửa.
+
+**Không đổi giao diện** — đúng yêu cầu, mọi thay đổi đều là thuộc tính
+accessibility, không style/layout nào bị động.
+
+**Phát hiện thêm (chưa sửa):** `FeaturedRoomCard.tsx` có
+`accessibilityLabel` hardcode thẳng tiếng Việt ("từ ${giá} mỗi đêm") không đi
+qua i18n — người dùng bật tiếng Anh vẫn nghe tiếng Việt khi dùng VoiceOver/
+TalkBack ở thẻ này. Không sửa vì ngoài phạm vi D6 (D6 là thêm role/label còn
+thiếu, không phải audit i18n).
+
+**File đã đổi:** `src/components/DateField.tsx`, `src/app/(auth)/register.tsx`,
+`src/components/ui/TextField.tsx`, `src/components/HeroCarousel.tsx`,
+`src/components/ExperienceGallery.tsx`, `src/app/onboarding.tsx`,
+`src/components/RoomTypeCard.tsx`, `src/components/BookingCard.tsx`,
+`src/components/FeaturedRoomCard.tsx`.
+
+**Cách test thủ công:** bật VoiceOver (iOS)/TalkBack (Android) → vuốt qua màn
+Tìm phòng/Đơn của tôi/Trang chủ: mỗi thẻ phòng/đơn chỉ đọc 1 lần (không đọc
+trùng ảnh+label), ảnh hero/onboarding/gallery bị bỏ qua (chỉ đọc chữ caption).
+Vào màn Đăng ký, tích ô đồng ý điều khoản → đọc đúng câu đầy đủ "Tôi đồng ý
+với Điều khoản sử dụng và Chính sách bảo mật của Vika Hotel." Gõ sai số điện
+thoại ở 1 form bất kỳ rồi focus lại field đó → đọc cả label và lỗi.
+
+**Commit message đề xuất:**
+```
+fix(a11y): close two Pressable gaps, mute decorative images, link field errors
+
+A full-repo audit found the app's accessibility was already solid (Checkbox/
+Chip/Stepper/StarRatingInput already had proper roles, state, and hitSlop)
+with just two real gaps: a DateField backdrop missing its role, and the
+register screen's agree-to-terms checkbox with no label at all. Also mark
+purely decorative images (hero/gallery/card thumbnails already described by
+visible captions or a parent's accessibilityLabel) accessible={false}, and
+fold TextField's error/hint into its accessibilityLabel so a screen reader
+hears what's wrong, not just sees it.
+```
+
+### D7. Hiệu năng danh sách — ✅
+
+**Đo trước (bảng 5 màn nêu trong prompt):**
+
+| Màn | Kiểu list | keyExtractor | Ảnh |
+|---|---|---|---|
+| Chat (`(tabs)/chat.tsx`) | `FlatList` | ⚠️ `(_, index) => String(index)` — **dùng index, không ổn định** | `ChatRoomCard` dùng `expo-image`, chưa set `cachePolicy` |
+| Đơn của tôi (`(tabs)/bookings.tsx`) | `FlatList` | ✅ `item.bookingId` | `BookingCard` dùng `expo-image`, chưa set `cachePolicy` |
+| Thông báo (`notifications.tsx`) | `SectionList` | ✅ `item.id` | Không có ảnh (chỉ icon) |
+| Tìm phòng (`(tabs)/search.tsx`) | `FlatList` | ✅ `item.roomTypeId` | `RoomTypeCard` dùng `expo-image`, chưa set `cachePolicy` |
+| Trang chủ (`(tabs)/index.tsx`) | `FlatList` ×2 (chính + carousel ngang) | ✅ `item.roomTypeId` cả 2 | `RoomTypeCard`/`FeaturedRoomCard`, chưa set `cachePolicy` |
+
+→ 4/5 màn đã dùng `FlatList`/`SectionList` + `keyExtractor` theo id thật từ
+đầu — **không có vấn đề ScrollView+map cho list dài** ở các màn này. Danh
+sách của cả 5 màn cũng không đủ dài (vài chục item, có phân trang ở
+Thông báo) để `initialNumToRender`/`windowSize` tạo khác biệt đo được — **cố
+tình không chỉnh** 2 prop này ở bất kỳ đâu, tránh tối ưu khi chưa có vấn đề
+thật (đúng nguyên tắc "sửa vấn đề có thật").
+
+**2 vấn đề thật tìm được, đã sửa:**
+1. **Chat dùng index làm key** — nguy hiểm thật, không phải lý thuyết: màn
+   chat có 2 chỗ **thay nguyên mảng `messages`** (tiếp tục hội thoại cũ lúc mở
+   app, và khôi phục lịch sử sau lỗi timeout) — nếu tin nhắn mới có ít/nhiều
+   hơn tin cũ ở cùng vị trí, React ghép nhầm state cục bộ của `ChatBubble` (vd
+   "xem thêm phòng") sang tin nhắn khác do key trùng theo index. Sửa:
+   - `types/chat.ts`: `ChatMessage` thêm field `id: string`.
+   - `utils/aiChatHistory.ts`: `buildMessagesFromHistory` gán `id` = đúng
+     `messageId` thật từ backend (ổn định qua mọi lần tải lại).
+   - `(tabs)/chat.tsx`: tin nhắn tạo mới (gửi đi, phản hồi AI, lỗi) gán `id`
+     bằng `Crypto.randomUUID()` (`expo-crypto`, có sẵn trong deps, không cài
+     thêm gì); tin chào mở đầu dùng id cố định `"welcome"`. `keyExtractor`
+     đổi thành `(item) => item.id`.
+2. **`cachePolicy` cho ảnh trong list** — mặc định `expo-image` là `'disk'`
+   (đọc+decode lại mỗi lần ô FlatList bị tái sử dụng khi cuộn). Thêm
+   `cachePolicy="memory-disk"` cho `RoomTypeCard`, `BookingCard`,
+   `FeaturedRoomCard`, `ChatRoomCard` — đúng 4 component ảnh nằm trong list
+   cuộn của 5 màn trên.
+
+**Kiểm tra component bị React Compiler bỏ qua:** `eslint-plugin-react-compiler`
+**chưa được cài** trong repo (chỉ có `eslint-plugin-react-hooks`, nguồn của
+các lỗi `set-state-in-effect` đã gặp trước đây) — cài thêm plugin mới không
+có trong danh sách được duyệt nên không tự thêm. Thay vào đó, quét tay các
+pattern hay khiến compiler bỏ qua (mutate trực tiếp mảng/object lấy từ
+props/state thay vì tạo bản mới): grep toàn bộ `.push`/`.sort`/`.splice` —
+**tất cả đều gọi trên mảng cục bộ** tự tạo trong hàm (hoặc bản copy qua
+spread `[...arr].sort(...)` trước khi sort), không có chỗ nào mutate thẳng
+state/props. Không phát hiện bail-out rõ ràng nào qua cách kiểm tra này —
+ghi nhận là **kiểm tra thủ công, không chắc 100% như công cụ chuyên dụng**,
+để lần sau nếu cài `eslint-plugin-react-compiler` thì chạy lại cho chắc.
+
+**Không thêm `memo`/`useMemo`/`useCallback` thủ công nào** — đúng yêu cầu, để
+React Compiler tự xử lý.
+
+**File đã đổi:** `src/types/chat.ts`, `src/utils/aiChatHistory.ts`,
+`src/app/(tabs)/chat.tsx`, `src/components/RoomTypeCard.tsx`,
+`src/components/BookingCard.tsx`, `src/components/FeaturedRoomCard.tsx`,
+`src/components/ChatRoomCard.tsx`.
+
+**Cách test thủ công:** chat với AI vài lượt, mở "thẻ phòng" bấm "Xem thêm"
+để mở rộng 1 thẻ, gửi tiếp vài tin nữa → thẻ đã mở không tự đóng/thẻ khác
+không tự mở do key trùng. Tắt app, mở lại (tiếp tục hội thoại cũ) → vẫn giữ
+đúng trạng thái. Cuộn nhanh qua lại danh sách phòng/đơn nhiều lần → ảnh không
+bị nhấp nháy/load lại từ đầu mỗi lần ô đó quay lại màn hình.
+
+**Commit message đề xuất:**
+```
+perf(lists): stable chat message ids and memory-disk image caching
+
+Chat used the array index as FlatList key, which could mis-associate a
+bubble's local UI state with the wrong message whenever the whole messages
+array gets replaced (resuming history, recovering from a timeout). Give
+every message a real id (the backend's messageId when rebuilt from history,
+a fresh UUID otherwise) and key on that. Also cache room/booking thumbnails
+in memory, not just on disk, since FlatList recycles their cells on scroll.
+```
+
 ## Điểm chờ quyết định (⏸)
 
 - **A3 — lưu refresh token:** đã hỏi, bạn chọn (b) giữ cookie. Xem mục A3 và
@@ -594,6 +1006,9 @@ own screens (view booking vs. regenerate a new link).
 
 ## Phát hiện thêm (ngoài phạm vi, chưa sửa)
 
+- **(D6) `components/FeaturedRoomCard.tsx`** — `accessibilityLabel` hardcode
+  tiếng Việt, không qua i18n (`` `${roomType.name}, từ ${formatVND(...)} mỗi đêm` ``).
+  Không sửa vì ngoài phạm vi D6.
 - **(sau merge dev #21) `src/utils/chatRooms.ts` (`pickRelevantRooms`) không còn
   được dùng ở đâu nữa** — `chat.tsx` giờ hiện thẳng `response.rooms` từ backend,
   không lọc qua hàm này. Liên quan trực tiếp tới task E1 (kế hoạch test ban đầu
@@ -609,4 +1024,9 @@ own screens (view booking vs. regenerate a new link).
 
 ## Việc bạn cần tự làm
 
-(Điền dần: lệnh EAS, xác nhận backend, xoá nút test lỗi trước khi nộp, rebuild dev client, v.v.)
+- Chạy các lệnh `eas env:create` ở mục A2 để khai báo biến môi trường cho 3
+  build profile (development/preview/production).
+- **(D4) Xoá nút "[DEV] Test Error Boundary" trong `(tabs)/profile.tsx`** (và
+  state/`if` throw đi kèm) trước khi nộp bài — tìm theo comment "DEV-ONLY".
+- Rebuild dev client (`npx expo run:android`/`run:ios`) nếu muốn test tính
+  năng "Lưu mã QR" (`expo-media-library`) — không chạy được trên Expo Go.

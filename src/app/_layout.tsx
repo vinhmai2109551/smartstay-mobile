@@ -7,14 +7,16 @@ import { PlayfairDisplay_600SemiBold } from '@expo-google-fonts/playfair-display
 import { PlayfairDisplay_700Bold } from '@expo-google-fonts/playfair-display/700Bold';
 import { useFonts } from 'expo-font';
 import { DarkTheme, DefaultTheme, ThemeProvider, type Theme } from 'expo-router/react-navigation';
-import { Stack } from 'expo-router';
+import { Stack, type ErrorBoundaryProps } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { authApi } from '@/api/auth';
 import { NotificationToast } from '@/components/NotificationToast';
+import { AppErrorFallback } from '@/components/ui/AppErrorFallback';
 import { ErrorView } from '@/components/ui/ErrorView';
+import { OfflineBanner } from '@/components/ui/OfflineBanner';
 import { ToastHost } from '@/components/ui/ToastHost';
 import { TopOverlay } from '@/components/ui/TopOverlay';
 import { ENV } from '@/config/env';
@@ -60,6 +62,12 @@ const DarkNavigationTheme: Theme = {
     border: Colors.dark.border,
   },
 };
+
+// Expo Router renders this instead of crashing the whole app when anything below this
+// layout throws during render — i.e. anywhere in the app, since this is the root.
+export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
+  return <AppErrorFallback error={error} onRetry={retry} />;
+}
 
 export default function RootLayout() {
   const { t } = useTranslation();
@@ -161,6 +169,7 @@ export default function RootLayout() {
       </Stack>
       {/* Above modal screens too (e.g. the booking sheet) — see TopOverlay. */}
       <TopOverlay>
+        <OfflineBanner />
         {isLoggedIn ? <NotificationToast /> : null}
         {/* App-wide feedback toasts (errors, confirmations) — on auth screens too. */}
         <ToastHost />
