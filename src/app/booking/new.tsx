@@ -1,11 +1,14 @@
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
+import { z } from 'zod';
 
 import { bookingsApi } from '@/api/bookings';
 import { getApiErrorMessage } from '@/api/client';
@@ -28,6 +31,9 @@ import { useAuthStore } from '@/store/authStore';
 import { toast } from '@/store/toastStore';
 import { formatVND } from '@/utils/currency';
 import { formatDate, nightsBetween } from '@/utils/date';
+import { phoneSchema } from '@/utils/validation';
+
+type GuestFormValues = { fullName: string; phone: string };
 
 type IconName = keyof typeof Ionicons.glyphMap;
 
@@ -54,15 +60,32 @@ export default function NewBookingScreen() {
 
   // Prefilled from the signed-in account; the guest can still edit them.
   const user = useAuthStore((s) => s.user);
-  const [fullName, setFullName] = useState(user?.fullName ?? '');
-  const [phone, setPhone] = useState(user?.phone ?? '');
+  const guestSchema = useMemo(
+    () =>
+      z.object({
+        fullName: z.string().trim().min(2, t('booking.fullNameInvalid')).max(100, t('booking.fullNameInvalid')),
+        phone: phoneSchema(t('booking.phoneInvalid')),
+      }),
+    [t],
+  );
+  const {
+    control,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<GuestFormValues>({
+    resolver: zodResolver(guestSchema),
+    defaultValues: { fullName: user?.fullName ?? '', phone: user?.phone ?? '' },
+  });
   const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'PAYOS'>('CASH');
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([]);
   const [promoCode, setPromoCode] = useState('');
   const [discountAmount, setDiscountAmount] = useState(0);
+  // The exact code the last successful validate() was for — null whenever the
+  // applied discount no longer reflects what's on screen (services or the code
+  // changed since), so a stale discount can never be submitted.
+  const [appliedPromoCode, setAppliedPromoCode] = useState<string | null>(null);
   const [promoMessage, setPromoMessage] = useState<string | null>(null);
   const [validatingPromo, setValidatingPromo] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
 
   const nights = useMemo(() => nightsBetween(params.checkIn, params.checkOut), [params.checkIn, params.checkOut]);
 
@@ -78,6 +101,20 @@ export default function NewBookingScreen() {
 
   const toggleService = (id: string) => {
     setSelectedServiceIds((prev) => (prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]));
+    if (appliedPromoCode) {
+      setAppliedPromoCode(null);
+      setDiscountAmount(0);
+      setPromoMessage(t('booking.promoNeedsReapply'));
+    }
+  };
+
+  const handlePromoCodeChange = (value: string) => {
+    setPromoCode(value);
+    if (appliedPromoCode) {
+      setAppliedPromoCode(null);
+      setDiscountAmount(0);
+      setPromoMessage(t('booking.promoNeedsReapply'));
+    }
   };
 
   const handleValidatePromo = async () => {
@@ -93,38 +130,35 @@ export default function NewBookingScreen() {
       });
       if (result.valid) {
         setDiscountAmount(result.discountAmount);
+        setAppliedPromoCode(promoCode.trim());
         setPromoMessage(t('booking.promoApplied', { amount: formatVND(result.discountAmount) }));
       } else {
         setDiscountAmount(0);
+        setAppliedPromoCode(null);
         setPromoMessage(t('booking.promoInvalid'));
       }
     } catch (error) {
       setDiscountAmount(0);
+      setAppliedPromoCode(null);
       setPromoMessage(getApiErrorMessage(error, t('booking.promoInvalid')));
     } finally {
       setValidatingPromo(false);
     }
   };
 
-  const handleSubmit = async () => {
-    if (!fullName.trim() || !phone.trim()) {
-      toast.warning(t('booking.requireFullNamePhone'));
-      return;
-    }
-
+  const onSubmit = async (values: GuestFormValues) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setSubmitting(true);
     try {
       const booking = await bookingsApi.create({
         roomTypeId: params.roomTypeId,
         checkIn: params.checkIn,
         checkOut: params.checkOut,
         guestInfo: {
-          fullName: fullName.trim(),
-          phone: phone.trim(),
+          fullName: values.fullName,
+          phone: values.phone,
         },
         extraServiceIds: selectedServiceIds,
-        promotionCode: discountAmount > 0 ? promoCode.trim() : undefined,
+        promotionCode: appliedPromoCode && appliedPromoCode === promoCode.trim() ? appliedPromoCode : undefined,
         paymentMethod,
       });
       if (paymentMethod === 'PAYOS') {
@@ -134,8 +168,6 @@ export default function NewBookingScreen() {
       }
     } catch (error) {
       toast.error(getApiErrorMessage(error, t('booking.createFailed')));
-    } finally {
-      setSubmitting(false);
     }
   };
 
@@ -199,22 +231,38 @@ export default function NewBookingScreen() {
 
           <Card style={styles.section}>
             <SectionTitle icon="person-outline" title={t('booking.guestInfo')} />
-            <TextField
-              label={t('booking.fullNameLabel')}
-              leftIcon="person-outline"
-              placeholder={t('booking.fullNamePlaceholder')}
-              textContentType="name"
-              value={fullName}
-              onChangeText={setFullName}
+            <Controller
+              control={control}
+              name="fullName"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <TextField
+                  label={t('booking.fullNameLabel')}
+                  leftIcon="person-outline"
+                  placeholder={t('booking.fullNamePlaceholder')}
+                  textContentType="name"
+                  value={value}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  error={errors.fullName?.message}
+                />
+              )}
             />
-            <TextField
-              label={t('booking.phoneLabel')}
-              leftIcon="call-outline"
-              placeholder={t('booking.phonePlaceholder')}
-              keyboardType="phone-pad"
-              textContentType="telephoneNumber"
-              value={phone}
-              onChangeText={setPhone}
+            <Controller
+              control={control}
+              name="phone"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <TextField
+                  label={t('booking.phoneLabel')}
+                  leftIcon="call-outline"
+                  placeholder={t('booking.phonePlaceholder')}
+                  keyboardType="phone-pad"
+                  textContentType="telephoneNumber"
+                  value={value}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  error={errors.phone?.message}
+                />
+              )}
             />
           </Card>
 
@@ -268,7 +316,7 @@ export default function NewBookingScreen() {
                   leftIcon="ticket-outline"
                   autoCapitalize="characters"
                   value={promoCode}
-                  onChangeText={setPromoCode}
+                  onChangeText={handlePromoCodeChange}
                 />
               </View>
               <Button
@@ -357,9 +405,12 @@ export default function NewBookingScreen() {
             ) : null}
             <View style={[styles.divider, { backgroundColor: theme.border }]} />
             <View style={styles.priceRow}>
-              <ThemedText type="bodyBold">{t('booking.total')}</ThemedText>
+              <ThemedText type="bodyBold">{t('booking.estimatedTotal')}</ThemedText>
               <ThemedText style={[styles.total, { color: theme.primary }]}>{formatVND(grandTotal)}</ThemedText>
             </View>
+            <ThemedText type="caption" themeColor="textSecondary">
+              {t('booking.estimatedTotalNote')}
+            </ThemedText>
           </Card>
 
         </Animated.View>
@@ -368,11 +419,16 @@ export default function NewBookingScreen() {
       <BottomBar>
         <View style={styles.flex}>
           <ThemedText type="caption" themeColor="textSecondary">
-            {t('booking.totalToPay')}
+            {t('booking.estimatedTotal')}
           </ThemedText>
           <ThemedText style={[styles.total, { color: theme.primary }]}>{formatVND(grandTotal)}</ThemedText>
         </View>
-        <Button label={t('booking.confirmButton')} fullWidth={false} onPress={handleSubmit} loading={submitting} />
+        <Button
+          label={t('booking.confirmButton')}
+          fullWidth={false}
+          onPress={handleSubmit(onSubmit)}
+          loading={isSubmitting}
+        />
       </BottomBar>
     </ThemedView>
   );

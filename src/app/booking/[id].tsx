@@ -62,7 +62,10 @@ export default function BookingDetailScreen() {
     refetch,
     refreshing,
     refresh,
-  } = useApi(fetchBooking, { refetchOnFocus: true });
+  } = useApi(fetchBooking, {
+    refetchOnFocus: true,
+    toastOnRefreshError: true,
+  });
   // Pushed over the socket when staff act on the booking, so the status changes live.
   useBookingUpdates(refresh);
   const fetchMyReviews = useCallback(() => reviewsApi.mine(), []);
@@ -555,6 +558,7 @@ export default function BookingDetailScreen() {
         confirmLabel={t("booking.cancelConfirm")}
         cancelLabel={t("booking.cancelDismiss")}
         destructive
+        animated={false}
         loading={cancelling}
         onConfirm={handleConfirmCancel}
         onCancel={() => setShowCancelConfirm(false)}

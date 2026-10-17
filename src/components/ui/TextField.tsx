@@ -41,12 +41,17 @@ export function TextField({
   const borderColor = error ? theme.danger : focused ? theme.primary : theme.border;
   const iconColor = error ? theme.danger : focused ? theme.primary : theme.textSecondary;
 
+  // Screen readers only read the visible label by default — fold the error (or hint,
+  // when there's no error) into it so a blind user hears what's wrong, not just sees it.
+  const accessibleLabelParts = [label, error || hint].filter((part): part is string => !!part);
+  const computedAccessibilityLabel = accessibleLabelParts.length > 0 ? accessibleLabelParts.join('. ') : undefined;
+
   const input = (
     <TextInput
       placeholderTextColor={theme.textSecondary}
       multiline={multiline}
       secureTextEntry={secureTextEntry && !revealed}
-      accessibilityLabel={label}
+      accessibilityLabel={computedAccessibilityLabel}
       style={[
         styles.input,
         inlineLabel && styles.inputInline,
