@@ -1,14 +1,21 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Tabs } from 'expo-router';
+import { Tabs, type ErrorBoundaryProps } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, type ColorValue } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AiTabButton } from '@/components/AiTabButton';
+import { AppErrorFallback } from '@/components/ui/AppErrorFallback';
 import { FontFamily, Space } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 type IconName = keyof typeof Ionicons.glyphMap;
+
+// Catches a render error inside any tab's content without taking down screens outside
+// the tabs (auth, modals...) — the root layout's own ErrorBoundary still covers those.
+export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
+  return <AppErrorFallback error={error} onRetry={retry} />;
+}
 
 // Filled icon when active, outline when inactive.
 function tabIcon(active: IconName, inactive: IconName) {

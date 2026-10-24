@@ -29,7 +29,10 @@ export default function BookingsScreen() {
   const { width } = useWindowDimensions();
   const contentWidth = Math.min(width, MaxContentWidth);
   const fetchBookings = useCallback(() => bookingsApi.my(), []);
-  const { data, loading, error, refetch, refreshing, refresh } = useApi(fetchBookings, { refetchOnFocus: true });
+  const { data, loading, error, refetch, refreshing, refresh } = useApi(fetchBookings, {
+    refetchOnFocus: true,
+    toastOnRefreshError: true,
+  });
   const [filter, setFilter] = useState<FilterKey>('ALL');
   useBookingUpdates(refresh);
   // Which bookings already have a review. Decorative — if it fails the cards simply
@@ -101,7 +104,7 @@ export default function BookingsScreen() {
             </View>
           }
           ListEmptyComponent={
-            loading ? null : filter === 'ALL' ? (
+            loading ? undefined : filter === 'ALL' ? (
               <EmptyState
                 icon="receipt-outline"
                 title={t('booking.emptyAllTitle')}

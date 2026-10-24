@@ -46,7 +46,8 @@ function KenBurnsImage({ source, duration, still }: { source: ImageSource | numb
 
   return (
     <Animated.View style={[StyleSheet.absoluteFill, style]}>
-      <Image source={source} style={StyleSheet.absoluteFill} contentFit="cover" />
+      {/* Decorative — the caption text overlay (eyebrow/title) already says what the slide is. */}
+      <Image source={source} style={StyleSheet.absoluteFill} contentFit="cover" accessible={false} />
     </Animated.View>
   );
 }

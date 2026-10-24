@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
-import { persistedStorage } from '@/store/persistedStorage';
+import { plainStorage } from '@/store/persistedStorage';
 
 export type ThemeMode = 'light' | 'dark' | 'system';
 export type AppLanguage = 'vi' | 'en';
@@ -27,7 +27,7 @@ export const useSettingsStore = create<SettingsState>()(
     }),
     {
       name: 'smartstay-settings',
-      storage: createJSONStorage(() => persistedStorage),
+      storage: createJSONStorage(() => plainStorage),
       partialize: (state) => ({ themeMode: state.themeMode, language: state.language }),
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true);

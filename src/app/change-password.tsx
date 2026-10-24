@@ -1,9 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useMemo } from 'react';
+import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { z } from 'zod';
 
 import { getApiErrorMessage } from '@/api/client';
 import { usersApi } from '@/api/users';
@@ -17,6 +20,9 @@ import { MaxContentWidth, MinTouch, Radius, Space } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuthStore } from '@/store/authStore';
 import { toast } from '@/store/toastStore';
+import { strongPasswordSchema } from '@/utils/validation';
+
+type FormValues = { oldPassword: string; newPassword: string; confirmPassword: string };
 
 export default function ChangePasswordScreen() {
   const { t } = useTranslation();
@@ -24,27 +30,38 @@ export default function ChangePasswordScreen() {
   const insets = useSafeAreaInsets();
   const clearSession = useAuthStore((s) => s.clearSession);
 
-  const [oldPassword, setOldPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [submitting, setSubmitting] = useState(false);
+  const schema = useMemo(
+    () =>
+      z
+        .object({
+          oldPassword: z.string().min(1, t('auth.passwordRequired')),
+          newPassword: strongPasswordSchema(t('profile.newPasswordHint')),
+          confirmPassword: z.string().min(1, t('auth.passwordRequired')),
+        })
+        .refine((data) => data.newPassword === data.confirmPassword, {
+          message: t('profile.passwordMismatch'),
+          path: ['confirmPassword'],
+        }),
+    [t],
+  );
 
-  const passwordsMismatch = confirmPassword.length > 0 && newPassword !== confirmPassword;
-  const canSubmit = !!oldPassword && newPassword.length >= 8 && newPassword === confirmPassword;
+  const {
+    control,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<FormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: { oldPassword: '', newPassword: '', confirmPassword: '' },
+  });
 
-  const handleSubmit = async () => {
-    if (!canSubmit) return;
-    setSubmitting(true);
+  const onSubmit = async (values: FormValues) => {
     try {
-      await usersApi.changePassword({ oldPassword, newPassword });
+      await usersApi.changePassword({ oldPassword: values.oldPassword, newPassword: values.newPassword });
       toast.success(t('profile.changePasswordSuccess'));
-      setOldPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
+      reset();
     } catch (err) {
       toast.error(getApiErrorMessage(err, t('profile.changePasswordFailed')));
-    } finally {
-      setSubmitting(false);
     }
   };
 
@@ -82,15 +99,23 @@ export default function ChangePasswordScreen() {
           </View>
         </Card>
 
-        <TextField
-          label={t('profile.currentPassword')}
-          leftIcon="lock-closed-outline"
-          placeholder={t('profile.currentPasswordPlaceholder')}
-          secureTextEntry
-          autoComplete="current-password"
-          textContentType="password"
-          value={oldPassword}
-          onChangeText={setOldPassword}
+        <Controller
+          control={control}
+          name="oldPassword"
+          render={({ field: { onChange, onBlur, value } }) => (
+            <TextField
+              label={t('profile.currentPassword')}
+              leftIcon="lock-closed-outline"
+              placeholder={t('profile.currentPasswordPlaceholder')}
+              secureTextEntry
+              autoComplete="current-password"
+              textContentType="password"
+              value={value}
+              onChangeText={onChange}
+              onBlur={onBlur}
+              error={errors.oldPassword?.message}
+            />
+          )}
         />
 
         <View style={styles.sectionDivider}>
@@ -101,27 +126,43 @@ export default function ChangePasswordScreen() {
           <View style={[styles.dividerLine, { backgroundColor: theme.border }]} />
         </View>
 
-        <TextField
-          label={t('profile.newPassword')}
-          leftIcon="key-outline"
-          placeholder={t('profile.newPasswordPlaceholder')}
-          secureTextEntry
-          autoComplete="new-password"
-          textContentType="newPassword"
-          value={newPassword}
-          onChangeText={setNewPassword}
+        <Controller
+          control={control}
+          name="newPassword"
+          render={({ field: { onChange, onBlur, value } }) => (
+            <TextField
+              label={t('profile.newPassword')}
+              leftIcon="key-outline"
+              placeholder={t('profile.newPasswordPlaceholder')}
+              hint={errors.newPassword ? undefined : t('profile.newPasswordHint')}
+              secureTextEntry
+              autoComplete="new-password"
+              textContentType="newPassword"
+              value={value}
+              onChangeText={onChange}
+              onBlur={onBlur}
+              error={errors.newPassword?.message}
+            />
+          )}
         />
 
-        <TextField
-          label={t('profile.confirmNewPasswordLabel')}
-          leftIcon="shield-checkmark-outline"
-          placeholder={t('profile.confirmNewPasswordPlaceholder')}
-          secureTextEntry
-          autoComplete="new-password"
-          textContentType="newPassword"
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-          error={passwordsMismatch ? t('profile.passwordMismatch') : undefined}
+        <Controller
+          control={control}
+          name="confirmPassword"
+          render={({ field: { onChange, onBlur, value } }) => (
+            <TextField
+              label={t('profile.confirmNewPasswordLabel')}
+              leftIcon="shield-checkmark-outline"
+              placeholder={t('profile.confirmNewPasswordPlaceholder')}
+              secureTextEntry
+              autoComplete="new-password"
+              textContentType="newPassword"
+              value={value}
+              onChangeText={onChange}
+              onBlur={onBlur}
+              error={errors.confirmPassword?.message}
+            />
+          )}
         />
 
         <Pressable
@@ -141,9 +182,8 @@ export default function ChangePasswordScreen() {
 
         <Button
           label={t('profile.updatePassword')}
-          onPress={handleSubmit}
-          loading={submitting}
-          disabled={!canSubmit}
+          onPress={handleSubmit(onSubmit)}
+          loading={isSubmitting}
         />
       </ScrollView>
     </ThemedView>

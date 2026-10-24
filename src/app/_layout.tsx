@@ -1,38 +1,45 @@
 // Per-weight imports: the package root bundles every weight and italic (~30 files).
-import { BeVietnamPro_400Regular } from '@expo-google-fonts/be-vietnam-pro/400Regular';
-import { BeVietnamPro_500Medium } from '@expo-google-fonts/be-vietnam-pro/500Medium';
-import { BeVietnamPro_600SemiBold } from '@expo-google-fonts/be-vietnam-pro/600SemiBold';
-import { BeVietnamPro_700Bold } from '@expo-google-fonts/be-vietnam-pro/700Bold';
-import { PlayfairDisplay_600SemiBold } from '@expo-google-fonts/playfair-display/600SemiBold';
-import { PlayfairDisplay_700Bold } from '@expo-google-fonts/playfair-display/700Bold';
-import { useFonts } from 'expo-font';
-import { DarkTheme, DefaultTheme, ThemeProvider, type Theme } from 'expo-router/react-navigation';
-import { Stack } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
+import { BeVietnamPro_400Regular } from "@expo-google-fonts/be-vietnam-pro/400Regular";
+import { BeVietnamPro_500Medium } from "@expo-google-fonts/be-vietnam-pro/500Medium";
+import { BeVietnamPro_600SemiBold } from "@expo-google-fonts/be-vietnam-pro/600SemiBold";
+import { BeVietnamPro_700Bold } from "@expo-google-fonts/be-vietnam-pro/700Bold";
+import { PlayfairDisplay_600SemiBold } from "@expo-google-fonts/playfair-display/600SemiBold";
+import { PlayfairDisplay_700Bold } from "@expo-google-fonts/playfair-display/700Bold";
+import { useFonts } from "expo-font";
+import {
+  DarkTheme,
+  DefaultTheme,
+  ThemeProvider,
+  type Theme,
+} from "expo-router/react-navigation";
+import { Stack, type ErrorBoundaryProps } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
+import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 
-import { authApi } from '@/api/auth';
-import { NotificationToast } from '@/components/NotificationToast';
-import { ErrorView } from '@/components/ui/ErrorView';
-import { ToastHost } from '@/components/ui/ToastHost';
-import { TopOverlay } from '@/components/ui/TopOverlay';
-import { ENV } from '@/config/env';
-import { Colors, FontFamily } from '@/constants/theme';
-import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
-import { useEffectiveColorScheme } from '@/hooks/use-theme';
-import { useAuthStore } from '@/store/authStore';
-import { useSettingsStore } from '@/store/settingsStore';
-import '@/i18n';
+import { authApi } from "@/api/auth";
+import { NotificationToast } from "@/components/NotificationToast";
+import { AppErrorFallback } from "@/components/ui/AppErrorFallback";
+import { ErrorView } from "@/components/ui/ErrorView";
+import { OfflineBanner } from "@/components/ui/OfflineBanner";
+import { ToastHost } from "@/components/ui/ToastHost";
+import { TopOverlay } from "@/components/ui/TopOverlay";
+import { ENV } from "@/config/env";
+import { Colors, FontFamily } from "@/constants/theme";
+import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
+import { useEffectiveColorScheme } from "@/hooks/use-theme";
+import { useAuthStore } from "@/store/authStore";
+import { useSettingsStore } from "@/store/settingsStore";
+import "@/i18n";
 
 // Keep the splash screen up until fonts and the persisted auth store are ready.
 SplashScreen.preventAutoHideAsync();
 
-const navigationFonts: Theme['fonts'] = {
-  regular: { fontFamily: FontFamily.regular, fontWeight: 'normal' },
-  medium: { fontFamily: FontFamily.medium, fontWeight: 'normal' },
-  bold: { fontFamily: FontFamily.semiBold, fontWeight: 'normal' },
-  heavy: { fontFamily: FontFamily.bold, fontWeight: 'normal' },
+const navigationFonts: Theme["fonts"] = {
+  regular: { fontFamily: FontFamily.regular, fontWeight: "normal" },
+  medium: { fontFamily: FontFamily.medium, fontWeight: "normal" },
+  bold: { fontFamily: FontFamily.semiBold, fontWeight: "normal" },
+  heavy: { fontFamily: FontFamily.bold, fontWeight: "normal" },
 };
 
 const LightNavigationTheme: Theme = {
@@ -61,6 +68,12 @@ const DarkNavigationTheme: Theme = {
   },
 };
 
+// Expo Router renders this instead of crashing the whole app when anything below this
+// layout throws during render — i.e. anywhere in the app, since this is the root.
+export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
+  return <AppErrorFallback error={error} onRetry={retry} />;
+}
+
 export default function RootLayout() {
   const { t } = useTranslation();
   const colorScheme = useEffectiveColorScheme();
@@ -87,7 +100,10 @@ export default function RootLayout() {
   const isLoggedIn = !!accessToken;
   useEffect(() => {
     if (hasHydrated && isLoggedIn) {
-      authApi.me().then(updateUser).catch(() => {});
+      authApi
+        .me()
+        .then(updateUser)
+        .catch(() => {});
     }
   }, [hasHydrated, isLoggedIn, updateUser]);
 
@@ -105,62 +121,114 @@ export default function RootLayout() {
 
   if (ENV.isMisconfigured) {
     return (
-      <ThemeProvider value={colorScheme === 'dark' ? DarkNavigationTheme : LightNavigationTheme}>
-        <ErrorView message={t('common.configErrorMessage')} />
+      <ThemeProvider
+        value={
+          colorScheme === "dark" ? DarkNavigationTheme : LightNavigationTheme
+        }
+      >
+        <ErrorView message={t("common.configErrorMessage")} />
       </ThemeProvider>
     );
   }
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkNavigationTheme : LightNavigationTheme}>
+    <ThemeProvider
+      value={
+        colorScheme === "dark" ? DarkNavigationTheme : LightNavigationTheme
+      }
+    >
       <Stack
         screenOptions={{
           headerShown: false,
           headerShadowVisible: false,
-          headerTintColor: Colors[colorScheme === 'dark' ? 'dark' : 'light'].primary,
+          headerTintColor:
+            Colors[colorScheme === "dark" ? "dark" : "light"].primary,
           headerTitleStyle: { fontFamily: FontFamily.semiBold, fontSize: 17 },
           headerBackTitleStyle: { fontFamily: FontFamily.medium },
-        }}>
-        <Stack.Protected guard={!!accessToken}>
+        }}
+      >
+        {/* expo-router 58 renders a failed guard as a redirect; without redirectTo it shows "Unmatched Route". */}
+        <Stack.Protected
+          guard={!!accessToken}
+          redirectTo={hasSeenOnboarding ? "/login" : "/onboarding"}
+        >
           <Stack.Screen name="(tabs)" />
           <Stack.Screen
             name="room/[id]"
-            options={{ headerShown: true, title: t('layout.roomDetailTitle'), headerBackTitle: t('common.back') }}
+            options={{
+              headerShown: true,
+              title: t("layout.roomDetailTitle"),
+              headerBackTitle: t("common.back"),
+            }}
           />
           <Stack.Screen
             name="booking/new"
-            options={{ headerShown: true, title: t('layout.newBookingTitle'), presentation: 'modal' }}
+            options={{
+              headerShown: true,
+              title: t("layout.newBookingTitle"),
+              presentation: "modal",
+            }}
           />
           <Stack.Screen
             name="booking/[id]"
-            options={{ headerShown: true, title: t('layout.bookingDetailTitle'), headerBackTitle: t('common.back') }}
+            options={{
+              headerShown: true,
+              title: t("layout.bookingDetailTitle"),
+              headerBackTitle: t("common.back"),
+            }}
           />
           <Stack.Screen
             name="checkout/[bookingId]"
-            options={{ headerShown: true, title: t('layout.checkoutTitle'), presentation: 'modal' }}
+            options={{
+              headerShown: true,
+              title: t("layout.checkoutTitle"),
+              presentation: "modal",
+            }}
           />
           <Stack.Screen
             name="account"
-            options={{ headerShown: true, title: t('layout.accountTitle'), headerBackTitle: t('common.back') }}
+            options={{
+              headerShown: true,
+              title: t("layout.accountTitle"),
+              headerBackTitle: t("common.back"),
+            }}
           />
           <Stack.Screen
             name="notifications"
-            options={{ headerShown: true, title: t('layout.notificationsTitle'), headerBackTitle: t('common.back') }}
+            options={{
+              headerShown: true,
+              title: t("layout.notificationsTitle"),
+              headerBackTitle: t("common.back"),
+            }}
           />
-          <Stack.Screen name="change-password" options={{ headerShown: false }} />
+          <Stack.Screen
+            name="change-password"
+            options={{ headerShown: false }}
+          />
           <Stack.Screen name="edit-profile" options={{ headerShown: false }} />
+          <Stack.Screen
+            name="reception-chat"
+            options={{ headerShown: false }}
+          />
         </Stack.Protected>
 
-        <Stack.Protected guard={!accessToken && !hasSeenOnboarding}>
+        <Stack.Protected
+          guard={!accessToken && !hasSeenOnboarding}
+          redirectTo={accessToken ? "/" : "/login"}
+        >
           <Stack.Screen name="onboarding" />
         </Stack.Protected>
 
-        <Stack.Protected guard={!accessToken && hasSeenOnboarding}>
+        <Stack.Protected
+          guard={!accessToken && hasSeenOnboarding}
+          redirectTo={accessToken ? "/" : "/onboarding"}
+        >
           <Stack.Screen name="(auth)" />
         </Stack.Protected>
       </Stack>
       {/* Above modal screens too (e.g. the booking sheet) — see TopOverlay. */}
       <TopOverlay>
+        <OfflineBanner />
         {isLoggedIn ? <NotificationToast /> : null}
         {/* App-wide feedback toasts (errors, confirmations) — on auth screens too. */}
         <ToastHost />

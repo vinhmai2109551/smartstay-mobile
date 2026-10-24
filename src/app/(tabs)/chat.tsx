@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import * as Crypto from "expo-crypto";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -16,7 +17,6 @@ import { isAxiosError } from "axios";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { aiChatApi } from "@/api/chat";
-import { getApiErrorMessage } from "@/api/client";
 import { AI_TAB_LIFT } from "@/components/AiTabButton";
 import { BrandMark } from "@/components/BrandMark";
 import { ChatBubble } from "@/components/ChatBubble";
@@ -31,8 +31,10 @@ import {
   Radius,
   Space,
 } from "@/constants/theme";
+import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { useTheme } from "@/hooks/use-theme";
 import { ChatMessage } from "@/types/chat";
+import { toast } from "@/store/toastStore";
 import { useAuthStore } from "@/store/authStore";
 import {
   buildMessagesFromHistory,
@@ -40,7 +42,7 @@ import {
   readStoredConversationId,
   storeConversationId,
 } from "@/utils/aiChatHistory";
-import { pickRelevantRooms } from "@/utils/chatRooms";
+import { TFunction } from "i18next";
 
 // The latest booking proposal shown before `index` — what an AI-created booking was made from.
 function findProposalBefore(messages: ChatMessage[], index: number) {
@@ -51,11 +53,25 @@ function findProposalBefore(messages: ChatMessage[], index: number) {
   return null;
 }
 
+const AI_DAILY_QUOTA_EXCEEDED = "AI_DAILY_QUOTA_EXCEEDED";
+
+function getSendErrorMessage(error: unknown, t: TFunction) {
+  if (isAxiosError(error) && error.response?.status === 429) {
+    const data = error.response.data as
+      | { code?: string; message?: string }
+      | undefined;
+    return data?.code === AI_DAILY_QUOTA_EXCEEDED && data.message
+      ? data.message
+      : t("chat.tooFast");
+  }
+  return t("chat.sendFailed");
+}
+
 export default function ChatScreen() {
   const { t } = useTranslation();
   const theme = useTheme();
   const welcomeMessage = useMemo<ChatMessage>(
-    () => ({ role: "MODEL", content: t("chat.welcomeMessage") }),
+    () => ({ id: "welcome", role: "MODEL", content: t("chat.welcomeMessage") }),
     [t],
   );
   const quickPrompts = useMemo(
@@ -77,6 +93,7 @@ export default function ChatScreen() {
   const listRef = useRef<FlatList>(null);
   const userId = useAuthStore((s) => s.user?.userId);
   const [loadingHistory, setLoadingHistory] = useState(false);
+  const isOnline = useNetworkStatus();
 
   // Resume the last conversation, like the web widget does after a reload. This tab only
   // exists while signed in and unmounts on sign-out, so the chat never leaks across users.
@@ -157,10 +174,10 @@ export default function ChatScreen() {
       setMessages((prev) => [
         ...prev,
         {
+          id: Crypto.randomUUID(),
           role: "MODEL",
           content: response.reply,
-          // Only the rooms the answer is about — see pickRelevantRooms.
-          rooms: pickRelevantRooms(response.reply, text, response.rooms),
+          rooms: response.rooms,
           promotions: response.promotions,
           pendingBooking: response.pendingBooking,
           booking: response.booking,
@@ -196,8 +213,9 @@ export default function ChatScreen() {
       setMessages((prev) => [
         ...prev,
         {
+          id: Crypto.randomUUID(),
           role: "MODEL",
-          content: getApiErrorMessage(error, t("chat.sendFailed")),
+          content: getSendErrorMessage(error, t),
         },
       ]);
     } finally {
@@ -210,7 +228,11 @@ export default function ChatScreen() {
   const sendText = (raw: string) => {
     const text = raw.trim();
     if (!text || sending) return;
-    setMessages((prev) => [...prev, { role: "USER", content: text }]);
+    if (!isOnline) {
+      toast.error(t("chat.offlineBlocked"));
+      return;
+    }
+    setMessages((prev) => [...prev, { id: Crypto.randomUUID(), role: "USER", content: text }]);
     setInput("");
     scrollToEnd();
     send(text);
@@ -218,18 +240,26 @@ export default function ChatScreen() {
 
   const handleCancelProposal = (proposalId: string) => {
     if (sending) return;
+    if (!isOnline) {
+      toast.error(t("chat.offlineBlocked"));
+      return;
+    }
 
     const cancelText = t("chat.cancelProposalMessage");
-    setMessages((prev) => [...prev, { role: "USER", content: cancelText }]);
+    setMessages((prev) => [...prev, { id: Crypto.randomUUID(), role: "USER", content: cancelText }]);
     scrollToEnd();
     send(cancelText, { cancelProposalId: proposalId });
   };
 
   const handleConfirmBooking = (proposalId: string) => {
     if (sending) return;
+    if (!isOnline) {
+      toast.error(t("chat.offlineBlocked"));
+      return;
+    }
     setConfirmingProposalId(proposalId);
     const confirmText = t("chat.confirmBookingMessage");
-    setMessages((prev) => [...prev, { role: "USER", content: confirmText }]);
+    setMessages((prev) => [...prev, { id: Crypto.randomUUID(), role: "USER", content: confirmText }]);
     scrollToEnd();
     send(confirmText, { confirmProposalId: proposalId });
   };
@@ -248,7 +278,7 @@ export default function ChatScreen() {
     sendText(t("chat.cancelBookingFormMessage"));
   };
 
-  const canSend = !sending && !!input.trim();
+  const canSend = !sending && !!input.trim() && isOnline;
   const showQuickPrompts = messages.length === 1 && !sending;
 
   return (
@@ -296,18 +326,21 @@ export default function ChatScreen() {
           <FlatList
             ref={listRef}
             data={messages}
-            keyExtractor={(_, index) => String(index)}
+            keyExtractor={(item) => item.id}
             contentContainerStyle={styles.list}
             keyboardShouldPersistTaps="handled"
             renderItem={({ item, index }) => (
               <ChatBubble
-                message={item}
+                message={index === 0 ? welcomeMessage : item}
                 confirming={
                   sending &&
                   item.pendingBooking?.proposalId === confirmingProposalId
                 }
                 onConfirmBooking={handleConfirmBooking}
                 onCancelProposal={handleCancelProposal}
+                onSelectRoom={(roomName) =>
+                  sendText(`Tôi muốn đặt phòng ${roomName}`)
+                }
                 showBookingForm={
                   index === messages.length - 1 && dismissedFormAt !== index
                 }
@@ -352,7 +385,7 @@ export default function ChatScreen() {
                     ))}
                   </View>
                 </View>
-              ) : null
+              ) : undefined
             }
           />
 

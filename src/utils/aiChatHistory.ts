@@ -1,18 +1,19 @@
-import { persistedStorage } from '@/store/persistedStorage';
+import { plainStorage } from '@/store/persistedStorage';
 import { AiConversationMessage, ChatMessage } from '@/types/chat';
 
 // Port of the web's components/aiChatHistory.js: remember the conversationId per user
 // so reopening the app resumes the same chat, and rebuild the messages (with their
 // room/promotion/booking cards) from GET /ai-agent/conversations/:id.
 
-// Per user, so another account signing in on the same phone can't read it. SecureStore
-// keys allow only letters, digits, ".", "-" and "_" — hence no ":" like the web key.
+// Per user, so another account signing in on the same phone can't read it. Uses "."
+// rather than ":" (like the web key) for consistency with when this read from
+// SecureStore, which only allows letters, digits, ".", "-" and "_" in key names.
 const storageKey = (userId: string) => `vika-ai-conversation.${userId}`;
 
 // Storage failures only lose the "resume chat" convenience — never break the chat.
 export async function readStoredConversationId(userId: string) {
   try {
-    return (await persistedStorage.getItem(storageKey(userId))) as string | null;
+    return (await plainStorage.getItem(storageKey(userId))) as string | null;
   } catch {
     return null;
   }
@@ -20,7 +21,7 @@ export async function readStoredConversationId(userId: string) {
 
 export async function storeConversationId(userId: string, conversationId: string) {
   try {
-    await persistedStorage.setItem(storageKey(userId), conversationId);
+    await plainStorage.setItem(storageKey(userId), conversationId);
   } catch {
     // ignore
   }
@@ -28,7 +29,7 @@ export async function storeConversationId(userId: string, conversationId: string
 
 export async function clearStoredConversationId(userId: string) {
   try {
-    await persistedStorage.removeItem(storageKey(userId));
+    await plainStorage.removeItem(storageKey(userId));
   } catch {
     // ignore
   }
@@ -51,7 +52,7 @@ export function buildMessagesFromHistory(history: AiConversationMessage[]): Chat
   for (const message of history ?? []) {
     if (message.role === 'USER') {
       widgets = {};
-      messages.push({ role: 'USER', content: message.content ?? '' });
+      messages.push({ id: message.messageId, role: 'USER', content: message.content ?? '' });
       continue;
     }
 
@@ -85,7 +86,13 @@ export function buildMessagesFromHistory(history: AiConversationMessage[]): Chat
     }
 
     if (message.role === 'MODEL') {
-      messages.push({ role: 'MODEL', content: message.content ?? '', ...widgets, pendingBooking: activePendingBooking });
+      messages.push({
+        id: message.messageId,
+        role: 'MODEL',
+        content: message.content ?? '',
+        ...widgets,
+        pendingBooking: activePendingBooking,
+      });
       widgets = {};
     }
   }

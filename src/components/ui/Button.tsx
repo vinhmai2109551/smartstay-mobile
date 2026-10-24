@@ -10,7 +10,9 @@ import { useTheme } from '@/hooks/use-theme';
 type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
 type ButtonSize = 'sm' | 'md' | 'lg';
 
-type ButtonProps = Omit<PressableProps, 'style'> & {
+// onPress takes no event so react-hook-form's handleSubmit(...) fits (RN 0.88 events aren't React SyntheticEvents).
+type ButtonProps = Omit<PressableProps, 'style' | 'onPress'> & {
+  onPress?: () => unknown;
   label: string;
   variant?: ButtonVariant;
   size?: ButtonSize;

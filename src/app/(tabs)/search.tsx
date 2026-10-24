@@ -8,6 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { roomsApi } from '@/api/rooms';
 import { getApiErrorMessage } from '@/api/client';
+import { toast } from '@/store/toastStore';
 import { DateField } from '@/components/DateField';
 import { HeroCarousel } from '@/components/HeroCarousel';
 import { RoomTypeCard } from '@/components/RoomTypeCard';
@@ -21,6 +22,7 @@ import { RoomCardSkeleton } from '@/components/ui/Skeleton';
 import { getSearchHeroSlides } from '@/constants/demoImages';
 import { MaxContentWidth, Space } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useSearchPrefsStore } from '@/store/searchPrefsStore';
 import { AvailableRoomType } from '@/types/room';
 import { nightsBetween, toIsoDate } from '@/utils/date';
 
@@ -35,17 +37,24 @@ export default function SearchScreen() {
   const heroHeight = Math.round(Math.min(Math.max((contentWidth - GUTTER * 2) * 0.58, 200), 300));
   const heroSlides = useMemo(() => getSearchHeroSlides(t), [t]);
 
-  const [checkIn, setCheckIn] = useState(dayjs().add(1, 'day').toDate());
-  const [checkOut, setCheckOut] = useState(dayjs().add(2, 'day').toDate());
-  const [guests, setGuests] = useState(2);
+  // Picks up where the guest left off if they already searched this session
+  // (e.g. tapped the search card on the home tab), otherwise tomorrow/+1 night.
+  const [checkIn, setCheckIn] = useState(() => {
+    const last = useSearchPrefsStore.getState().checkIn;
+    return last ? dayjs(last).toDate() : dayjs().add(1, 'day').toDate();
+  });
+  const [checkOut, setCheckOut] = useState(() => {
+    const last = useSearchPrefsStore.getState().checkOut;
+    return last ? dayjs(last).toDate() : dayjs().add(2, 'day').toDate();
+  });
+  const [guests, setGuests] = useState(() => useSearchPrefsStore.getState().guests ?? 2);
   const [results, setResults] = useState<AvailableRoomType[] | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const setSearchPrefs = useSearchPrefsStore((s) => s.setSearchPrefs);
 
   const nights = nightsBetween(checkIn, checkOut);
 
   const handleSearch = async () => {
-    setError(null);
     setLoading(true);
     try {
       const data = await roomsApi.searchAvailability({
@@ -54,8 +63,9 @@ export default function SearchScreen() {
         guests,
       });
       setResults(data);
+      setSearchPrefs({ checkIn: toIsoDate(checkIn), checkOut: toIsoDate(checkOut), guests });
     } catch (err) {
-      setError(getApiErrorMessage(err, t('search.searchFailed')));
+      toast.error(getApiErrorMessage(err, t('search.searchFailed')));
     } finally {
       setLoading(false);
     }
@@ -90,12 +100,6 @@ export default function SearchScreen() {
 
         <Stepper label={t('search.guests')} hint={t('search.guestsHint')} value={guests} onChange={setGuests} max={20} />
 
-        {error ? (
-          <ThemedText type="small" themeColor="danger">
-            {error}
-          </ThemedText>
-        ) : null}
-
         <Button label={t('search.searchButton', { count: nights })} icon="search" onPress={handleSearch} loading={loading} />
       </Card>
 
@@ -124,7 +128,7 @@ export default function SearchScreen() {
           keyboardShouldPersistTaps="handled"
           ListHeaderComponent={header}
           ListEmptyComponent={
-            loading ? null : results === null ? (
+            loading ? undefined : results === null ? (
               <EmptyState
                 icon="calendar-outline"
                 title={t('search.emptyInitialTitle')}

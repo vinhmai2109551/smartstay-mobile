@@ -32,7 +32,14 @@ export function FeaturedRoomCard({ roomType, width, onPress }: FeaturedRoomCardP
       style={({ pressed }) => [styles.card, shadows.card, { width, opacity: pressed ? 0.94 : 1 }]}>
       <View style={[styles.inner, { backgroundColor: theme.backgroundSelected }]}>
         {image ? (
-          <Image source={image} style={StyleSheet.absoluteFill} contentFit="cover" transition={200} />
+          <Image
+            source={image}
+            style={StyleSheet.absoluteFill}
+            contentFit="cover"
+            transition={200}
+            cachePolicy="memory-disk"
+            accessible={false}
+          />
         ) : (
           <View style={[StyleSheet.absoluteFill, styles.placeholder]}>
             <Ionicons name="bed-outline" size={36} color={theme.textSecondary} />

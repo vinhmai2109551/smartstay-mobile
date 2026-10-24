@@ -4,33 +4,21 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Pressable, StyleSheet, useWindowDimensions, View } from "react-native";
 import { ChatBookingForm } from "@/components/ChatBookingForm";
-import { RoomTypeCard } from "@/components/RoomTypeCard";
 import { ThemedText } from "@/components/themed-text";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { FontFamily, MaxContentWidth, Radius, Space } from "@/constants/theme";
-import { useTheme } from "@/hooks/use-theme";
+import { useTheme, useShadows } from "@/hooks/use-theme";
 import { ChatMessage, PendingBooking } from "@/types/chat";
 import { formatVND } from "@/utils/currency";
 import { formatDate } from "@/utils/date";
 import { ChatBookingCreatedCard } from "./ChatBookingCreatedCard";
 import { ChatPromotionList } from "./ChatPromotionList";
+import { ChatRoomCard } from "./ChatRoomCard";
+import { FormattedMessage } from "./FormattedMessage";
 
 // Rooms shown before "Show n more" when a reply still lists many.
-const COLLAPSED_ROOMS = 2;
-
-// Renders the **bold** spans the AI writes in markdown; everything else stays plain text.
-function renderInlineMarkdown(text: string) {
-  return text.split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
-    part.startsWith("**") && part.endsWith("**") && part.length > 4 ? (
-      <ThemedText key={i} style={styles.bold}>
-        {part.slice(2, -2)}
-      </ThemedText>
-    ) : (
-      part
-    ),
-  );
-}
+const COLLAPSED_ROOMS = 4;
 
 export function ChatBubble({
   message,
@@ -43,6 +31,7 @@ export function ChatBubble({
   busy,
   proposal,
   showProposal,
+  onSelectRoom,
 }: {
   message: ChatMessage;
   onConfirmBooking?: (proposalId: string) => void;
@@ -56,6 +45,7 @@ export function ChatBubble({
   // The proposal this booking was created from, for the room/dates/name on the full-screen QR.
   proposal?: PendingBooking | null;
   showProposal?: boolean;
+  onSelectRoom?: (roomName: string) => void;
 }) {
   const { t } = useTranslation();
   const theme = useTheme();
@@ -65,10 +55,6 @@ export function ChatBubble({
   const rooms = message.rooms ?? [];
   const visibleRooms = showAllRooms ? rooms : rooms.slice(0, COLLAPSED_ROOMS);
   const hiddenRooms = rooms.length - visibleRooms.length;
-  // Rich cards take ~3/4 of the screen, capped for tablets.
-  const cardWidth = Math.round(
-    Math.min(Math.min(width, MaxContentWidth) * 0.74, 320),
-  );
   // The booking form and the booking cards span the whole chat column, like on the web —
   // their rows (dates, payment options) wrap at card width. Matches the list's horizontal
   // padding (chat.tsx).
@@ -76,8 +62,13 @@ export function ChatBubble({
   const showProposalCard = !!showProposal && !!message.pendingBooking;
   const promotions = message.promotions ?? [];
   const wide =
-    showForm || showProposalCard || !!message.booking || promotions.length > 0;
+    showForm ||
+    showProposalCard ||
+    !!message.booking ||
+    promotions.length > 0 ||
+    rooms.length > 0;
   const formWidth = Math.min(width, MaxContentWidth) - Space.lg * 2;
+  const shadows = useShadows();
 
   return (
     <View
@@ -90,36 +81,54 @@ export function ChatBubble({
       <View
         style={[
           styles.bubble,
+          shadows.card,
           wide && styles.bubbleNarrow,
           isUser
             ? [styles.bubbleUser, { backgroundColor: theme.primary }]
             : [
                 styles.bubbleAssistant,
                 {
-                  backgroundColor: theme.backgroundElement,
+                  backgroundColor: theme.backgroundSelected,
                   borderColor: theme.border,
                 },
               ],
         ]}
       >
-        <ThemedText
-          type="body"
-          style={{ color: isUser ? theme.primaryText : theme.text }}
-        >
-          {isUser ? message.content : renderInlineMarkdown(message.content)}
-        </ThemedText>
+        {!isUser ? (
+          <ThemedText
+            type="caption"
+            style={[styles.assistantLabel, { color: theme.primary }]}
+          >
+            {t("chat.assistantLabel")}
+          </ThemedText>
+        ) : null}
+
+        {isUser ? (
+          <ThemedText
+            type="body"
+            style={[styles.userText, { color: theme.primaryText }]}
+          >
+            {message.content}
+          </ThemedText>
+        ) : (
+          <FormattedMessage text={message.content} />
+        )}
       </View>
 
       {rooms.length ? (
-        <View style={[styles.cards, { width: cardWidth }]}>
+        <View style={[styles.roomGrid, { width: formWidth }]}>
           {visibleRooms.map((roomType) => (
-            <RoomTypeCard
+            <ChatRoomCard
               key={roomType.roomTypeId}
               roomType={roomType}
-              imageHeight={140}
-              onPress={() => router.push(`/room/${roomType.roomTypeId}`)}
+              // 2 cột, trừ khoảng cách giữa 2 thẻ.
+              width={(formWidth - Space.sm) / 2}
+              disabled={busy}
+              onSelect={() => onSelectRoom?.(roomType.name)}
+              onOpen={() => router.push(`/room/${roomType.roomTypeId}`)}
             />
           ))}
+
           {hiddenRooms > 0 ? (
             <Pressable
               accessibilityRole="button"
@@ -308,16 +317,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: Space.lg,
     paddingVertical: Space.md,
   },
-  bubbleUser: { borderBottomRightRadius: Space.xs },
+  bubbleUser: { borderTopRightRadius: Space.xs },
   bubbleAssistant: {
-    borderBottomLeftRadius: Space.xs,
+    borderTopLeftRadius: Space.xs,
     borderWidth: StyleSheet.hairlineWidth,
   },
-  cards: { gap: Space.md },
   flex: { flex: 1 },
   actions: { flexDirection: "row", gap: Space.sm },
-  bold: { fontFamily: FontFamily.bold },
   moreRooms: {
+    width: "100%",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -355,5 +363,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: Space.xs,
     minHeight: 28,
+  },
+  roomGrid: { flexDirection: "row", flexWrap: "wrap", gap: Space.sm },
+  userText: { fontSize: 15, lineHeight: 22 },
+  assistantLabel: {
+    fontFamily: FontFamily.bold,
+    fontSize: 11,
+    marginBottom: 2,
   },
 });

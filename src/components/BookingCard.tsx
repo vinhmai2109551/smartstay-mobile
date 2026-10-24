@@ -44,8 +44,15 @@ export function BookingCard({ booking, onPress, reviewRating, onReview }: Bookin
       ]}>
       <View style={styles.top}>
         <View style={[styles.thumb, { backgroundColor: theme.backgroundSelected }]}>
+          {/* Image is decorative — the Pressable's own accessibilityLabel already describes this card. */}
           {image ? (
-            <Image source={image} style={StyleSheet.absoluteFill} contentFit="cover" />
+            <Image
+              source={image}
+              style={StyleSheet.absoluteFill}
+              contentFit="cover"
+              cachePolicy="memory-disk"
+              accessible={false}
+            />
           ) : (
             <Ionicons name="bed-outline" size={24} color={theme.textSecondary} />
           )}

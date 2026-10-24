@@ -67,6 +67,7 @@ export function DateField({ label, value, onChange, minimumDate, dense = false }
       {Platform.OS === 'ios' ? (
         <Modal visible={show} transparent animationType="slide" onRequestClose={() => setShow(false)}>
           <Pressable
+            accessibilityRole="button"
             accessibilityLabel={t('common.close')}
             style={styles.backdrop}
             onPress={() => setShow(false)}
