@@ -104,7 +104,7 @@ export default function BookingsScreen() {
             </View>
           }
           ListEmptyComponent={
-            loading ? null : filter === 'ALL' ? (
+            loading ? undefined : filter === 'ALL' ? (
               <EmptyState
                 icon="receipt-outline"
                 title={t('booking.emptyAllTitle')}

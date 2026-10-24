@@ -85,3 +85,15 @@ export type ChatMessage = {
   booking?: ConfirmedBooking | null;
   bookingFormRequest?: BookingFormRequest | null;
 };
+
+export type ReceptionMessage = {
+  conversationId: string;
+  messageId: string;
+  senderId: string;
+  senderName: string;
+  senderRole: string;
+  content: string;
+  attachmentUrl: string | null;
+  attachmentType: "IMAGE" | null;
+  createdAt: string;
+};

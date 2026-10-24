@@ -188,6 +188,8 @@ export default function NotificationsScreen() {
         sections={loading ? [] : sections}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
+        // The iOS 26 native header is translucent; inset the list so the filters start below it.
+        contentInsetAdjustmentBehavior="automatic"
         stickySectionHeadersEnabled={false}
         refreshControl={
           <RefreshControl
@@ -199,7 +201,7 @@ export default function NotificationsScreen() {
         }
         ListHeaderComponent={header}
         ListEmptyComponent={
-          loading ? null : (
+          loading ? undefined : (
             <EmptyState
               icon={
                 onlyUnread
@@ -227,7 +229,7 @@ export default function NotificationsScreen() {
         ListFooterComponent={
           loadingMore ? (
             <ActivityIndicator style={styles.footer} color={theme.primary} />
-          ) : null
+          ) : undefined
         }
         renderSectionHeader={({ section }) => (
           <ThemedText
