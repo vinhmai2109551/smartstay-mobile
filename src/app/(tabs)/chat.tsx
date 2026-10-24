@@ -18,7 +18,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { aiChatApi } from "@/api/chat";
 import { AI_TAB_LIFT } from "@/components/AiTabButton";
-import { BrandMark } from "@/components/BrandMark";
 import { ChatBubble } from "@/components/ChatBubble";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
@@ -43,6 +42,7 @@ import {
   storeConversationId,
 } from "@/utils/aiChatHistory";
 import { TFunction } from "i18next";
+import { SmartStayAiIcon } from "@/components/SmartStayAiIcon";
 
 // The latest booking proposal shown before `index` — what an AI-created booking was made from.
 function findProposalBefore(messages: ChatMessage[], index: number) {
@@ -232,7 +232,10 @@ export default function ChatScreen() {
       toast.error(t("chat.offlineBlocked"));
       return;
     }
-    setMessages((prev) => [...prev, { id: Crypto.randomUUID(), role: "USER", content: text }]);
+    setMessages((prev) => [
+      ...prev,
+      { id: Crypto.randomUUID(), role: "USER", content: text },
+    ]);
     setInput("");
     scrollToEnd();
     send(text);
@@ -246,7 +249,10 @@ export default function ChatScreen() {
     }
 
     const cancelText = t("chat.cancelProposalMessage");
-    setMessages((prev) => [...prev, { id: Crypto.randomUUID(), role: "USER", content: cancelText }]);
+    setMessages((prev) => [
+      ...prev,
+      { id: Crypto.randomUUID(), role: "USER", content: cancelText },
+    ]);
     scrollToEnd();
     send(cancelText, { cancelProposalId: proposalId });
   };
@@ -259,7 +265,10 @@ export default function ChatScreen() {
     }
     setConfirmingProposalId(proposalId);
     const confirmText = t("chat.confirmBookingMessage");
-    setMessages((prev) => [...prev, { id: Crypto.randomUUID(), role: "USER", content: confirmText }]);
+    setMessages((prev) => [
+      ...prev,
+      { id: Crypto.randomUUID(), role: "USER", content: confirmText },
+    ]);
     scrollToEnd();
     send(confirmText, { confirmProposalId: proposalId });
   };
@@ -285,7 +294,7 @@ export default function ChatScreen() {
     <ThemedView style={styles.flex}>
       <SafeAreaView style={styles.flex} edges={["top"]}>
         <View style={[styles.header, { borderBottomColor: theme.border }]}>
-          <BrandMark size={40} iconSize={18} />
+          <SmartStayAiIcon size={40} />
           <View style={styles.headerText}>
             <ThemedText type="bodyBold">{t("chat.headerTitle")}</ThemedText>
             <View style={styles.statusRow}>
