@@ -128,7 +128,7 @@ export default function SearchScreen() {
           keyboardShouldPersistTaps="handled"
           ListHeaderComponent={header}
           ListEmptyComponent={
-            loading ? null : results === null ? (
+            loading ? undefined : results === null ? (
               <EmptyState
                 icon="calendar-outline"
                 title={t('search.emptyInitialTitle')}

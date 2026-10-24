@@ -385,7 +385,7 @@ export default function ChatScreen() {
                     ))}
                   </View>
                 </View>
-              ) : null
+              ) : undefined
             }
           />
 

@@ -1,36 +1,47 @@
-import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import { useCallback, useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
-import { FlatList, Pressable, RefreshControl, StyleSheet, useWindowDimensions, View } from 'react-native';
-import Animated, { FadeIn, FadeInDown, FadeInRight } from 'react-native-reanimated';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import { useCallback, useMemo } from "react";
+import { useTranslation } from "react-i18next";
+import {
+  FlatList,
+  Pressable,
+  RefreshControl,
+  StyleSheet,
+  useWindowDimensions,
+  View,
+} from "react-native";
+import Animated, {
+  FadeIn,
+  FadeInDown,
+  FadeInRight,
+} from "react-native-reanimated";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import { promotionsApi } from '@/api/promotions';
-import { roomTypesApi } from '@/api/roomTypes';
-import { Avatar } from '@/components/Avatar';
-import { ExperienceGallery } from '@/components/ExperienceGallery';
-import { FeaturedRoomCard } from '@/components/FeaturedRoomCard';
-import { HeroCarousel } from '@/components/HeroCarousel';
-import { PerkRow } from '@/components/PerkRow';
-import { PromoTicket } from '@/components/PromoTicket';
-import { RoomTypeCard } from '@/components/RoomTypeCard';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Button } from '@/components/ui/Button';
-import { CountBadge } from '@/components/ui/CountBadge';
-import { ErrorView } from '@/components/ui/ErrorView';
-import { SectionHeader } from '@/components/ui/SectionHeader';
-import { RoomCardSkeleton, Skeleton } from '@/components/ui/Skeleton';
-import { getHomeHeroSlides } from '@/constants/demoImages';
-import { MaxContentWidth, MinTouch, Radius, Space } from '@/constants/theme';
-import { useApi } from '@/hooks/useApi';
-import { useUnreadNotifications } from '@/hooks/useUnreadNotifications';
-import { useShadows, useTheme } from '@/hooks/use-theme';
-import { useAuthStore } from '@/store/authStore';
-import { useSearchPrefsStore } from '@/store/searchPrefsStore';
-import { RoomType } from '@/types/room';
-import { formatDate } from '@/utils/date';
+import { promotionsApi } from "@/api/promotions";
+import { roomTypesApi } from "@/api/roomTypes";
+import { Avatar } from "@/components/Avatar";
+import { ExperienceGallery } from "@/components/ExperienceGallery";
+import { FeaturedRoomCard } from "@/components/FeaturedRoomCard";
+import { HeroCarousel } from "@/components/HeroCarousel";
+import { PerkRow } from "@/components/PerkRow";
+import { PromoTicket } from "@/components/PromoTicket";
+import { RoomTypeCard } from "@/components/RoomTypeCard";
+import { ThemedText } from "@/components/themed-text";
+import { ThemedView } from "@/components/themed-view";
+import { Button } from "@/components/ui/Button";
+import { CountBadge } from "@/components/ui/CountBadge";
+import { ErrorView } from "@/components/ui/ErrorView";
+import { SectionHeader } from "@/components/ui/SectionHeader";
+import { RoomCardSkeleton, Skeleton } from "@/components/ui/Skeleton";
+import { getHomeHeroSlides } from "@/constants/demoImages";
+import { MaxContentWidth, MinTouch, Radius, Space } from "@/constants/theme";
+import { useApi } from "@/hooks/useApi";
+import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
+import { useShadows, useTheme } from "@/hooks/use-theme";
+import { useAuthStore } from "@/store/authStore";
+import { useSearchPrefsStore } from "@/store/searchPrefsStore";
+import { RoomType } from "@/types/room";
+import { formatDate } from "@/utils/date";
 
 const GUTTER = Space.lg;
 const CAROUSEL_GAP = Space.md;
@@ -39,11 +50,21 @@ const FEATURED_COUNT = 5;
 
 type IconName = keyof typeof Ionicons.glyphMap;
 
-function SearchField({ icon, label, value }: { icon: IconName; label: string; value: string }) {
+function SearchField({
+  icon,
+  label,
+  value,
+}: {
+  icon: IconName;
+  label: string;
+  value: string;
+}) {
   const theme = useTheme();
   return (
     <View style={styles.searchField}>
-      <View style={[styles.searchFieldIcon, { backgroundColor: theme.primarySoft }]}>
+      <View
+        style={[styles.searchFieldIcon, { backgroundColor: theme.primarySoft }]}
+      >
         <Ionicons name={icon} size={18} color={theme.primary} />
       </View>
       <View style={styles.searchFieldText}>
@@ -71,9 +92,11 @@ export default function HomeScreen() {
   const lastGuests = useSearchPrefsStore((s) => s.guests);
   const searchDateLabel =
     lastCheckIn && lastCheckOut
-      ? `${formatDate(lastCheckIn, 'DD/MM')} – ${formatDate(lastCheckOut, 'DD/MM')}`
-      : t('home.searchDate');
-  const searchGuestsLabel = lastGuests ? t('common.guest', { count: lastGuests }) : t('home.searchAddGuests');
+      ? `${formatDate(lastCheckIn, "DD/MM")} – ${formatDate(lastCheckOut, "DD/MM")}`
+      : t("home.searchDate");
+  const searchGuestsLabel = lastGuests
+    ? t("common.guest", { count: lastGuests })
+    : t("home.searchAddGuests");
 
   const fetchRoomTypes = useCallback(() => roomTypesApi.list(), []);
   const roomTypes = useApi(fetchRoomTypes, { toastOnRefreshError: true });
@@ -83,18 +106,26 @@ export default function HomeScreen() {
   // Content is capped and centred on tablets; everything below derives from this width.
   const contentWidth = Math.min(windowWidth, MaxContentWidth);
   const innerWidth = contentWidth - GUTTER * 2;
-  const heroHeight = Math.round(Math.min(Math.max(innerWidth * 0.62, 210), 320));
+  const heroHeight = Math.round(
+    Math.min(Math.max(innerWidth * 0.62, 210), 320),
+  );
   const featuredCardWidth = Math.round(Math.min(innerWidth * 0.78, 320));
 
-  const firstName = user?.fullName ? user.fullName.trim().split(/\s+/).at(-1) : undefined;
+  const firstName = user?.fullName
+    ? user.fullName.trim().split(/\s+/).at(-1)
+    : undefined;
   const featured = useMemo(
-    () => [...(roomTypes.data ?? [])].sort((a, b) => b.basePrice - a.basePrice).slice(0, FEATURED_COUNT),
+    () =>
+      [...(roomTypes.data ?? [])]
+        .sort((a, b) => b.basePrice - a.basePrice)
+        .slice(0, FEATURED_COUNT),
     [roomTypes.data],
   );
   const promotion = promotions.data?.[0];
 
-  const openRoom = (roomType: RoomType) => router.push(`/room/${roomType.roomTypeId}`);
-  const goToSearch = () => router.navigate('/(tabs)/search');
+  const openRoom = (roomType: RoomType) =>
+    router.push(`/room/${roomType.roomTypeId}`);
+  const goToSearch = () => router.navigate("/(tabs)/search");
   const refreshing = roomTypes.refreshing || promotions.refreshing;
   const onRefresh = () => {
     roomTypes.refresh();
@@ -110,37 +141,73 @@ export default function HomeScreen() {
       <View style={styles.topBar}>
         <View style={styles.greeting}>
           <ThemedText type="small" themeColor="textSecondary">
-            {t('home.greeting')}
-            {firstName ? ',' : ''}
+            {t("home.greeting")}
+            {firstName ? "," : ""}
           </ThemedText>
           <ThemedText type="title" numberOfLines={1}>
-            {firstName ?? t('home.greetingFallbackName')}
+            {firstName ?? t("home.greetingFallbackName")}
           </ThemedText>
         </View>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={
-            unreadCount > 0 ? t('home.notificationsUnread', { count: unreadCount }) : t('home.notifications')
-          }
-          onPress={() => router.push('/notifications')}
+          accessibilityLabel={t("home.chatWithReception")}
+          onPress={() => router.push("/reception-chat")}
           style={({ pressed }) => [
             styles.iconButton,
-            { backgroundColor: theme.backgroundElement, borderColor: theme.border, opacity: pressed ? 0.7 : 1 },
-          ]}>
-          <Ionicons name={unreadCount > 0 ? 'notifications' : 'notifications-outline'} size={22} color={theme.text} />
+            {
+              backgroundColor: theme.backgroundElement,
+              borderColor: theme.border,
+              opacity: pressed ? 0.7 : 1,
+            },
+          ]}
+        >
+          <Ionicons
+            name="chatbubble-ellipses-outline"
+            size={22}
+            color={theme.text}
+          />
+        </Pressable>
+
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={
+            unreadCount > 0
+              ? t("home.notificationsUnread", { count: unreadCount })
+              : t("home.notifications")
+          }
+          onPress={() => router.push("/notifications")}
+          style={({ pressed }) => [
+            styles.iconButton,
+            {
+              backgroundColor: theme.backgroundElement,
+              borderColor: theme.border,
+              opacity: pressed ? 0.7 : 1,
+            },
+          ]}
+        >
+          <Ionicons
+            name={unreadCount > 0 ? "notifications" : "notifications-outline"}
+            size={22}
+            color={theme.text}
+          />
           <CountBadge count={unreadCount} style={styles.bellBadge} />
         </Pressable>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={t('tabs.profile')}
-          onPress={() => router.navigate('/(tabs)/profile')}
-          style={({ pressed }) => ({ opacity: pressed ? 0.8 : 1 })}>
+          accessibilityLabel={t("tabs.profile")}
+          onPress={() => router.navigate("/(tabs)/profile")}
+          style={({ pressed }) => ({ opacity: pressed ? 0.8 : 1 })}
+        >
           <Avatar name={user?.fullName} size={MinTouch} />
         </Pressable>
       </View>
 
       <Animated.View entering={FadeIn.duration(600)}>
-        <HeroCarousel slides={heroSlides} height={heroHeight} captionInset={SEARCH_OVERLAP} />
+        <HeroCarousel
+          slides={heroSlides}
+          height={heroHeight}
+          captionInset={SEARCH_OVERLAP}
+        />
       </Animated.View>
 
       {/* Entering animation lives on a plain Animated.View: Reanimated drops function
@@ -150,22 +217,45 @@ export default function HomeScreen() {
         style={[
           styles.searchCard,
           shadows.floating,
-          { backgroundColor: theme.backgroundElement, borderColor: theme.border },
-        ]}>
-        <ThemedText type="bodyBold">{t('home.searchTitle')}</ThemedText>
+          {
+            backgroundColor: theme.backgroundElement,
+            borderColor: theme.border,
+          },
+        ]}
+      >
+        <ThemedText type="bodyBold">{t("home.searchTitle")}</ThemedText>
         <Pressable
           accessibilityRole="search"
-          accessibilityLabel={t('home.searchFieldsAccessibility')}
+          accessibilityLabel={t("home.searchFieldsAccessibility")}
           onPress={goToSearch}
           style={({ pressed }) => [
             styles.searchFields,
-            { borderColor: theme.border, backgroundColor: theme.background, opacity: pressed ? 0.8 : 1 },
-          ]}>
-          <SearchField icon="calendar-outline" label={t('home.searchDatesLabel')} value={searchDateLabel} />
-          <View style={[styles.searchDivider, { backgroundColor: theme.border }]} />
-          <SearchField icon="people-outline" label={t('home.searchGuests')} value={searchGuestsLabel} />
+            {
+              borderColor: theme.border,
+              backgroundColor: theme.background,
+              opacity: pressed ? 0.8 : 1,
+            },
+          ]}
+        >
+          <SearchField
+            icon="calendar-outline"
+            label={t("home.searchDatesLabel")}
+            value={searchDateLabel}
+          />
+          <View
+            style={[styles.searchDivider, { backgroundColor: theme.border }]}
+          />
+          <SearchField
+            icon="people-outline"
+            label={t("home.searchGuests")}
+            value={searchGuestsLabel}
+          />
         </Pressable>
-        <Button label={t('home.searchAccessibility')} icon="search" onPress={goToSearch} />
+        <Button
+          label={t("home.searchAccessibility")}
+          icon="search"
+          onPress={goToSearch}
+        />
       </Animated.View>
 
       <PerkRow />
@@ -178,7 +268,7 @@ export default function HomeScreen() {
         </Animated.View>
       ) : null}
 
-      <SectionHeader title={t('home.featuredRooms')} onAction={goToSearch} />
+      <SectionHeader title={t("home.featuredRooms")} onAction={goToSearch} />
     </View>
   );
 
@@ -194,7 +284,11 @@ export default function HomeScreen() {
       keyExtractor={(item) => item.roomTypeId}
       renderItem={({ item, index }) => (
         <Animated.View entering={FadeInRight.duration(500).delay(index * 90)}>
-          <FeaturedRoomCard roomType={item} width={featuredCardWidth} onPress={() => openRoom(item)} />
+          <FeaturedRoomCard
+            roomType={item}
+            width={featuredCardWidth}
+            onPress={() => openRoom(item)}
+          />
         </Animated.View>
       )}
       showsHorizontalScrollIndicator={false}
@@ -210,7 +304,7 @@ export default function HomeScreen() {
 
   return (
     <ThemedView style={styles.flex}>
-      <SafeAreaView style={styles.flex} edges={['top']}>
+      <SafeAreaView style={styles.flex} edges={["top"]}>
         <FlatList
           data={roomTypes.loading ? [] : (roomTypes.data ?? [])}
           keyExtractor={(item) => item.roomTypeId}
@@ -229,11 +323,17 @@ export default function HomeScreen() {
               {header}
               {featuredCarousel}
               <View style={styles.gallerySection}>
-                <SectionHeader title={t('home.experienceTitle')} subtitle={t('home.experienceSubtitle')} />
+                <SectionHeader
+                  title={t("home.experienceTitle")}
+                  subtitle={t("home.experienceSubtitle")}
+                />
                 <ExperienceGallery width={innerWidth} />
               </View>
               <View style={styles.suggestHeader}>
-                <SectionHeader title={t('home.suggestedTitle')} subtitle={t('home.suggestedSubtitle')} />
+                <SectionHeader
+                  title={t("home.suggestedTitle")}
+                  subtitle={t("home.suggestedSubtitle")}
+                />
               </View>
               {roomTypes.loading ? (
                 <View style={styles.skeletonList}>
@@ -246,19 +346,19 @@ export default function HomeScreen() {
           renderItem={({ item, index }) => (
             <Animated.View
               entering={FadeInDown.duration(500).delay(Math.min(index, 4) * 80)}
-              style={styles.suggestItem}>
+              style={styles.suggestItem}
+            >
               <RoomTypeCard roomType={item} onPress={() => openRoom(item)} />
             </Animated.View>
           )}
           ListEmptyComponent={
-            roomTypes.loading ? null : (
+            roomTypes.loading ? undefined : (
               <ThemedText themeColor="textSecondary" style={styles.empty}>
-                {t('home.noRoomTypes')}
+                {t("home.noRoomTypes")}
               </ThemedText>
             )
           }
         />
-
       </SafeAreaView>
     </ThemedView>
   );
@@ -267,8 +367,8 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   list: {
-    alignSelf: 'center',
-    paddingBottom: Space['3xl'],
+    alignSelf: "center",
+    paddingBottom: Space["3xl"],
   },
   headerBlock: {
     paddingHorizontal: GUTTER,
@@ -276,8 +376,8 @@ const styles = StyleSheet.create({
     gap: Space.xl,
   },
   topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: Space.sm,
   },
   greeting: { flex: 1 },
@@ -286,10 +386,10 @@ const styles = StyleSheet.create({
     height: MinTouch,
     borderRadius: MinTouch / 2,
     borderWidth: StyleSheet.hairlineWidth,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
-  bellBadge: { position: 'absolute', top: -4, right: -4 },
+  bellBadge: { position: "absolute", top: -4, right: -4 },
   searchCard: {
     // Pulls the card up so it overlaps the bottom edge of the hero.
     marginTop: -(SEARCH_OVERLAP + Space.xl),
@@ -300,17 +400,21 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
   },
   searchFields: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     minHeight: 64,
     borderRadius: Radius.md,
     borderWidth: StyleSheet.hairlineWidth,
   },
-  searchDivider: { width: StyleSheet.hairlineWidth, alignSelf: 'stretch', marginVertical: Space.md },
+  searchDivider: {
+    width: StyleSheet.hairlineWidth,
+    alignSelf: "stretch",
+    marginVertical: Space.md,
+  },
   searchField: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: Space.sm,
     paddingHorizontal: Space.md,
     paddingVertical: Space.sm,
@@ -319,8 +423,8 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   searchFieldText: { flex: 1 },
   carousel: {
@@ -330,27 +434,27 @@ const styles = StyleSheet.create({
     paddingHorizontal: GUTTER,
     paddingVertical: Space.sm,
   },
-  row: { flexDirection: 'row', gap: CAROUSEL_GAP },
+  row: { flexDirection: "row", gap: CAROUSEL_GAP },
   gallerySection: {
     paddingHorizontal: GUTTER,
-    marginTop: Space['2xl'],
+    marginTop: Space["2xl"],
     gap: Space.lg,
   },
   suggestHeader: {
     paddingHorizontal: GUTTER,
-    marginTop: Space['2xl'],
+    marginTop: Space["2xl"],
     marginBottom: Space.lg,
   },
   skeletonList: {
     paddingHorizontal: GUTTER,
-    gap: Space['2xl'],
+    gap: Space["2xl"],
   },
   suggestItem: {
     paddingHorizontal: GUTTER,
     marginBottom: Space.xl,
   },
   empty: {
-    textAlign: 'center',
+    textAlign: "center",
     paddingHorizontal: GUTTER,
   },
 });

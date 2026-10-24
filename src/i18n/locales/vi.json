@@ -172,6 +172,7 @@
     "greetingFallbackName": "Quý khách",
     "notifications": "Thông báo",
     "notificationsUnread": "Thông báo, {{count}} chưa đọc",
+    "chatWithReception": "Nhắn tin với lễ tân",
     "searchTitle": "Bạn muốn nghỉ khi nào?",
     "searchDate": "Chọn ngày",
     "searchGuests": "Số khách",
@@ -568,5 +569,27 @@
       "idNumber": "Số giấy tờ gồm 6–20 chữ hoặc số",
       "address": "Địa chỉ tối đa 255 ký tự"
     }
+  },
+  "receptionChat": {
+    "title": "Lễ tân Vika Hotel",
+    "online": "Đang trực tuyến",
+    "placeholder": "Nhắn tin cho lễ tân...",
+    "staffLabel": "Lễ tân khách sạn",
+    "emptyTitle": "Chào bạn",
+    "emptyDescription": "Lễ tân Vika Hotel luôn sẵn sàng hỗ trợ đặt phòng, hoàn tiền và mọi thắc mắc của bạn.",
+    "today": "Hôm nay",
+    "yesterday": "Hôm qua",
+    "send": "Gửi tin nhắn",
+    "attach": "Đính kèm ảnh",
+    "removeImage": "Bỏ ảnh",
+    "loadFailed": "Không tải được cuộc trò chuyện. Vui lòng thử lại.",
+    "sendFailed": "Không gửi được tin nhắn, vui lòng thử lại.",
+    "imageType": "Chỉ nhận ảnh định dạng JPG, PNG hoặc WEBP.",
+    "imageTooLarge": "Ảnh vượt quá dung lượng cho phép (tối đa 5MB).",
+    "prompts": [
+      "Tôi muốn hỏi về hoàn tiền",
+      "Tôi muốn đổi ngày nhận phòng",
+      "Tôi cần yêu cầu thêm dịch vụ"
+    ]
   }
 }

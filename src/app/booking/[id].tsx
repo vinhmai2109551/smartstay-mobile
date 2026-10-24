@@ -5,7 +5,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
+import { RefreshControl, ScrollView, type ScrollViewInstance, StyleSheet, View } from "react-native";
 
 import { bookingsApi } from "@/api/bookings";
 import { getApiErrorMessage } from "@/api/client";
@@ -72,7 +72,7 @@ export default function BookingDetailScreen() {
   const myReviews = useApi(fetchMyReviews);
 
   // "Write a review" in the booking list opens this screen with ?review=1 — jump to the form.
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<ScrollViewInstance>(null);
   const [reviewY, setReviewY] = useState<number | null>(null);
   const hasScrolledRef = useRef(false);
   useEffect(() => {

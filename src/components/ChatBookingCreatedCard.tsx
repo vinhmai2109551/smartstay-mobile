@@ -10,7 +10,7 @@ import { router } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, View, type ViewInstance } from "react-native";
 import QRCode from "react-native-qrcode-svg";
 import { captureRef } from "react-native-view-shot";
 import { Card } from "./ui/Card";
@@ -53,7 +53,7 @@ export function ChatBookingCreatedCard({
   // (lễ tân xác nhận đơn CASH chẳng hạn) nếu khách vẫn đang xem lại thẻ này trong chat.
   const [liveStatus, setLiveStatus] = useState<BookingStatus>(booking.status);
   // Phiếu thanh toán dựng ngoài màn hình (PaymentQrSlip) — chụp lại thành ảnh khi lưu.
-  const slipRef = useRef<View>(null);
+  const slipRef = useRef<ViewInstance>(null);
 
   useBookingUpdates(() => {
     bookingsApi

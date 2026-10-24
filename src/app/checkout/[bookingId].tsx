@@ -6,7 +6,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, useWindowDimensions, View, type ViewInstance } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { captureRef } from 'react-native-view-shot';
 import Animated, { ZoomIn } from 'react-native-reanimated';
@@ -44,7 +44,7 @@ export default function CheckoutScreen() {
   const [bankSheetVisible, setBankSheetVisible] = useState(false);
   const [recentBankAppId, setRecentBankAppId] = useState<string | null>(null);
   // Phiếu thanh toán dựng ngoài màn hình (PaymentQrSlip) — chụp lại thành ảnh khi lưu.
-  const slipRef = useRef<View>(null);
+  const slipRef = useRef<ViewInstance>(null);
 
   const qrSize = Math.round(Math.min(Math.min(width, MaxContentWidth) - Space['4xl'] * 2, 260));
 

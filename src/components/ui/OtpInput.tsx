@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, TextInput, type TextInputInstance, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { FontFamily, Radius, Space } from '@/constants/theme';
@@ -20,7 +20,7 @@ type OtpInputProps = {
 export function OtpInput({ value, onChange, length = 6, error }: OtpInputProps) {
   const { t } = useTranslation();
   const theme = useTheme();
-  const inputRef = useRef<TextInput>(null);
+  const inputRef = useRef<TextInputInstance>(null);
   const [focused, setFocused] = useState(false);
 
   return (

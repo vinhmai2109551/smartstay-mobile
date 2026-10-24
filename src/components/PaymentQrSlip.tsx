@@ -1,7 +1,7 @@
 import dayjs from "dayjs";
 import { type Ref } from "react";
 import { useTranslation } from "react-i18next";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View, type ViewInstance } from "react-native";
 import QRCode from "react-native-qrcode-svg";
 
 import { FontFamily } from "@/constants/theme";
@@ -21,7 +21,7 @@ const SLIP = {
 };
 
 type PaymentQrSlipProps = {
-  ref?: Ref<View>;
+  ref?: Ref<ViewInstance>;
   qrCode: string;
   amount: number;
   code: string;

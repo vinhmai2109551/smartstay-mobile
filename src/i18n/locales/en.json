@@ -172,6 +172,7 @@
     "greetingFallbackName": "Guest",
     "notifications": "Notifications",
     "notificationsUnread": "Notifications, {{count}} unread",
+    "chatWithReception": "Message reception",
     "searchTitle": "When would you like to stay?",
     "searchDate": "Pick dates",
     "searchGuests": "Guests",
@@ -568,5 +569,27 @@
       "idNumber": "ID number must be 6–20 letters or digits",
       "address": "Address can be at most 255 characters"
     }
+  },
+  "receptionChat": {
+    "title": "Vika Hotel Reception",
+    "online": "Online",
+    "placeholder": "Message the reception...",
+    "staffLabel": "Hotel reception",
+    "emptyTitle": "Hello",
+    "emptyDescription": "Our reception team is here to help with bookings, refunds and any questions.",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "send": "Send message",
+    "attach": "Attach image",
+    "removeImage": "Remove image",
+    "loadFailed": "Couldn't load the conversation. Please try again.",
+    "sendFailed": "Couldn't send the message, please try again.",
+    "imageType": "Only JPG, PNG or WEBP images are accepted.",
+    "imageTooLarge": "The image is too large (max 5MB).",
+    "prompts": [
+      "I have a question about a refund",
+      "I'd like to change my check-in date",
+      "I need an extra service"
+    ]
   }
 }
