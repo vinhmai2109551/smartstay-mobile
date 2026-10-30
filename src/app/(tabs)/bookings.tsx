@@ -28,7 +28,7 @@ export default function BookingsScreen() {
   const theme = useTheme();
   const { width } = useWindowDimensions();
   const contentWidth = Math.min(width, MaxContentWidth);
-  const fetchBookings = useCallback(() => bookingsApi.my(), []);
+  const fetchBookings = useCallback(() => bookingsApi.my({limit: 100}),[])
   const { data, loading, error, refetch, refreshing, refresh } = useApi(fetchBookings, {
     refetchOnFocus: true,
     toastOnRefreshError: true,

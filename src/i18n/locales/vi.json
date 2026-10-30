@@ -241,7 +241,10 @@
     "noReviews": "Chưa có đánh giá nào — hãy là người đầu tiên trải nghiệm.",
     "perNight": "/ đêm",
     "nightsAndTotal": "{{nights}} đêm · {{total}}",
-    "bookButton": "Đặt phòng"
+    "bookButton": "Đặt phòng",
+    "addToFavorites": "Lưu vào yêu thích",
+    "removeFromFavorites": "Bỏ yêu thích",
+    "favoriteFailed": "Không cập nhật được yêu thích, vui lòng thử lại."
   },
   "booking": {
     "guestInfo": "Thông tin khách",
@@ -486,8 +489,16 @@
     "themeSystem": "Hệ thống",
     "languageVi": "Tiếng Việt",
     "languageEn": "English",
-    "accountDetails": "Thông tin tài khoản"
+    "accountDetails": "Thông tin tài khoản",
+    "favorites": "Danh sách yêu thích"
   },
+  "favorites": {
+    "title": "Danh sách yêu thích",
+    "empty": "Bạn chưa lưu phòng nào vào yêu thích.",
+    "explore": "Khám phá phòng",
+    "loadError": "Không thể tải danh sách yêu thích"
+  },
+
   "notifications": {
     "markAllRead": "Đánh dấu đã đọc hết",
     "filterAll": "Tất cả",

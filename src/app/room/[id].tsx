@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import dayjs from "dayjs";
 import { Image } from "expo-image";
-import { router, useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams, Stack } from "expo-router";
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -10,6 +10,7 @@ import {
   StyleSheet,
   useWindowDimensions,
   View,
+  Pressable,
 } from "react-native";
 import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
 
@@ -31,6 +32,9 @@ import { useApi } from "@/hooks/useApi";
 import { useTheme } from "@/hooks/use-theme";
 import { formatVND } from "@/utils/currency";
 import { formatDate, nightsBetween, toIsoDate } from "@/utils/date";
+import * as Haptics from "expo-haptics";
+import { favoritesApi } from "@/api/favorites";
+import { toast } from "@/store/toastStore";
 
 const GUTTER = Space.lg;
 
@@ -55,6 +59,25 @@ export default function RoomTypeDetailScreen() {
     [params.id],
   );
   const reviews = useApi(fetchReviews);
+  const fetchFavorites = useCallback(() => favoritesApi.mine(), []);
+  const favorites = useApi(fetchFavorites);
+  const [favoriteOverride, setFavoriteOverride] = useState<boolean | null>(
+    null,
+  );
+  const isFavorite =
+    favoriteOverride ??
+    !!favorites.data?.some((f) => f.roomTypeId === params.id);
+  const toggleFavorite = async () => {
+    const next = !isFavorite;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setFavoriteOverride(next);
+    try {
+      await (next ? favoritesApi.add : favoritesApi.remove)(params.id);
+    } catch {
+      setFavoriteOverride(!next);
+      toast.error(t("room.favoriteFailed"));
+    }
+  };
 
   const [page, setPage] = useState(0);
   const galleryWidth = Math.min(windowWidth, MaxContentWidth);
@@ -97,226 +120,250 @@ export default function RoomTypeDetailScreen() {
     : undefined;
 
   return (
-    <ThemedView style={styles.flex}>
-      <ScrollView
-        contentContainerStyle={styles.scroll}
-        // contentInsetAdjustmentBehavior="automatic"
-        showsVerticalScrollIndicator={false}
-      >
-        <Animated.View
-          entering={FadeIn.duration(250)}
-          style={[
-            styles.galleryWrap,
-            { width: galleryWidth, height: galleryHeight },
-          ]}
+    <>
+      <ThemedView style={styles.flex}>
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          // contentInsetAdjustmentBehavior="automatic"
+          showsVerticalScrollIndicator={false}
         >
-          {galleryImages.length ? (
-            <FlatList
-              data={galleryImages}
-              keyExtractor={(item, index) => `${index}-${String(item)}`}
-              horizontal
-              pagingEnabled
-              showsHorizontalScrollIndicator={false}
-              onMomentumScrollEnd={(e) =>
-                setPage(
-                  Math.round(e.nativeEvent.contentOffset.x / galleryWidth),
-                )
-              }
-              renderItem={({ item }) => (
-                <Image
-                  source={typeof item === "string" ? { uri: item } : item}
-                  style={{ width: galleryWidth, height: galleryHeight }}
-                  contentFit="cover"
-                  transition={200}
-                  accessibilityLabel={t("room.imageAlt", {
-                    name: roomType.name,
-                  })}
-                />
-              )}
-            />
-          ) : (
-            <View
-              style={[
-                styles.galleryPlaceholder,
-                { backgroundColor: theme.backgroundSelected },
-              ]}
-            >
-              <Ionicons
-                name="image-outline"
-                size={40}
-                color={theme.textSecondary}
+          <Animated.View
+            entering={FadeIn.duration(250)}
+            style={[
+              styles.galleryWrap,
+              { width: galleryWidth, height: galleryHeight },
+            ]}
+          >
+            {galleryImages.length ? (
+              <FlatList
+                data={galleryImages}
+                keyExtractor={(item, index) => `${index}-${String(item)}`}
+                horizontal
+                pagingEnabled
+                showsHorizontalScrollIndicator={false}
+                onMomentumScrollEnd={(e) =>
+                  setPage(
+                    Math.round(e.nativeEvent.contentOffset.x / galleryWidth),
+                  )
+                }
+                renderItem={({ item }) => (
+                  <Image
+                    source={typeof item === "string" ? { uri: item } : item}
+                    style={{ width: galleryWidth, height: galleryHeight }}
+                    contentFit="cover"
+                    transition={200}
+                    accessibilityLabel={t("room.imageAlt", {
+                      name: roomType.name,
+                    })}
+                  />
+                )}
               />
-            </View>
-          )}
-          {galleryImages.length > 1 ? (
-            <View style={styles.dots} pointerEvents="none">
-              {galleryImages.map((_, index) => (
-                <View
-                  key={index}
-                  style={[
-                    styles.dot,
-                    index === page ? styles.dotActive : null,
-                    { backgroundColor: "#FFFFFF" },
-                  ]}
-                />
-              ))}
-            </View>
-          ) : null}
-        </Animated.View>
-
-        <Animated.View
-          entering={FadeInDown.duration(240).delay(60)}
-          style={[
-            styles.sheet,
-            { backgroundColor: theme.background, width: galleryWidth },
-          ]}
-        >
-          <View style={styles.titleBlock}>
-            <ThemedText type="title">{roomType.name}</ThemedText>
-            <View style={styles.metaRow}>
-              <View style={styles.meta}>
+            ) : (
+              <View
+                style={[
+                  styles.galleryPlaceholder,
+                  { backgroundColor: theme.backgroundSelected },
+                ]}
+              >
                 <Ionicons
-                  name="people-outline"
-                  size={16}
+                  name="image-outline"
+                  size={40}
                   color={theme.textSecondary}
                 />
-                <ThemedText type="small" themeColor="textSecondary">
-                  {t("room.maxGuests", { count: roomType.capacity })}
-                </ThemedText>
               </View>
-              {averageRating !== undefined ? (
-                <View style={styles.meta}>
-                  <Ionicons name="star" size={15} color={theme.accent} />
-                  <ThemedText type="smallBold">
-                    {averageRating.toFixed(1)}
-                  </ThemedText>
-                  <ThemedText type="small" themeColor="textSecondary">
-                    {t("room.reviewCount", { count: reviewList.length })}
-                  </ThemedText>
-                </View>
-              ) : null}
-            </View>
-          </View>
-
-          <Card style={styles.stayCard}>
-            <View style={styles.stayItem}>
-              <ThemedText type="caption" themeColor="textSecondary">
-                {t("room.checkIn")}
-              </ThemedText>
-              <ThemedText type="bodyBold">{formatDate(checkIn)}</ThemedText>
-            </View>
-            <View
-              style={[styles.stayDivider, { backgroundColor: theme.border }]}
-            />
-            <View style={styles.stayItem}>
-              <ThemedText type="caption" themeColor="textSecondary">
-                {t("room.checkOut")}
-              </ThemedText>
-              <ThemedText type="bodyBold">{formatDate(checkOut)}</ThemedText>
-            </View>
-            <View
-              style={[styles.stayDivider, { backgroundColor: theme.border }]}
-            />
-            <View style={styles.stayItem}>
-              <ThemedText type="caption" themeColor="textSecondary">
-                {t("room.guests")}
-              </ThemedText>
-              <ThemedText type="bodyBold">{guests}</ThemedText>
-            </View>
-          </Card>
-
-          {roomType.description ? (
-            <View style={styles.section}>
-              <ThemedText type="heading">{t("room.about")}</ThemedText>
-              <ThemedText type="body" themeColor="textSecondary">
-                {roomType.description}
-              </ThemedText>
-            </View>
-          ) : null}
-
-          {roomType.amenities?.length ? (
-            <View style={styles.section}>
-              <ThemedText type="heading">{t("room.amenities")}</ThemedText>
-              <View style={styles.amenityGrid}>
-                {roomType.amenities.map((amenity, index) => (
-                  <View key={index} style={styles.amenity}>
-                    <View
-                      style={[
-                        styles.amenityIcon,
-                        { backgroundColor: theme.primarySoft },
-                      ]}
-                    >
-                      <Ionicons
-                        name={amenityIcon(amenity)}
-                        size={18}
-                        color={theme.primary}
-                      />
-                    </View>
-                    <ThemedText type="small" style={styles.amenityText}>
-                      {amenity}
-                    </ThemedText>
-                  </View>
+            )}
+            {galleryImages.length > 1 ? (
+              <View style={styles.dots} pointerEvents="none">
+                {galleryImages.map((_, index) => (
+                  <View
+                    key={index}
+                    style={[
+                      styles.dot,
+                      index === page ? styles.dotActive : null,
+                      { backgroundColor: "#FFFFFF" },
+                    ]}
+                  />
                 ))}
               </View>
-            </View>
-          ) : null}
+            ) : null}
+          </Animated.View>
 
-          <View style={styles.section}>
-            <View style={styles.reviewTitleRow}>
-              <ThemedText type="heading">{t("room.reviewsTitle")}</ThemedText>
-              {averageRating !== undefined ? (
-                <RatingStars rating={averageRating} size={14} />
-              ) : null}
+          <Animated.View
+            entering={FadeInDown.duration(240).delay(60)}
+            style={[
+              styles.sheet,
+              { backgroundColor: theme.background, width: galleryWidth },
+            ]}
+          >
+            <View style={styles.titleBlock}>
+              <ThemedText type="title">{roomType.name}</ThemedText>
+              <View style={styles.metaRow}>
+                <View style={styles.meta}>
+                  <Ionicons
+                    name="people-outline"
+                    size={16}
+                    color={theme.textSecondary}
+                  />
+                  <ThemedText type="small" themeColor="textSecondary">
+                    {t("room.maxGuests", { count: roomType.capacity })}
+                  </ThemedText>
+                </View>
+                {averageRating !== undefined ? (
+                  <View style={styles.meta}>
+                    <Ionicons name="star" size={15} color={theme.accent} />
+                    <ThemedText type="smallBold">
+                      {averageRating.toFixed(1)}
+                    </ThemedText>
+                    <ThemedText type="small" themeColor="textSecondary">
+                      {t("room.reviewCount", { count: reviewList.length })}
+                    </ThemedText>
+                  </View>
+                ) : null}
+              </View>
             </View>
-            {reviews.loading ? (
-              <Skeleton height={90} radius={Radius.md} />
-            ) : reviewList.length > 0 ? (
-              reviewList.map((review) => (
-                <ReviewCard key={review.reviewId} review={review} />
-              ))
-            ) : (
-              <ThemedText type="small" themeColor="textSecondary">
-                {t("room.noReviews")}
+
+            <Card style={styles.stayCard}>
+              <View style={styles.stayItem}>
+                <ThemedText type="caption" themeColor="textSecondary">
+                  {t("room.checkIn")}
+                </ThemedText>
+                <ThemedText type="bodyBold">{formatDate(checkIn)}</ThemedText>
+              </View>
+              <View
+                style={[styles.stayDivider, { backgroundColor: theme.border }]}
+              />
+              <View style={styles.stayItem}>
+                <ThemedText type="caption" themeColor="textSecondary">
+                  {t("room.checkOut")}
+                </ThemedText>
+                <ThemedText type="bodyBold">{formatDate(checkOut)}</ThemedText>
+              </View>
+              <View
+                style={[styles.stayDivider, { backgroundColor: theme.border }]}
+              />
+              <View style={styles.stayItem}>
+                <ThemedText type="caption" themeColor="textSecondary">
+                  {t("room.guests")}
+                </ThemedText>
+                <ThemedText type="bodyBold">{guests}</ThemedText>
+              </View>
+            </Card>
+
+            {roomType.description ? (
+              <View style={styles.section}>
+                <ThemedText type="heading">{t("room.about")}</ThemedText>
+                <ThemedText type="body" themeColor="textSecondary">
+                  {roomType.description}
+                </ThemedText>
+              </View>
+            ) : null}
+
+            {roomType.amenities?.length ? (
+              <View style={styles.section}>
+                <ThemedText type="heading">{t("room.amenities")}</ThemedText>
+                <View style={styles.amenityGrid}>
+                  {roomType.amenities.map((amenity, index) => (
+                    <View key={index} style={styles.amenity}>
+                      <View
+                        style={[
+                          styles.amenityIcon,
+                          { backgroundColor: theme.primarySoft },
+                        ]}
+                      >
+                        <Ionicons
+                          name={amenityIcon(amenity)}
+                          size={18}
+                          color={theme.primary}
+                        />
+                      </View>
+                      <ThemedText type="small" style={styles.amenityText}>
+                        {amenity}
+                      </ThemedText>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            ) : null}
+
+            <View style={styles.section}>
+              <View style={styles.reviewTitleRow}>
+                <ThemedText type="heading">{t("room.reviewsTitle")}</ThemedText>
+                {averageRating !== undefined ? (
+                  <RatingStars rating={averageRating} size={14} />
+                ) : null}
+              </View>
+              {reviews.loading ? (
+                <Skeleton height={90} radius={Radius.md} />
+              ) : reviewList.length > 0 ? (
+                reviewList.map((review) => (
+                  <ReviewCard key={review.reviewId} review={review} />
+                ))
+              ) : (
+                <ThemedText type="small" themeColor="textSecondary">
+                  {t("room.noReviews")}
+                </ThemedText>
+              )}
+            </View>
+          </Animated.View>
+        </ScrollView>
+
+        <BottomBar>
+          <View style={styles.priceBlock}>
+            <View style={styles.priceRow}>
+              <ThemedText style={[styles.price, { color: theme.primary }]}>
+                {formatVND(roomType.basePrice)}
               </ThemedText>
-            )}
-          </View>
-        </Animated.View>
-      </ScrollView>
-
-      <BottomBar>
-        <View style={styles.priceBlock}>
-          <View style={styles.priceRow}>
-            <ThemedText style={[styles.price, { color: theme.primary }]}>
-              {formatVND(roomType.basePrice)}
-            </ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
-              {t("room.perNight")}
+              <ThemedText type="small" themeColor="textSecondary">
+                {t("room.perNight")}
+              </ThemedText>
+            </View>
+            <ThemedText type="caption" themeColor="textSecondary">
+              {t("room.nightsAndTotal", {
+                nights,
+                total: formatVND(roomType.basePrice * nights),
+              })}
             </ThemedText>
           </View>
-          <ThemedText type="caption" themeColor="textSecondary">
-            {t("room.nightsAndTotal", {
-              nights,
-              total: formatVND(roomType.basePrice * nights),
-            })}
-          </ThemedText>
-        </View>
-        <Button
-          label={t("room.bookButton")}
-          fullWidth={false}
-          onPress={() =>
-            router.push({
-              pathname: "/booking/new",
-              params: {
-                roomTypeId: roomType.roomTypeId,
-                checkIn,
-                checkOut,
-                guests,
-              },
-            })
-          }
-        />
-      </BottomBar>
-    </ThemedView>
+          <Button
+            label={t("room.bookButton")}
+            fullWidth={false}
+            onPress={() =>
+              router.push({
+                pathname: "/booking/new",
+                params: {
+                  roomTypeId: roomType.roomTypeId,
+                  checkIn,
+                  checkOut,
+                  guests,
+                },
+              })
+            }
+          />
+        </BottomBar>
+      </ThemedView>
+      <Stack.Screen
+        options={{
+          headerRight: () => (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t(
+                isFavorite ? "room.removeFromFavorites" : "room.addToFavorites",
+              )}
+              accessibilityState={{ selected: isFavorite }}
+              onPress={toggleFavorite}
+              disabled={favorites.loading}
+              hitSlop={10}
+            >
+              <Ionicons
+                name={isFavorite ? "heart" : "heart-outline"}
+                size={24}
+                color={isFavorite ? theme.danger : theme.text}
+              />
+            </Pressable>
+          ),
+        }}
+      />
+    </>
   );
 }
 

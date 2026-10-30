@@ -210,6 +210,14 @@ export default function RootLayout() {
             name="reception-chat"
             options={{ headerShown: false }}
           />
+          <Stack.Screen
+            name="favorites"
+            options={{
+              headerShown: true,
+              title: t("favorites.title"),
+              headerBackTitle: t("common.back"),
+            }}
+          />
         </Stack.Protected>
 
         <Stack.Protected
