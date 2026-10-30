@@ -37,13 +37,13 @@ function Dot({ delay }: { delay: number }) {
 }
 
 /** Three bouncing dots shown while the AI assistant is composing a reply. */
-export function TypingIndicator() {
+export function TypingIndicator({label} :{label?: string}) {
   const { t } = useTranslation();
   const theme = useTheme();
 
   return (
     <View
-      accessibilityLabel={t('chat.typingAccessibility')}
+      accessibilityLabel={label ?? t('chat.typingAccessibility')}
       style={[styles.bubble, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
       <Dot delay={0} />
       <Dot delay={140} />

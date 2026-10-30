@@ -200,7 +200,8 @@
     "hero3Eyebrow": "XANH MÁT",
     "hero3Title": "Bình yên giữa\nkhu vườn nhiệt đới",
     "hero4Eyebrow": "CHO GIA ĐÌNH",
-    "hero4Title": "Rộng rãi cho\ncả nhà sum vầy"
+    "hero4Title": "Rộng rãi cho\ncả nhà sum vầy",
+    "chatWithReceptionUnread": "Nhắn tin với lễ tân, {{count}} tin chưa đọc"
   },
   "search": {
     "title": "Tìm phòng trống",
@@ -601,6 +602,7 @@
       "Tôi muốn hỏi về hoàn tiền",
       "Tôi muốn đổi ngày nhận phòng",
       "Tôi cần yêu cầu thêm dịch vụ"
-    ]
+    ],
+    "typing": "Lễ tân đang nhập tin nhắn."
   }
 }

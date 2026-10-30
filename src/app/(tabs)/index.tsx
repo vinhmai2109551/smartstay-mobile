@@ -42,6 +42,7 @@ import { useAuthStore } from "@/store/authStore";
 import { useSearchPrefsStore } from "@/store/searchPrefsStore";
 import { RoomType } from "@/types/room";
 import { formatDate } from "@/utils/date";
+import { useReceptionChatStore } from "@/store/receptionChatStore";
 
 const GUTTER = Space.lg;
 const CAROUSEL_GAP = Space.md;
@@ -86,6 +87,7 @@ export default function HomeScreen() {
   const { width: windowWidth } = useWindowDimensions();
   const user = useAuthStore((s) => s.user);
   const unreadCount = useUnreadNotifications();
+  const chatUnread = useReceptionChatStore((s) => s.unread);
   const heroSlides = useMemo(() => getHomeHeroSlides(t), [t]);
   const lastCheckIn = useSearchPrefsStore((s) => s.checkIn);
   const lastCheckOut = useSearchPrefsStore((s) => s.checkOut);
@@ -150,7 +152,11 @@ export default function HomeScreen() {
         </View>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={t("home.chatWithReception")}
+          accessibilityLabel={
+            chatUnread > 0
+              ? t("home.chatWithReceptionUnread", { count: chatUnread })
+              : t("home.chatWithReception")
+          }
           onPress={() => router.push("/reception-chat")}
           style={({ pressed }) => [
             styles.iconButton,
@@ -166,6 +172,7 @@ export default function HomeScreen() {
             size={22}
             color={theme.text}
           />
+          <CountBadge count={chatUnread} style={styles.bellBadge} />
         </Pressable>
 
         <Pressable

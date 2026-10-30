@@ -8,6 +8,8 @@ import { useAuthStore } from "@/store/authStore";
 import { useNotificationStore } from "@/store/notificationStore";
 import { AppNotification } from "@/types/notification";
 import { useSocketStore } from "@/store/socketStore";
+import { useReceptionChatStore } from "@/store/receptionChatStore";
+import { ReceptionMessage } from "@/types/chat";
 
 // The socket.io server lives at the API host root, not under /api/v1.
 const SOCKET_URL = API_URL.replace(/\/api\/v\d+\/?$/, "");
@@ -44,6 +46,26 @@ export function useRealtimeNotifications(enabled: boolean) {
     );
     socket.on("booking:updated", () => bumpBookings());
 
+    // Server rooms are lost on reconnect: rejoin the reception chat so staff replies
+    // reach the home badge, then recount what arrived while offline.
+    socket.on("connect", () => {
+      const { conversationId, sync } = useReceptionChatStore.getState();
+      if (!conversationId) return;
+      socket.emit("chat:join", { conversationId });
+      sync().catch(() => {});
+    });
+    socket.on("chat:message", (message: ReceptionMessage) =>
+      useReceptionChatStore.getState().receive(message),
+    );
+    socket.on(
+      "chat:typing",
+      (p: { conversationId: string; userId: string; isTyping: boolean }) => {
+        if (p.isTyping && p.userId === useAuthStore.getState().user?.userId) {
+          useReceptionChatStore.getState().readElsewhere(p.conversationId);
+        }
+      },
+    );
+
     // iOS suspends sockets in the background; reconnect and resync on return.
     const appState = AppState.addEventListener("change", (state) => {
       if (state !== "active") return;
@@ -69,6 +91,7 @@ export function useRealtimeNotifications(enabled: boolean) {
       useSocketStore.setState({ socket: null });
       // Signing out must not leave the previous user's notifications around.
       reset();
+      useReceptionChatStore.getState().reset();
     };
   }, [enabled]);
 }

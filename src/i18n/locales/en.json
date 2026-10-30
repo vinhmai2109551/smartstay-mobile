@@ -200,7 +200,8 @@
     "hero3Eyebrow": "LUSH & GREEN",
     "hero3Title": "Peace and quiet in\na tropical garden",
     "hero4Eyebrow": "FOR FAMILIES",
-    "hero4Title": "Room enough for\nthe whole family"
+    "hero4Title": "Room enough for\nthe whole family",
+    "chatWithReceptionUnread": "Chat with reception, {{count}} unread"
   },
   "search": {
     "title": "Find available rooms",
@@ -600,6 +601,7 @@
       "I have a question about a refund",
       "I'd like to change my check-in date",
       "I need an extra service"
-    ]
+    ],
+    "typing": "Reception is typing."
   }
 }
