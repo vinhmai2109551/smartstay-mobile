@@ -40,9 +40,13 @@ import { ReceptionMessage } from "@/types/chat";
 import { formatDate } from "@/utils/date";
 import { TFunction } from "i18next";
 import { getApiErrorMessage } from "@/api/client";
+import { TypingIndicator } from "@/components/TypingIndicator";
+import { useReceptionChatStore } from "@/store/receptionChatStore";
 
 // Consecutive messages from one sender within this window are drawn as one group.
 const GROUP_WINDOW_MS = 3 * 60 * 1000;
+const STOP_TYPING_AFTER_MS = 3000;
+const HIDE_TYPING_AFTER_MS = 5000;
 
 function sameGroup(a?: ReceptionMessage, b?: ReceptionMessage) {
   return (
@@ -79,6 +83,10 @@ export default function ReceptionChatScreen() {
     null,
   );
   const [uploading, setUploading] = useState(false);
+  const [staffTyping, setStaffTyping] = useState(false);
+  const typingSentRef = useRef(false);
+  const stopTypingTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const hideTypingTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   // Open (or create) the guest's conversation and load its history.
   useEffect(() => {
@@ -89,6 +97,7 @@ export default function ReceptionChatScreen() {
         const history = await receptionChatApi.messages(id);
         if (cancelled) return;
         setConversationId(id);
+        useReceptionChatStore.getState().setConversation(id);
         setMessages(history);
       })
       .catch(() => !cancelled && setLoadFailed(true))
@@ -112,6 +121,7 @@ export default function ReceptionChatScreen() {
     };
     const onMessage = (message: ReceptionMessage) => {
       if (message.conversationId !== conversationId) return;
+      if (message.senderId !== userId) setStaffTyping(false);
       // The server echoes our own messages back; a refetch can also overlap.
       setMessages((prev) =>
         prev.some((m) => m.messageId === message.messageId)
@@ -119,19 +129,66 @@ export default function ReceptionChatScreen() {
           : [...prev, message],
       );
     };
+
     const onError = (error: { message?: string }) =>
       toast.error(error?.message ?? t("receptionChat.sendFailed"));
+
+    const onTyping = (p: {
+      conversationId: string;
+      userId: string;
+      isTyping: boolean;
+    }) => {
+      // The guest's own other devices (e.g. web) are in the room too.
+      if (p.conversationId !== conversationId || p.userId === userId) return;
+      clearTimeout(hideTypingTimer.current);
+      setStaffTyping(p.isTyping);
+      if (p.isTyping) {
+        hideTypingTimer.current = setTimeout(
+          () => setStaffTyping(false),
+          HIDE_TYPING_AFTER_MS,
+        );
+      }
+    };
 
     if (socket.connected) join();
     socket.on("connect", onConnect);
     socket.on("chat:message", onMessage);
     socket.on("exception", onError);
+    socket.on("chat:typing", onTyping);
     return () => {
       socket.off("connect", onConnect);
       socket.off("chat:message", onMessage);
       socket.off("exception", onError);
+      socket.off("chat:typing", onTyping);
+      clearTimeout(hideTypingTimer.current);
+      clearTimeout(stopTypingTimer.current);
+      if (typingSentRef.current) {
+        typingSentRef.current = false;
+        socket.emit("chat:typing", { conversationId, isTyping: false });
+      }
     };
-  }, [socket, conversationId, t]);
+  }, [socket, conversationId, t, userId]);
+
+  const lastCreatedAt = messages.at(-1)?.createdAt;
+  useEffect(() => {
+    if (lastCreatedAt) useReceptionChatStore.getState().markRead(lastCreatedAt);
+  }, [lastCreatedAt]);
+
+  const emitTyping = (isTyping: boolean) => {
+    typingSentRef.current = isTyping;
+    socket?.emit("chat:typing", { conversationId, isTyping });
+  };
+
+  const onChangeInput = (text: string) => {
+    setInput(text);
+    if (!conversationId || !socket?.connected) return;
+    if (!typingSentRef.current) emitTyping(true);
+    clearTimeout(stopTypingTimer.current);
+    stopTypingTimer.current = setTimeout(
+      () => emitTyping(false),
+      STOP_TYPING_AFTER_MS,
+    );
+  };
 
   const send = async (text: string) => {
     const content = text.trim();
@@ -150,13 +207,15 @@ export default function ReceptionChatScreen() {
           type: pending.mimeType ?? "image/jpeg",
         });
         attachment = { attachmentUrl: url, attachmentType: type };
-      } catch {
-        toast.error(getApiErrorMessage(t("receptionChat.sendFailed")));
+      } catch (error) {
+        toast.error(getApiErrorMessage(error, t("receptionChat.sendFailed")));
         return;
       } finally {
         setUploading(false);
       }
     }
+    clearTimeout(stopTypingTimer.current);
+    if (typingSentRef.current) emitTyping(false);
     // No optimistic append — the server broadcasts our message back to the room.
     socket.emit("chat:message", { conversationId, content, ...attachment });
     setInput("");
@@ -268,6 +327,13 @@ export default function ReceptionChatScreen() {
                   </View>
                 </View>
               }
+              ListFooterComponent={
+                staffTyping ? (
+                  <View style={styles.typing}>
+                    <TypingIndicator label={t("receptionChat.typing")} />
+                  </View>
+                ) : undefined
+              }
               renderItem={({ item, index }) => {
                 const prev = messages[index - 1];
                 const next = messages[index + 1];
@@ -373,7 +439,7 @@ export default function ReceptionChatScreen() {
               >
                 <TextInput
                   value={input}
-                  onChangeText={setInput}
+                  onChangeText={onChangeInput}
                   placeholder={t("receptionChat.placeholder")}
                   placeholderTextColor={theme.textSecondary}
                   multiline
@@ -501,4 +567,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  typing: { marginTop: Space.md, alignSelf: "flex-start" },
 });
