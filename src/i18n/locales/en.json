@@ -241,7 +241,10 @@
     "noReviews": "No reviews yet — be the first to share your experience.",
     "perNight": "/ night",
     "nightsAndTotal": "{{nights}} nights · {{total}}",
-    "bookButton": "Book now"
+    "bookButton": "Book now",
+    "addToFavorites": "Save to favorites",
+    "removeFromFavorites": "Remove from favorites",
+    "favoriteFailed": "Couldn't update favorites, please try again."
   },
   "booking": {
     "guestInfo": "Guest information",
@@ -486,7 +489,14 @@
     "themeSystem": "System",
     "languageVi": "Tiếng Việt",
     "languageEn": "English",
-    "accountDetails": "Account details"
+    "accountDetails": "Account details",
+    "favorites": "Favorites"
+  },
+  "favorites": {
+    "title": "Favorites",
+    "empty": "You haven't saved any rooms yet.",
+    "explore": "Explore rooms",
+    "loadError": "Could not load your favorites"
   },
   "notifications": {
     "markAllRead": "Mark all as read",

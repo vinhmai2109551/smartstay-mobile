@@ -88,7 +88,7 @@ export function Button({
           backgroundColor: colors.background,
           borderColor: colors.border,
           opacity: isDisabled ? 0.55 : 1,
-          alignSelf: fullWidth ? 'stretch' : 'flex-start',
+          alignSelf: fullWidth ? 'stretch' : 'auto',
         },
         animatedStyle,
       ]}
