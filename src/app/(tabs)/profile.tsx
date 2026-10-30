@@ -102,7 +102,9 @@ export default function ProfileScreen() {
   // submitting — see docs/IMPROVEMENT_LOG.md task D4.
   const [throwTestError, setThrowTestError] = useState(false);
   if (__DEV__ && throwTestError) {
-    throw new Error('Test error from the dev-only button in Hồ sơ (profile.tsx)');
+    throw new Error(
+      "Test error from the dev-only button in Hồ sơ (profile.tsx)",
+    );
   }
 
   const themeOptions: { key: ThemeMode; label: string; icon: IconName }[] = [
@@ -250,6 +252,12 @@ export default function ProfileScreen() {
               onPress={() => router.navigate("/(tabs)/chat")}
               last
             />
+            <MenuRow
+              icon="heart-outline"
+              label={t("profile.favorites")}
+              trailing="chevron-forward"
+              onPress={() => router.push("/favorites")}
+            />
           </Card>
 
           <ThemedText
@@ -321,7 +329,11 @@ export default function ProfileScreen() {
           </Card>
 
           {__DEV__ ? (
-            <Card padded={false} elevation="none" style={[styles.group, styles.logoutGroup]}>
+            <Card
+              padded={false}
+              elevation="none"
+              style={[styles.group, styles.logoutGroup]}
+            >
               <MenuRow
                 icon="bug-outline"
                 label="[DEV] Test Error Boundary"
@@ -332,8 +344,14 @@ export default function ProfileScreen() {
             </Card>
           ) : null}
 
-          <ThemedText type="caption" themeColor="textSecondary" style={styles.version}>
-            {t("profile.version", { version: Constants.expoConfig?.version ?? "1.0.0" })}
+          <ThemedText
+            type="caption"
+            themeColor="textSecondary"
+            style={styles.version}
+          >
+            {t("profile.version", {
+              version: Constants.expoConfig?.version ?? "1.0.0",
+            })}
           </ThemedText>
         </View>
       </ScrollView>

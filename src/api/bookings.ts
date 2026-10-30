@@ -5,6 +5,7 @@ import { AddBookingServiceDto, Booking, BookingStatus, CancelBookingDto, CreateB
 export type MyBookingsParams = {
   status?: BookingStatus;
   page?: number;
+  limit?: number;
 };
 
 export const bookingsApi = {
@@ -22,4 +23,4 @@ export const bookingsApi = {
 
   addService: (id: string, dto: AddBookingServiceDto) =>
     apiClient.post<Booking>(`/bookings/${id}/services`, dto).then((r) => r.data),
-};
+}
