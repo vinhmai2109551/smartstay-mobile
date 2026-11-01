@@ -18,6 +18,9 @@ type NotificationState = {
   toast: AppNotification | null;
   // Bumped on `booking:updated` so open booking screens know to reload.
   bookingsVersion: number;
+  // Bumped on `favorite:updated` so an open Favorites screen knows to reload
+  // (favorited/unfavorited from another device — web or another session).
+  favoritesVersion: number;
 
   fetch: (options?: { silent?: boolean }) => Promise<void>;
   loadMore: () => Promise<void>;
@@ -26,6 +29,7 @@ type NotificationState = {
   receive: (notification: AppNotification) => void;
   dismissToast: () => void;
   bumpBookings: () => void;
+  bumpFavorites: () => void;
   reset: () => void;
 };
 
@@ -40,6 +44,7 @@ const initialState = {
   error: null,
   toast: null,
   bookingsVersion: 0,
+  favoritesVersion: 0,
 };
 
 /**
@@ -118,5 +123,6 @@ export const useNotificationStore = create<NotificationState>()((set, get) => ({
 
   dismissToast: () => set({ toast: null }),
   bumpBookings: () => set((state) => ({ bookingsVersion: state.bookingsVersion + 1 })),
+  bumpFavorites: () => set((state) => ({ favoritesVersion: state.favoritesVersion + 1 })),
   reset: () => set(initialState),
 }));

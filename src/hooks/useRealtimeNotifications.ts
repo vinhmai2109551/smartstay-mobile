@@ -22,7 +22,7 @@ const SOCKET_URL = API_URL.replace(/\/api\/v\d+\/?$/, "");
 export function useRealtimeNotifications(enabled: boolean) {
   useEffect(() => {
     if (!enabled) return;
-    const { fetch, receive, bumpBookings, reset } =
+    const { fetch, receive, bumpBookings, bumpFavorites, reset } =
       useNotificationStore.getState();
 
     fetch();
@@ -45,6 +45,7 @@ export function useRealtimeNotifications(enabled: boolean) {
       receive(notification),
     );
     socket.on("booking:updated", () => bumpBookings());
+    socket.on("favorite:updated", () => bumpFavorites());
 
     // Server rooms are lost on reconnect: rejoin the reception chat so staff replies
     // reach the home badge, then recount what arrived while offline.
