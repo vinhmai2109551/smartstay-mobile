@@ -2,6 +2,7 @@ import { RoomType } from './room';
 import { Service } from './service';
 import { Promotion } from './promotion';
 import { User } from './auth';
+import { BookingRefundRequest } from './refund';
 
 export type BookingStatus = 'PENDING' | 'CONFIRMED' | 'CHECKED_IN' | 'CHECKED_OUT' | 'CANCELLED';
 export type PaymentMethod = 'CASH' | 'PAYOS';
@@ -53,6 +54,9 @@ export type Booking = {
   vatAmount: number;
   totalAmount: number;
   dueAmount: number;
+  // Only present on GET /bookings/:id (BookingService.findById) — null if the booking
+  // was never cancelled-while-paid (no RefundRequest ever created for it).
+  refundRequest?: BookingRefundRequest | null;
 };
 
 export type BookingDetail = Booking;

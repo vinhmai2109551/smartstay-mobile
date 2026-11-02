@@ -16,6 +16,8 @@ const TYPE_STYLE: Record<string, { icon: IconName; tone: Tone }> = {
   PAYMENT_SUCCESS: { icon: 'wallet', tone: 'success' },
   PAYMENT_FAILED: { icon: 'alert-circle', tone: 'danger' },
   REVIEW_REPLIED: { icon: 'chatbubble-ellipses', tone: 'warning' },
+  REFUND_COMPLETED: { icon: 'cash', tone: 'success' },
+  REFUND_REJECTED: { icon: 'close-circle', tone: 'danger' },
 };
 const DEFAULT_STYLE: { icon: IconName; tone: Tone } = { icon: 'notifications', tone: 'primary' };
 

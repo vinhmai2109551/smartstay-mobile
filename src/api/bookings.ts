@@ -1,6 +1,7 @@
 import { apiClient } from './client';
 import { Paginated } from '@/types/common';
 import { AddBookingServiceDto, Booking, BookingStatus, CancelBookingDto, CreateBookingDto } from '@/types/booking';
+import { CancellationPreview } from '@/types/refund';
 
 export type MyBookingsParams = {
   status?: BookingStatus;
@@ -23,4 +24,7 @@ export const bookingsApi = {
 
   addService: (id: string, dto: AddBookingServiceDto) =>
     apiClient.post<Booking>(`/bookings/${id}/services`, dto).then((r) => r.data),
+
+  cancellationPreview: (id: string) =>
+    apiClient.get<CancellationPreview>(`/bookings/${id}/cancellation-preview`).then((r) => r.data),
 }

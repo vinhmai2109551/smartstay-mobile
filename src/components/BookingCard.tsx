@@ -9,8 +9,18 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { FontFamily, Radius, Space } from '@/constants/theme';
 import { useShadows, useTheme } from '@/hooks/use-theme';
 import { Booking } from '@/types/booking';
+import { MyRefundRequest } from '@/types/refund';
 import { formatVND } from '@/utils/currency';
 import { formatDate, nightsBetween } from '@/utils/date';
+import { getRefundDisplayState } from '@/utils/refund';
+
+type IconName = keyof typeof Ionicons.glyphMap;
+const REFUND_STATE_ICON: Record<'pending' | 'overdue' | 'completed' | 'rejected', IconName> = {
+  pending: 'time-outline',
+  overdue: 'alert-circle',
+  completed: 'checkmark-circle',
+  rejected: 'close-circle',
+};
 
 type BookingCardProps = {
   booking: Booking;
@@ -19,9 +29,11 @@ type BookingCardProps = {
   reviewRating?: number | null;
   /** Shown as a "Write a review" button on checked-out bookings that have no review. */
   onReview?: () => void;
+  /** This booking's refund request, if it was cancelled while paid — null otherwise. */
+  refund?: MyRefundRequest | null;
 };
 
-export function BookingCard({ booking, onPress, reviewRating, onReview }: BookingCardProps) {
+export function BookingCard({ booking, onPress, reviewRating, onReview, refund }: BookingCardProps) {
   const { t } = useTranslation();
   const theme = useTheme();
   const shadows = useShadows();
@@ -58,7 +70,10 @@ export function BookingCard({ booking, onPress, reviewRating, onReview }: Bookin
           )}
         </View>
         <View style={styles.info}>
-          <StatusBadge status={booking.status} />
+          <View style={styles.statusRow}>
+            <StatusBadge status={booking.status} />
+            {booking.status === 'CANCELLED' && refund ? <RefundBadge refund={refund} /> : null}
+          </View>
           <ThemedText type="bodyBold" numberOfLines={1}>
             {booking.roomType.name}
           </ThemedText>
@@ -112,7 +127,26 @@ export function BookingCard({ booking, onPress, reviewRating, onReview }: Bookin
   );
 }
 
+function RefundBadge({ refund }: { refund: MyRefundRequest }) {
+  const { t } = useTranslation();
+  const theme = useTheme();
+  const state = getRefundDisplayState(refund);
+  if (!state) return null;
+  const color = state === 'completed' ? theme.success : state === 'rejected' || state === 'overdue' ? theme.danger : theme.warning;
+
+  return (
+    <View style={styles.refundBadge}>
+      <Ionicons name={REFUND_STATE_ICON[state]} size={12} color={color} />
+      <ThemedText type="caption" style={{ color }}>
+        {t(`booking.refundState.${state}`)}
+      </ThemedText>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
+  statusRow: { flexDirection: 'row', alignItems: 'center', gap: Space.xs, flexWrap: 'wrap' },
+  refundBadge: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   card: {
     borderRadius: Radius.lg,
     padding: Space.lg,
