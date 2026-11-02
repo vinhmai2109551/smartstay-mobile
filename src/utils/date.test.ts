@@ -1,4 +1,5 @@
-import { formatDate, formatDateTime, nightsBetween, toIsoDate } from './date';
+import dayjs from 'dayjs';
+import { formatDate, formatDateTime, getRebookDates, nightsBetween, toIsoDate } from './date';
 
 describe('formatDate', () => {
   it('formats a Date with the default DD/MM/YYYY pattern', () => {
@@ -36,4 +37,33 @@ describe('toIsoDate', () => {
   it('formats a Date as YYYY-MM-DD', () => {
     expect(toIsoDate(new Date(2026, 2, 5))).toBe('2026-03-05');
   });
+});
+
+describe('getRebookDates', () => {
+  const TODAY = dayjs('2026-03-10');
+
+  it.each<[string, string, string, string]>([
+    ['old check-in is still in the future', '2026-03-20', '2026-03-23', '2026-03-20'],
+    ['old check-in is exactly today', '2026-03-10', '2026-03-13', '2026-03-10'],
+  ])('%s -> keeps the original check-in (%s)', (_label, checkIn, checkOut, expectedCheckIn) => {
+    expect(getRebookDates(checkIn, checkOut, TODAY)).toEqual({
+      checkIn: expectedCheckIn,
+      checkOut,
+    });
+  });
+
+  it.each<[string, string, string, number, string, string]>([
+    ['1 night, already past', '2026-03-01', '2026-03-02', 1, '2026-03-11', '2026-03-12'],
+    ['3 nights, already past', '2026-02-20', '2026-02-23', 3, '2026-03-11', '2026-03-14'],
+    ['crosses a month boundary', '2026-01-25', '2026-01-27', 2, '2026-03-11', '2026-03-13'],
+    ['crosses a year boundary', '2025-12-28', '2025-12-30', 2, '2026-03-11', '2026-03-13'],
+  ])(
+    '%s -> shifts to tomorrow keeping %i night(s)',
+    (_label, checkIn, checkOut, _nights, expectedCheckIn, expectedCheckOut) => {
+      expect(getRebookDates(checkIn, checkOut, TODAY)).toEqual({
+        checkIn: expectedCheckIn,
+        checkOut: expectedCheckOut,
+      });
+    },
+  );
 });
