@@ -1,5 +1,7 @@
 # Vika Hotel (SmartStay Mobile)
 
+[![CI](https://github.com/vinhmai2109551/smartstay-mobile/actions/workflows/ci.yml/badge.svg)](https://github.com/vinhmai2109551/smartstay-mobile/actions/workflows/ci.yml)
+
 Ứng dụng mobile (Expo / React Native) dành cho **khách hàng** của Vika Hotel —
 đặt phòng, thanh toán, chat với trợ lý AI để tìm/đặt phòng, quản lý đơn và hồ
 sơ cá nhân. Đây là phần mobile của đồ án SmartStay, chạy song song với backend

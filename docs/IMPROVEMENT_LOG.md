@@ -34,8 +34,9 @@ giai đoạn, dừng lại chờ xác nhận trước khi sang giai đoạn kế
 - [x] D7. Hiệu năng danh sách
 
 ### Giai đoạn E — Kiểm thử & CI
-- [ ] E1. Jest
-- [ ] E2. Prettier + CI
+- [x] E1. Jest
+- [x] E2a. Prettier (cấu hình xong, **chưa chạy `format`** — chờ bạn)
+- [x] E2b. CI workflow (`.github/workflows/ci.yml`)
 
 ---
 
@@ -996,6 +997,231 @@ a fresh UUID otherwise) and key on that. Also cache room/booking thumbnails
 in memory, not just on disk, since FlatList recycles their cells on scroll.
 ```
 
+### E1. Jest (thiết lập + test cho src/utils và helper lỗi API) — ✅
+
+**Cài đặt:**
+- `npx expo install jest-expo jest -- --save-dev` — lệnh này đưa cả 2 package
+  vào `dependencies` thay vì `devDependencies` (có vẻ là bug/quirk của chính
+  `expo install -- --save-dev`, không liên quan gì đến task) → tự phát hiện
+  khi đọc lại `package.json`, sửa tay sang `devDependencies`, chạy lại
+  `npm install` để đồng bộ `package-lock.json`.
+- `npm install --save-dev @types/jest` (cài riêng bằng npm thường, không qua
+  `expo install` vì không phải lib Expo-aware).
+- Thêm script: `"test": "jest"`, `"test:watch": "jest --watch"`,
+  `"coverage": "jest --coverage"`.
+
+**Cấu hình:**
+- `jest.config.js` — preset `jest-expo`; `setupFiles: ['<rootDir>/jest.setup.ts']`;
+  `moduleNameMapper` cho alias `@/*` + `@/assets/*` (khớp đúng `tsconfig.json`)
+  và mock `.css`; `collectCoverageFrom: ['src/utils/**/*.{ts,tsx}']` (đúng
+  phạm vi E1 — utils + 1 hàm lỗi API, không ép coverage toàn repo).
+- `jest.setup.ts` — mock `@react-native-async-storage/async-storage` và
+  `@react-native-community/netinfo` qua file mock chính thức có sẵn ngay
+  trong 2 lib này; viết tay mock cho `expo-secure-store` (Map lưu trong RAM,
+  giả `getItemAsync`/`setItemAsync`/`deleteItemAsync`) và `expo-localization`
+  (trả cố định dữ liệu `vi-VN`) — 2 lib này **không có mock chính thức**.
+- `jest/cssMock.js` — module rỗng, dùng cho `moduleNameMapper` của `.css`
+  (hiện chưa file test nào thực sự cần tới, thêm trước cho chắc).
+
+**Lỗi `tsc` toàn repo sau khi viết xong test (⚠️ ghi lại vì nguyên nhân khá
+ngầm, không phải lỗi logic test):** `tsc --noEmit` báo hàng loạt "Cannot find
+name 'describe'/'it'/'expect'" ở `jest.setup.ts` và cả 6 file `*.test.ts`,
+dù `@types/jest` đã cài đúng (`node_modules/@types/jest` tồn tại). Nguyên
+nhân: `expo/tsconfig.base` có `exclude: ["${configDir}/node_modules", ...]`,
+khiến cơ chế tự quét `node_modules/@types` của TypeScript 6 không chạm tới
+file này (trong khi `@types/node` vẫn hoạt động được vì global `process`
+được một file khác trong compilation tham chiếu gián tiếp, không qua cơ chế
+auto-scan). **Không sửa bằng cách thêm `"types": ["jest"]` vào
+`compilerOptions`** — cách này sẽ giới hạn auto-include của TS chỉ còn đúng
+tên liệt kê trong mảng, có rủi ro làm mất ambient type khác đang được project
+dùng ngầm mà không rõ hết danh sách (vd `@types/react`, `hammerjs`...). Thay
+vào đó thêm 1 file mới, không đụng `tsconfig.json`:
+- `src/types/jest.d.ts` (mới) — chỉ có `/// <reference types="jest" />`.
+  File này đã nằm sẵn trong `include: ["**/*.ts", ...]` của tsconfig; chỉ cần
+  "có mặt" trong compilation là đủ để toàn bộ khai báo global của
+  `@types/jest` (`describe`, `it`, `expect`, ...) áp dụng cho cả project, vì
+  đây là ambient global, không cần import ở từng file.
+
+Sau khi thêm file này: `tsc --noEmit` và `expo lint` đều sạch (0 lỗi) trên
+toàn project, kể cả các file test mới và `test.each` (hết luôn lỗi
+`implicitly has an 'any' type` ở tham số callback của `bookingQr.test.ts`).
+
+**Lỗi tự phát hiện khi viết test (không phải bug nguồn — đã sửa test, không
+sửa `src/utils/currency.ts`):** `currency.test.ts` kỳ vọng
+`formatVND(1800000)` = `` `1.800.000 ₫` `` (khoảng trắng thường) nhưng Jest
+báo fail dù 2 chuỗi nhìn giống hệt nhau trên terminal. Viết test chẩn đoán
+tạm in mã ký tự thực tế → phát hiện `Intl.NumberFormat('vi-VN', {style:
+'currency', currency: 'VND'})` trả về khoảng trắng **không ngắt (NBSP,
+U+00A0)** giữa số và "₫" dưới môi trường Jest, khác với khoảng trắng thường
+(U+0020) khi gọi y nguyên hàm đó bằng `node -e` trực tiếp — khác biệt do bản
+ICU giữa 2 môi trường chạy, không phải lỗi của `formatVND`. Đúng quy tắc
+"không sửa code nguồn để test pass; lộ bug thì ⏸ báo" — đây không phải bug
+nguồn nên không cần hỏi, chỉ sửa **test** dùng ` `.
+
+**File test mới (đúng phạm vi `src/utils/**` + `getApiErrorMessage`; không
+test `chatRooms.ts`/`pickRelevantRooms` — đã xác nhận với bạn là dead code
+sau merge dev #21, xem mục "Phát hiện thêm" bên dưới):**
+- `bookingQr.test.ts` — `canShowCheckInPass`: đủ bảng 18 dòng
+  status × paymentMethod × paymentStatus (bảng gốc từ task A1).
+- `aiChatHistory.test.ts` — `buildMessagesFromHistory`: lịch sử rỗng, gắn
+  `rooms` từ TOOL `search_rooms` thành công, bỏ qua TOOL có
+  `toolResult.success: false`, giữ `pendingBooking` qua lượt USER, xoá
+  `pendingBooking` khi có `create_booking`.
+- `date.test.ts` — `formatDate` (mặc định/tuỳ pattern/null-undefined),
+  `formatDateTime`, `nightsBetween` (bình thường + floor tối thiểu 1 đêm),
+  `toIsoDate`.
+- `currency.test.ts` — `formatVND` (số dương, 0, null/undefined).
+- `validation.test.ts` — `phoneSchema`, `passwordSchema`,
+  `strongPasswordSchema` (viết ở C2/D3, chưa có test trước đây).
+- `client.test.ts` — `getApiErrorMessage` (message mảng/string từ body, body
+  ưu tiên hơn cả status 5xx, fallback tuỳ chỉnh & fallback mặc định, phân
+  loại `ERR_NETWORK`/`ECONNABORTED`/5xx) — đối chiếu đúng chuỗi dịch thật
+  trong `vi.json` (import trực tiếp), không hardcode lại chuỗi kỳ vọng.
+
+**Coverage (`npx jest --coverage`, phạm vi `src/utils/**`):**
+
+| File | Stmts | Branch | Funcs | Lines |
+|---|---|---|---|---|
+| currency.ts | 100% | 100% | 100% | 100% |
+| validation.ts | 100% | 100% | 100% | 100% |
+| date.ts | 100% | 80% | 100% | 100% |
+| bookingQr.ts | 60% | 100% | 33% | 60% |
+| aiChatHistory.ts | 61% | 52% | 20% | 64% |
+| chatRooms.ts | 0% | 0% | 0% | 0% (dead code, cố tình không test) |
+| logger.ts | 0% | — | — | 0% (ngoài phạm vi E1) |
+| saveQr.ts | 0% | — | — | 0% (ngoài phạm vi E1) |
+
+`Test Suites: 6 passed, 6 total` / `Tests: 53 passed, 53 total`.
+
+**File đã đổi/tạo:**
+- Mới: `jest.config.js`, `jest.setup.ts`, `jest/cssMock.js`,
+  `src/types/jest.d.ts`, `src/api/client.test.ts`,
+  `src/utils/aiChatHistory.test.ts`, `src/utils/bookingQr.test.ts`,
+  `src/utils/currency.test.ts`, `src/utils/date.test.ts`,
+  `src/utils/validation.test.ts`.
+- Sửa: `package.json` (devDependencies: `jest`, `jest-expo`, `@types/jest`;
+  scripts `test`/`test:watch`/`coverage`), `package-lock.json`.
+
+**Cách test thủ công:** `npm test` (hoặc `npm run coverage`) chạy sạch
+53/53; `npx tsc --noEmit` và `npx expo lint` sạch trên toàn repo kể cả các
+file test mới.
+
+**Commit message đề xuất:**
+```
+test(utils): add Jest setup and unit tests for src/utils helpers
+
+Set up jest-expo with hand-written mocks for expo-secure-store and
+expo-localization (no official jest mocks exist for either), then add
+unit tests for the booking-QR visibility rule, chat history rebuilding,
+date/currency formatting, the phone/password Zod schemas, and the API
+error-message classifier. Fix a gap where @types/jest's ambient globals
+never reached the project's tsc compile (expo's base tsconfig excludes
+node_modules, so nothing pulled the package in) via a one-line ambient
+reference file instead of a tsconfig `types` restriction that could have
+silently dropped other implicitly-relied-on @types packages.
+```
+
+### E2a. Prettier — ✅ (cấu hình xong, **chưa chạy `npm run format`**)
+
+**Cài đặt:** `npm install --save-dev prettier eslint-config-prettier` (npm
+thường, không phải lib Expo-aware).
+
+**File mới:**
+- `.prettierrc` — `singleQuote`, `semi: true`, `printWidth: 120`,
+  `trailingComma: "all"`, `bracketSameLine: false`, `arrowParens: "always"`
+  (đúng theo yêu cầu ban đầu).
+- `.prettierignore` — bỏ qua `node_modules/`, `.expo/`, `dist/`,
+  `web-build/`, `coverage/`, `ios/`, `android/` (các thư mục generated/native,
+  khớp với `.gitignore`), `expo-env.d.ts` (file generated), và
+  `package-lock.json` (không nên format lock file).
+
+**Sửa:**
+- `eslint.config.js` — thêm `eslint-config-prettier` làm phần tử **cuối cùng**
+  trong mảng `defineConfig([...])` (sau `expoConfig`), để tắt các rule stylistic
+  của ESLint có thể xung đột với Prettier, không chỉnh gì khác.
+- `package.json` — thêm script `"typecheck": "tsc --noEmit"`,
+  `"format": "prettier --write ."`, `"format:check": "prettier --check ."`.
+
+**Đã kiểm tra (không chạy `format`):**
+- `npm run typecheck` và `npm run lint` → sạch, không bị ảnh hưởng bởi việc
+  thêm `eslint-config-prettier`.
+- `npm run format:check` (chỉ đọc, không ghi file) → báo **84 file chưa đúng
+  định dạng Prettier** (gần như toàn bộ `src/`) — đúng như dự đoán, vì đây là
+  lần đầu đưa Prettier vào repo.
+
+**Cố tình CHƯA chạy `npm run format`:** lệnh này sẽ viết lại cả 84 file trong
+1 lần, tạo diff khổng lồ không liên quan tới nội dung — theo đúng yêu cầu ban
+đầu, chỉ chạy khi bạn gõ rõ "format" (cũng để bạn chủ động chọn thời điểm,
+tránh đụng commit của bạn Khoa ở nhánh khác).
+
+**File đã đổi/tạo:** mới `.prettierrc`, `.prettierignore`; sửa
+`eslint.config.js`, `package.json` (devDependencies +
+`prettier`/`eslint-config-prettier`; scripts `typecheck`/`format`/`format:check`),
+`package-lock.json`.
+
+**Cách test thủ công:** `npm run format:check` → thấy danh sách file chưa
+format (như trên). Khi bạn sẵn sàng, gõ "format" để mình chạy
+`npm run format` rồi `npm run typecheck && npm run lint && npm test` lại cho
+chắc không có gì vỡ sau khi format.
+
+**Commit message đề xuất:**
+```
+chore(tooling): add Prettier config and typecheck/format scripts
+
+Wire eslint-config-prettier in as the last entry in the flat ESLint config
+so stylistic rules don't fight Prettier, and add typecheck/format/format:check
+npm scripts. Deliberately not running `format` yet — it would rewrite ~84
+files in one diff with no content change, so that run is left for a
+dedicated commit once coordinated with in-flight branches.
+```
+
+### E2b. CI workflow (`.github/workflows/ci.yml`) — ✅
+
+**Điểm chờ quyết định đã hỏi:** `format:check` (bước CI) hiện chắc chắn fail
+vì chưa chạy `npm run format` (xem E2a). Hỏi bạn muốn: (a) thêm đủ 4 bước
+luôn, chấp nhận CI đỏ tạm thời cho tới khi chạy `format`, (b) thêm CI thiếu
+`format:check` trước, bổ sung sau cùng lúc chạy `format`, hay (c) chạy
+`format` ngay. **Bạn chọn (a)** — thêm đủ 4 bước ngay, CI sẽ đỏ ở bước
+`format:check` cho tới khi bạn gõ "format".
+
+**File mới:** `.github/workflows/ci.yml` — trigger `push`/`pull_request` vào
+`main` và `dev`; job chạy trên `ubuntu-latest`, Node 20 kèm cache `npm`
+(`actions/setup-node@v4` với `cache: npm`); các step theo đúng thứ tự:
+`npm ci` → `npm run typecheck` → `npm run lint` → `npm run format:check` →
+`npm test`.
+
+**Đã chạy thử đủ cả 5 bước ở máy (trừ chấp nhận `format:check` fail theo
+quyết định trên):**
+- `npm ci` — cài sạch từ `package-lock.json`, không lỗi.
+- `npm run typecheck` — sạch.
+- `npm run lint` — sạch (0 lỗi, kể cả sau khi thêm `eslint-config-prettier`
+  ở E2a).
+- `npm run format:check` — **fail đúng như dự kiến**, báo 84 file (gồm cả 2
+  file `booking/[id].tsx`/`checkout/[bookingId].tsx` vừa đổi ở merge PR #22,
+  giờ dùng double-quote nên càng khác định dạng của repo).
+- `npm test` — 53/53 test pass (không đổi gì so với E1).
+
+**Sửa:** `README.md` — thêm badge CI ngay dưới tiêu đề, link tới
+`actions/workflows/ci.yml` của repo GitHub hiện tại
+(`vinhmai2109551/smartstay-mobile`).
+
+**File đã đổi/tạo:** mới `.github/workflows/ci.yml`; sửa `README.md`.
+
+**Cách test thủ công:** sau khi bạn push nhánh này lên GitHub, vào tab
+"Actions" xem workflow "CI" chạy — sẽ đỏ ở bước `format:check` cho tới khi
+chạy `npm run format` (gõ "format" để mình chạy, rồi CI sẽ xanh từ lần push
+kế tiếp).
+
+**Commit message đề xuất:**
+```
+ci: add GitHub Actions workflow and CI badge
+
+Run npm ci, typecheck, lint, format:check, and test on every push/PR to
+main and dev. format:check will fail until a formatting pass runs (tracked
+separately, see the Prettier config commit) — left in now, by choice, so CI
+reflects the repo's real state instead of hiding the pending formatting debt.
+```
+
 ## Điểm chờ quyết định (⏸)
 
 - **A3 — lưu refresh token:** đã hỏi, bạn chọn (b) giữ cookie. Xem mục A3 và
@@ -1003,6 +1229,10 @@ in memory, not just on disk, since FlatList recycles their cells on scroll.
 - **B3 — tên app:** đã hỏi, bạn chọn "Vika Hotel". Xem mục B3.
 - **C2 — numberOfGuests:** đã hỏi, bạn chọn chỉ thêm type + TODO, không gửi
   lên server. Xem mục C2.
+- **E1 — `pickRelevantRooms` (dead code sau merge dev #21):** đã hỏi, bạn
+  chọn bỏ khỏi danh sách test. Xem mục E1.
+- **E2b — CI đỏ tạm vì `format:check`:** đã hỏi, bạn chọn thêm đủ 4 bước CI
+  ngay, chấp nhận đỏ tới khi chạy `format`. Xem mục E2b.
 
 ## Phát hiện thêm (ngoài phạm vi, chưa sửa)
 
@@ -1011,9 +1241,9 @@ in memory, not just on disk, since FlatList recycles their cells on scroll.
   Không sửa vì ngoài phạm vi D6.
 - **(sau merge dev #21) `src/utils/chatRooms.ts` (`pickRelevantRooms`) không còn
   được dùng ở đâu nữa** — `chat.tsx` giờ hiện thẳng `response.rooms` từ backend,
-  không lọc qua hàm này. Liên quan trực tiếp tới task E1 (kế hoạch test ban đầu
-  có nêu test `pickRelevantRooms`) — khi tới E1 cần bỏ hàm này khỏi danh sách
-  test hoặc hỏi lại nếu vẫn muốn giữ hàm (hiện là dead code).
+  không lọc qua hàm này. Đã hỏi lúc làm E1 → bạn chọn bỏ khỏi danh sách test
+  (xem mục E1 và "Điểm chờ quyết định"). Hàm vẫn còn trong code, chưa xoá —
+  nếu xác nhận là dead code thật thì có thể xoá hẳn `chatRooms.ts` ở lần sau.
 
 - **(B3) `account.tsx` và `edit-profile.tsx` có thể trùng chức năng:** cả hai
   đều cho sửa `fullName`/`phone`/`address` qua `usersApi.updateMe`; `account.tsx`
@@ -1030,3 +1260,217 @@ in memory, not just on disk, since FlatList recycles their cells on scroll.
   state/`if` throw đi kèm) trước khi nộp bài — tìm theo comment "DEV-ONLY".
 - Rebuild dev client (`npx expo run:android`/`run:ios`) nếu muốn test tính
   năng "Lưu mã QR" (`expo-media-library`) — không chạy được trên Expo Go.
+- **(E2) Chạy `npm run format` khi sẵn sàng** — gõ "format" trong chat để mình
+  chạy, rồi mình chạy lại `typecheck`/`lint`/`test` ngay sau đó để đảm bảo
+  không vỡ gì. Nên làm sau khi đã coordinate với Khoa (diff sẽ chạm gần hết
+  `src/`, tốt nhất làm khi không ai khác đang có PR mở). Sau khi format xong
+  và push, badge CI trong README sẽ chuyển xanh.
+- **(tuỳ chọn, không gấp) `src/utils/chatRooms.ts` (`pickRelevantRooms`)** —
+  xác nhận là dead code sau merge dev #21 (xem "Phát hiện thêm"); có thể xoá
+  hẳn file này nếu không còn dùng.
+- **(tuỳ chọn, không gấp) `account.tsx` vs `edit-profile.tsx`** — xem lại có
+  đúng là 2 chức năng khác nhau hay nên gộp (xem "Phát hiện thêm").
+- Xem lại từng "Commit message đề xuất" trong log này và tự `git add`/`git
+  commit` theo cách bạn muốn (theo từng task hay gộp theo giai đoạn) — mình
+  không tự commit theo đúng quy tắc đã thống nhất từ đầu.
+
+## Tổng kết toàn bộ Giai đoạn A–E
+
+20/20 task đã xong (kể cả 2 ⏸ đã hỏi và chốt, và E2a mới xong phần cấu hình —
+tự thừa nhận chưa chạy `npm run format` theo đúng chủ ý ban đầu).
+
+| Task | Trạng thái | Tóm tắt 1 dòng |
+|---|---|---|
+| A1 | ✅ | Vé check-in chỉ hiện khi đơn đã xác nhận + (nếu PayOS) đã thanh toán |
+| A2 | ✅ | `ENV.isMisconfigured` + màn chặn khi thiếu biến môi trường bản EAS build |
+| A3 | ✅ ⏸(b) | Sửa race condition ở interceptor refresh token; giữ cookie httpOnly như cũ |
+| B1 | ✅ | `src/types/css.d.ts` — hết lỗi `tsc` với `global.css` |
+| B2 | ✅ | Lint về 0 lỗi (trừ 1 warning để dành cho C4, đã hết sau C4) |
+| B3 | ✅ ⏸ | README viết lại, `.env.example`, bỏ script `reset-project`, đổi tên app "Vika Hotel" |
+| *(ngoài kế hoạch)* | ✅ | Rà soát "chuyên nghiệp hơn": searchPrefsStore cho trang chủ, toast lỗi khi refetch nền, haptic khi copy mã khuyến mãi |
+| C1 | ✅ | Reset mã khuyến mãi đã áp khi đổi dịch vụ đặt phòng |
+| C2 | ✅ ⏸ | `phoneSchema` (Zod) cho SĐT; `numberOfGuests` chỉ thêm type + TODO, không gửi server |
+| C3 | ✅ | Đổi nhãn "Tạm tính" + chú thích (không có endpoint báo giá trước) |
+| C4 | ✅ | `usePayosCheckout` — tách rõ `loading/waiting/paid/expired/failed`, polling + AppState |
+| D1 | ✅ | `useApi` chống race bằng `requestId` + `mountedRef` |
+| D2 | ✅ | Tách `secureStorage` (chỉ access token) / `plainStorage` (còn lại), migrate blob cũ |
+| D3 | ✅ | `strongPasswordSchema` (8 ký tự, có chữ+số) — sửa đúng luật backend cho đổi mật khẩu |
+| D4 | ✅ | `ErrorBoundary` qua Expo Router + `AppErrorFallback` + `logger.ts` |
+| D5 | ✅ | `useNetworkStatus` + `OfflineBanner`; chặn gửi chat khi mất mạng |
+| D6 | ✅ | Thêm accessibilityLabel/Role cho nhiều component (audit qua subagent) |
+| D7 | ✅ | Key ổn định cho tin nhắn chat (UUID thay index); `cachePolicy="memory-disk"` cho ảnh trong list |
+| *(interlude)* | ✅ | Review merge dev #21 và #22 — không có bug, resolve conflict đúng "Updated upstream" |
+| E1 | ✅ ⏸ | Jest + 6 file test (53 test) cho `src/utils` + `getApiErrorMessage`; sửa gap `@types/jest` không tới được `tsc` |
+| E2a | ✅ (⏳ chưa `format`) | Cấu hình Prettier + script `typecheck`/`format`/`format:check` |
+| E2b | ✅ ⏸ | CI workflow GitHub Actions (đỏ tạm ở `format:check` — đã hỏi, bạn chọn vậy) |
+
+**Trạng thái kiểm tra ở lần log cuối:** `npm run typecheck` sạch, `npm run
+lint` sạch, `npm test` 53/53 pass, `npm run format:check` fail ở 84 file
+(đúng như đã biết, chờ bạn chạy `format`). Toàn bộ thay đổi đã `git add`,
+**chưa commit gì** — đúng quy tắc đã thống nhất từ đầu.
+
+**3 mục ⏸ đã hỏi và chốt trong lúc làm** (ngoài A3/B3/C2 đã chốt từ các giai
+đoạn trước): E1 (bỏ `pickRelevantRooms` khỏi test), E2b (thêm đủ CI 4 bước,
+chấp nhận đỏ tạm). Xem đầy đủ ở mục "Điểm chờ quyết định" phía trên.
+
+**3 việc ngoài phạm vi, chưa sửa, cần bạn quyết định sau** (xem "Phát hiện
+thêm"): `accessibilityLabel` hardcode tiếng Việt ở `FeaturedRoomCard`, dead
+code `pickRelevantRooms`/`chatRooms.ts`, khả năng trùng chức năng
+`account.tsx`/`edit-profile.tsx`.
+
+**Để hoàn tất đợt này, bạn cần tự làm** (xem đầy đủ ở "Việc bạn cần tự làm"
+phía trên) — tóm gọn: khai báo biến môi trường EAS (A2), xoá nút DEV test
+error boundary (D4), chạy `npm run format` khi sẵn sàng (E2), rồi tự
+`git add`/`git commit`/`git push` theo ý bạn.
+
+## Sự cố ngoài kế hoạch — nâng cấp Expo SDK 57 → 58 (2026-11-01)
+
+Sau khi Giai đoạn E xong, bạn gặp lỗi hết RAM khi chạy `expo start` (không
+liên quan task nào) — trong lúc xử lý, phát hiện `package.json` và
+`package-lock.json` **chứa conflict marker Git chưa resolve**
+(`<<<<<<< Updated upstream` / `>>>>>>> Stashed changes`), khiến JSON không
+hợp lệ và mọi lệnh `npm`/`expo` gãy ngay. Nguyên nhân: một `git stash pop`
+(nhiều khả năng do VSCode tự sync/pull) bị xung đột giữa bản nâng cấp **Expo
+SDK 57 → 58** (đã có sẵn trong working tree, kèm nhiều package nhảy major
+version: `react-native-gesture-handler` 2→3, `react-native-view-shot` 5→6,
+`react-native-webview` 13→14, React Native 0.86→0.88, React 19.2→19.3) và
+các devDependencies mình thêm ở E1/E2 (`jest`, `jest-expo`, `@types/jest`,
+`prettier`, `eslint-config-prettier`).
+
+**Đã hỏi bạn — bạn chọn giữ bản nâng cấp SDK 58** và cộng thêm lại phần của
+mình. Đã làm:
+- Resolve `package.json`: giữ hết các bản 58.x/19.3.0 phía "Updated upstream",
+  cộng lại `@types/jest`/`eslint-config-prettier`/`prettier` từ stash, và
+  **nâng `jest` (29→30) + `jest-expo` (57→58)** cho khớp SDK 58 (kiểm tra qua
+  npm registry, không giữ nguyên bản 57 cũ vì sẽ không tương thích).
+- `package-lock.json`: xoá hẳn (không hand-merge 18 conflict block của file
+  generate), để `npm install` tự tạo lại.
+- Gặp tiếp 2 lớp lỗi dây chuyền, cả 2 đều do `node_modules` bị dính trạng
+  thái dở từ các lần cài bị ngắt giữa đường (mất mạng `ECONNRESET`, rồi
+  `EPERM` khi Windows khoá file lúc cleanup):
+  1. `react-native-reanimated` thiếu hẳn file `.d.ts` (chỉ còn `package.json`
+     trong thư mục type) → gây hàng loạt lỗi `tsc` "Could not find a
+     declaration file".
+  2. `expo-modules-core` bị nest sai chỗ (`expo/node_modules/...` thay vì
+     hoist lên top-level) dù không có xung đột version nào → jest-expo không
+     `require` được, test gãy hết.
+  Cách sửa cả 2: xoá sạch `node_modules` **và** `package-lock.json`, cài lại
+  từ đầu hoàn toàn (không để npm "kế thừa" layout cũ từ lockfile) — làm đúng
+  2 lần mới hết sạch (lần 1 còn sót nest sai ở `expo-modules-core`).
+- `jest-expo@58` tách `@react-native/jest-preset` thành peer dependency riêng
+  (trước đây đi kèm luôn) — đã thêm `@react-native/jest-preset` vào
+  devDependencies (bản `^0.88.1`, khớp đúng `react-native@0.88.0`).
+- `.expo/types/router.d.ts` (file tự sinh) bị cũ hơn 2 màn hình mới
+  (`favorites.tsx`, `reception-chat.tsx`) → gây lỗi `tsc` sai (route có tồn
+  tại, chỉ là type cache cũ) — chạy `expo start` vài chục giây để nó tự sinh
+  lại, không sửa code gì.
+
+**Trạng thái cuối cùng sau khi xử lý:** `typecheck` ✅ sạch, `lint` ✅ 0 lỗi
+(2 warning — xem bug mới phát hiện ngay dưới), `test` ✅ 53/53 pass.
+`package.json`/`package-lock.json` đã `git add` đánh dấu resolve xong.
+
+**Bug phát hiện ngoài phạm vi — đã sửa sau khi bạn xác nhận:**
+- **`src/app/favorites.tsx` dòng 27-29** — `return;` dư dấu `;` khiến
+  `<ErrorView .../>` phía dưới thành dead code (lint báo `no-unreachable`) →
+  khi tải "Yêu thích" lỗi, màn hình trắng trơn thay vì hiện lỗi + nút thử
+  lại. Đã sửa: bỏ dấu `;` dư, gộp `return` với JSX trên 1 dòng. Không đổi gì
+  khác (key i18n `favorites.loadError` đã có đủ vi/en từ trước). Kiểm tra lại
+  `typecheck`/`lint` sạch hoàn toàn (hết cả 2 warning).
+
+**Việc bạn cần tự làm thêm (bổ sung, do SDK 58):**
+- Rebuild lại dev client / app native (`npx expo run:android` hoặc
+  `run:ios`, hoặc tạo build EAS mới) — bản trên điện thoại hiện đang build
+  với SDK 57, không còn khớp JS bundle SDK 58 nữa.
+- Cân nhắc test kỹ các tính năng dùng `react-native-gesture-handler`,
+  `react-native-view-shot`, `react-native-webview` — cả 3 nhảy major
+  version, có khả năng breaking change API (vd màn checkout dùng
+  `captureRef` từ `view-shot` 6.x).
+
+**Máy đang rất thiếu RAM (0.85GB trống / 7.83GB tổng lúc kiểm tra) — `tsc` và
+`jest` đều crash hết heap, giống lỗi hết RAM khi chạy `expo start` ban đầu.**
+Đã sửa 2 script để chịu được máy ít RAM hơn (không phải lỗi code, lỗi môi
+trường):
+- `typecheck`: đổi thành `node --max-old-space-size=4096 .../tsc --noEmit`
+  (gọi `node` trực tiếp với heap lớn hơn thay vì để tsc tự tính — cách này
+  chạy đúng trên cả Windows/Mac/Linux, không cần cài `cross-env`).
+- `test`/`test:watch`/`coverage`: thêm `--maxWorkers=2` (Jest mặc định chạy
+  số worker = số core CPU trừ 1, mỗi worker là 1 process Node riêng — máy ít
+  RAM thì càng nhiều worker song song càng dễ OOM; giảm xuống 2 giúp ổn định
+  hơn, đổi lại chạy test chậm hơn một chút).
+- **Khuyên bạn**: đóng vài app nặng RAM (nhiều tab Code/VSCode, trình duyệt,
+  Zalo...) khi chạy `expo start`/`typecheck`/`test` nếu vẫn thấy crash, vì
+  2 flag trên chỉ nâng mức tối đa V8 được dùng — không giúp được nếu hệ điều
+  hành thực sự không còn RAM để cấp.
+
+## Tính năng mới — Realtime "Yêu thích" giữa web và mobile (2026-11-01)
+
+Bạn báo danh sách phòng yêu thích không đồng bộ realtime giữa web và mobile.
+Tra trực tiếp code backend (`t:/kltn-vika-hotel-booking`, không đoán) xác
+nhận: API `/favorites` là REST thuần, **không hề emit socket event** khi
+add/remove — khác hẳn `booking:updated` đã có sẵn. Đã hỏi bạn, bạn chọn làm
+chuẩn: thêm socket event ở backend. Vì cần sửa cả backend lẫn mobile, xin ghi
+rõ **đây là 2 repo khác nhau** (`t:/kltn-vika-hotel-booking` và
+`t:/smartstay-mobile`) — phần backend/web dưới đây mình đã sửa trực tiếp vào
+repo kia nhưng **mình không `git add`/commit được từ phiên mobile này**, bạn
+tự kiểm tra và commit riêng ở repo đó.
+
+**Backend (`t:/kltn-vika-hotel-booking/backend`) — theo đúng pattern có sẵn
+của `booking:updated`/`RealtimeGateway`:**
+- `src/realtime/realtime.gateway.ts` — thêm `emitFavoriteUpdated(userId,
+  payload)`, bắn vào room riêng của user (`user:<userId>`), event tên
+  `favorite:updated` — giống hệt cách `emitBookingUpdatedForCustomer` đang
+  làm.
+- `src/room-types/favorite.service.ts` — tiêm `RealtimeGateway` (đã có sẵn
+  trong `ReservationsModule`, không cần đổi module wiring), gọi
+  `emitFavoriteUpdated` sau khi `add`/`remove` thành công, payload giữ đúng
+  hình dạng cũ `{ roomTypeId, isFavorite }` (không đổi response REST).
+- Đã `npx tsc --noEmit` cho backend — sạch.
+
+**Web (`t:/kltn-vika-hotel-booking/frontend`) — theo đúng pattern có sẵn của
+`BookingHistoryPage.jsx` nghe `booking:updated`:**
+- `src/components/user/FavoritesPage.jsx` — thêm `useEffect` nghe
+  `socket.on('favorite:updated', ...)` (qua `useSocket()` có sẵn), dispatch
+  `favoriteApi.util.invalidateTags(['Favorite'])` để RTK Query tự refetch.
+  **Chỉ sửa đúng trang danh sách yêu thích** — không đụng tới nút tim ở
+  `GeneralInfoRoom.jsx` (trang chi tiết phòng), vì bạn chỉ báo danh sách.
+
+**Mobile (`src/`) — theo đúng pattern có sẵn của `bookingsVersion`/
+`useBookingUpdates` (xem D1/useApi):**
+- `src/store/notificationStore.ts` — thêm `favoritesVersion` + `bumpFavorites()`,
+  song song hệt `bookingsVersion`/`bumpBookings`.
+- `src/hooks/useFavoriteUpdates.ts` (mới) — bản sao của `useBookingUpdates`
+  cho favorites.
+- `src/hooks/useRealtimeNotifications.ts` — thêm
+  `socket.on("favorite:updated", () => bumpFavorites())`.
+- `src/app/favorites.tsx` — gọi `useFavoriteUpdates(refetch)` để màn tự tải
+  lại khi có cập nhật từ thiết bị khác.
+
+**Lưu ý phạm vi:** chỉ đồng bộ **danh sách** yêu thích (đúng theo bạn báo).
+Nút tim ở trang chi tiết phòng (`room/[id].tsx` mobile, `GeneralInfoRoom.jsx`
+web) không nghe event này — nếu đang mở trang chi tiết 1 phòng trên thiết bị
+A và bỏ tim phòng đó từ thiết bị B, nút tim ở thiết bị A sẽ không tự đổi cho
+tới khi rời/mở lại trang. Báo lại nếu muốn làm luôn phần này.
+
+**Cách test thủ công:** đăng nhập cùng 1 tài khoản trên web và mobile (hoặc
+2 tab web) → mở màn/trang "Yêu thích" ở cả 2 → bấm tim 1 phòng ở bên này →
+bên kia tự cập nhật danh sách không cần F5/rời màn hình (cần cả backend đã
+chạy code mới và FE/mobile đã build lại).
+
+**Commit message đề xuất (mobile):**
+```
+feat(favorites): sync favorites list in realtime via socket
+
+Listen for the new `favorite:updated` socket event (backend: see the
+companion commit in kltn-vika-hotel-booking) and refetch the favorites
+screen when it fires, mirroring the existing bookingsVersion/
+useBookingUpdates pattern used for booking:updated.
+```
+
+**Commit message đề xuất (backend, repo khác — bạn tự commit ở đó):**
+```
+feat(favorites): emit favorite:updated over the realtime gateway
+
+Favorites were REST-only with no realtime signal, so a change made on one
+device (web or mobile) never reached another open session. Emit to the
+user's own room on add/remove, mirroring emitBookingUpdatedForCustomer.
+```

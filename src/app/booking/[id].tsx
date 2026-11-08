@@ -31,7 +31,7 @@ import { toast } from "@/store/toastStore";
 import { formatVND } from "@/utils/currency";
 import { Review, REVIEW_COMMENT_MAX, REVIEW_COMMENT_MIN } from "@/types/review";
 import { canShowCheckInPass, getBookingCode } from "@/utils/bookingQr";
-import { formatDate, nightsBetween } from "@/utils/date";
+import { formatDate, getRebookDates, nightsBetween } from "@/utils/date";
 import { paymentsApi } from "@/api/payments";
 
 const CANCELLABLE_STATUSES = new Set(["PENDING", "CONFIRMED"]);
@@ -157,6 +157,18 @@ export default function BookingDetailScreen() {
     router.push(`/checkout/${booking.bookingId}`);
   };
 
+  const handleRebook = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const { checkIn, checkOut } = getRebookDates(
+      booking.checkInDate,
+      booking.checkOutDate,
+    );
+    router.push({
+      pathname: "/room/[id]",
+      params: { id: booking.roomType.roomTypeId, checkIn, checkOut },
+    });
+  };
+
   const handleSubmitReview = async () => {
     setReviewSubmitting(true);
     try {
@@ -179,6 +191,7 @@ export default function BookingDetailScreen() {
   const commentTooShort = trimmedLength < REVIEW_COMMENT_MIN;
 
   const image = roomImageSource(booking.roomType);
+  const roomTypeInactive = booking.roomType.status === "INACTIVE";
   const nights = nightsBetween(booking.checkInDate, booking.checkOutDate);
   const isPaid = booking.paymentStatus === "PAID";
   const needsPayment =
@@ -451,7 +464,9 @@ export default function BookingDetailScreen() {
           ) : null}
         </Card>
 
-        {needsPayment || CANCELLABLE_STATUSES.has(booking.status) ? (
+        {needsPayment ||
+        CANCELLABLE_STATUSES.has(booking.status) ||
+        booking.status === "CANCELLED" ? (
           <View style={styles.actions}>
             {needsPayment ? (
               <Button
@@ -467,7 +482,24 @@ export default function BookingDetailScreen() {
                 onPress={() => setShowCancelConfirm(true)}
               />
             ) : null}
+            {booking.status === "CANCELLED" ? (
+              <RebookButton
+                variant="primary"
+                disabled={roomTypeInactive}
+                roomTypeName={booking.roomType.name}
+                onPress={handleRebook}
+              />
+            ) : null}
           </View>
+        ) : null}
+
+        {booking.status === "CHECKED_OUT" ? (
+          <RebookButton
+            variant="outline"
+            disabled={roomTypeInactive}
+            roomTypeName={booking.roomType.name}
+            onPress={handleRebook}
+          />
         ) : null}
 
         {booking.status === "CHECKED_OUT" ? (
@@ -567,6 +599,41 @@ export default function BookingDetailScreen() {
   );
 }
 
+function RebookButton({
+  variant,
+  disabled,
+  roomTypeName,
+  onPress,
+}: {
+  variant: "primary" | "outline";
+  disabled: boolean;
+  roomTypeName: string;
+  onPress: () => void;
+}) {
+  const { t } = useTranslation();
+  return (
+    <View style={styles.rebookGroup}>
+      <Button
+        label={t("booking.rebook")}
+        icon="refresh-outline"
+        variant={variant}
+        disabled={disabled}
+        accessibilityLabel={`${t("booking.rebook")} ${roomTypeName}`}
+        onPress={onPress}
+      />
+      {disabled ? (
+        <ThemedText
+          type="caption"
+          themeColor="textSecondary"
+          style={styles.center}
+        >
+          {t("booking.rebookUnavailable")}
+        </ThemedText>
+      ) : null}
+    </View>
+  );
+}
+
 function InfoRow({
   icon,
   label,
@@ -658,6 +725,7 @@ const styles = StyleSheet.create({
   divider: { height: StyleSheet.hairlineWidth, marginVertical: Space.xs },
   total: { fontFamily: FontFamily.bold, fontSize: 18, lineHeight: 24 },
   actions: { gap: Space.md },
+  rebookGroup: { gap: Space.xs },
   reviewHeader: { gap: Space.xs },
   reviewBlock: { gap: Space.md },
   thanks: {

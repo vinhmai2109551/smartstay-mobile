@@ -6,6 +6,7 @@ import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   FlatList,
+  Modal,
   ScrollView,
   StyleSheet,
   useWindowDimensions,
@@ -13,6 +14,7 @@ import {
   Pressable,
 } from "react-native";
 import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { reviewsApi } from "@/api/reviews";
 import { roomTypesApi } from "@/api/roomTypes";
@@ -41,7 +43,8 @@ const GUTTER = Space.lg;
 export default function RoomTypeDetailScreen() {
   const { t } = useTranslation();
   const theme = useTheme();
-  const { width: windowWidth } = useWindowDimensions();
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{
     id: string;
     checkIn?: string;
@@ -80,6 +83,7 @@ export default function RoomTypeDetailScreen() {
   };
 
   const [page, setPage] = useState(0);
+  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
   const galleryWidth = Math.min(windowWidth, MaxContentWidth);
   const galleryHeight = Math.round(Math.min(galleryWidth * 0.72, 380));
 
@@ -146,16 +150,18 @@ export default function RoomTypeDetailScreen() {
                     Math.round(e.nativeEvent.contentOffset.x / galleryWidth),
                   )
                 }
-                renderItem={({ item }) => (
-                  <Image
-                    source={typeof item === "string" ? { uri: item } : item}
-                    style={{ width: galleryWidth, height: galleryHeight }}
-                    contentFit="cover"
-                    transition={200}
-                    accessibilityLabel={t("room.imageAlt", {
-                      name: roomType.name,
-                    })}
-                  />
+                renderItem={({ item, index }) => (
+                  <Pressable onPress={() => setViewerIndex(index)}>
+                    <Image
+                      source={typeof item === "string" ? { uri: item } : item}
+                      style={{ width: galleryWidth, height: galleryHeight }}
+                      contentFit="cover"
+                      transition={200}
+                      accessibilityLabel={t("room.imageAlt", {
+                        name: roomType.name,
+                      })}
+                    />
+                  </Pressable>
                 )}
               />
             ) : (
@@ -341,6 +347,69 @@ export default function RoomTypeDetailScreen() {
           />
         </BottomBar>
       </ThemedView>
+      <Modal
+        visible={viewerIndex !== null}
+        animationType="fade"
+        onRequestClose={() => setViewerIndex(null)}
+      >
+        <View style={styles.viewer}>
+          <FlatList
+            data={galleryImages}
+            keyExtractor={(item, index) => `${index}-${String(item)}`}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            initialScrollIndex={viewerIndex ?? 0}
+            getItemLayout={(_, index) => ({
+              length: windowWidth,
+              offset: windowWidth * index,
+              index,
+            })}
+            onMomentumScrollEnd={(e) => {
+              const index = Math.round(
+                e.nativeEvent.contentOffset.x / windowWidth,
+              );
+              // Late scroll events can fire after closing — never reopen the viewer.
+              setViewerIndex((prev) => (prev === null ? null : index));
+            }}
+            renderItem={({ item }) => (
+              // shortcut: ScrollView pinch-zoom is iOS-only; Android just shows the full image — use a gesture-handler pinch if Android zoom is needed.
+              <ScrollView
+                style={{ width: windowWidth, height: windowHeight }}
+                maximumZoomScale={3}
+                centerContent
+                showsHorizontalScrollIndicator={false}
+                showsVerticalScrollIndicator={false}
+              >
+                <Image
+                  source={typeof item === "string" ? { uri: item } : item}
+                  style={{ width: windowWidth, height: windowHeight }}
+                  contentFit="contain"
+                  accessibilityLabel={t("room.imageAlt", {
+                    name: roomType.name,
+                  })}
+                />
+              </ScrollView>
+            )}
+          />
+          <View
+            style={[styles.viewerBar, { top: insets.top + Space.sm }]}
+            pointerEvents="box-none"
+          >
+            <ThemedText type="smallBold" style={styles.viewerCounter}>
+              {(viewerIndex ?? 0) + 1}/{galleryImages.length}
+            </ThemedText>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t("common.close")}
+              onPress={() => setViewerIndex(null)}
+              hitSlop={12}
+            >
+              <Ionicons name="close" size={28} color="#FFFFFF" />
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
       <Stack.Screen
         options={{
           headerRight: () => (
@@ -384,6 +453,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 6,
   },
+  viewer: { flex: 1, backgroundColor: "#000000" },
+  viewerBar: {
+    position: "absolute",
+    left: GUTTER,
+    right: GUTTER,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  viewerCounter: { color: "#FFFFFF" },
   dot: { width: 6, height: 6, borderRadius: 3, opacity: 0.55 },
   dotActive: { width: 18, opacity: 1 },
   sheet: {
