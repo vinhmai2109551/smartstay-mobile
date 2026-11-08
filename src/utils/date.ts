@@ -1,4 +1,4 @@
-import dayjs from 'dayjs';
+import dayjs, { type Dayjs } from 'dayjs';
 import 'dayjs/locale/en';
 import 'dayjs/locale/vi';
 
@@ -25,4 +25,22 @@ export function nightsBetween(checkIn: string | Date, checkOut: string | Date) {
 
 export function toIsoDate(value: Date) {
   return dayjs(value).format('YYYY-MM-DD');
+}
+
+// Đặt lại đúng ngày cũ nếu check-in cũ chưa qua; nếu đã qua, dời sang ngày mai và giữ
+// nguyên số đêm, để room/[id].tsx luôn nhận được một khoảng ngày còn đặt được.
+export function getRebookDates(checkInDate: string, checkOutDate: string, today: Dayjs = dayjs()) {
+  const todayStart = today.startOf('day');
+  if (!dayjs(checkInDate).startOf('day').isBefore(todayStart)) {
+    return {
+      checkIn: toIsoDate(dayjs(checkInDate).toDate()),
+      checkOut: toIsoDate(dayjs(checkOutDate).toDate()),
+    };
+  }
+  const nights = nightsBetween(checkInDate, checkOutDate);
+  const newCheckIn = todayStart.add(1, 'day');
+  return {
+    checkIn: toIsoDate(newCheckIn.toDate()),
+    checkOut: toIsoDate(newCheckIn.add(nights, 'day').toDate()),
+  };
 }

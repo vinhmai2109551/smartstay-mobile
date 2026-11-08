@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { MaxContentWidth, Radius, Space } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
 import { useApi } from "@/hooks/useApi";
+import { useFavoriteUpdates } from "@/hooks/useFavoriteUpdates";
 import { router } from "expo-router";
 import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
@@ -24,9 +25,12 @@ export default function FavoritesScreen() {
     },
   );
 
+  // Favorited/unfavorited from another device (web, or another session) — reload
+  // so this list stays in sync instead of only catching up on next screen focus.
+  useFavoriteUpdates(refetch);
+
   if (error && !data) {
-    return;
-    <ErrorView message={t(`favorites.loadError`)} onRetry={refetch} />;
+    return <ErrorView message={t(`favorites.loadError`)} onRetry={refetch} />;
   }
 
   return (

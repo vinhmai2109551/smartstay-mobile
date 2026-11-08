@@ -305,6 +305,8 @@
     "checkInLockedPayment": "Your check-in code will appear once you've paid",
     "checkInLockedConfirmation": "Your check-in code will appear once the hotel confirms your booking",
     "cancelFailed": "Couldn't cancel the booking.",
+    "rebook": "Book again",
+    "rebookUnavailable": "This room type is no longer available for booking",
     "reviewTitle": "How was your stay?",
     "reviewSubtitle": "Your review helps Vika Hotel serve you better.",
     "reviewRatingLabel": "Star rating",

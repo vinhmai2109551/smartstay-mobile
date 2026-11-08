@@ -305,6 +305,8 @@
     "checkInLockedPayment": "Mã check-in sẽ hiện sau khi bạn thanh toán",
     "checkInLockedConfirmation": "Mã check-in sẽ hiện khi khách sạn xác nhận đơn",
     "cancelFailed": "Không thể huỷ đơn.",
+    "rebook": "Đặt lại",
+    "rebookUnavailable": "Loại phòng này hiện ngừng nhận đặt",
     "reviewTitle": "Kỳ nghỉ của bạn thế nào?",
     "reviewSubtitle": "Đánh giá giúp Vika Hotel phục vụ bạn tốt hơn.",
     "reviewRatingLabel": "Số sao đánh giá",

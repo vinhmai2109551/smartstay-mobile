@@ -55,7 +55,7 @@ export function ChatBookingCreatedCard({
   // Phiếu thanh toán dựng ngoài màn hình (PaymentQrSlip) — chụp lại thành ảnh khi lưu.
   const slipRef = useRef<ViewInstance>(null);
 
-  useBookingUpdates(() => {
+  const refreshBooking = () => {
     bookingsApi
       .detail(booking.bookingId)
       .then((fresh) => {
@@ -65,7 +65,12 @@ export function ChatBookingCreatedCard({
       .catch(() => {
         // Lỗi mạng tạm thời: giữ trạng thái hiện có, event sau sẽ thử lại.
       });
-  });
+  };
+  useBookingUpdates(refreshBooking);
+  // Đơn có thể đã được xác nhận trong lúc khách không mở chat (không nhận được event) —
+  // hỏi trạng thái thật mỗi lần thẻ hiện ra, giống web hiện mã ngay khi đơn CONFIRMED.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(refreshBooking, [booking.bookingId]);
 
   // Dữ liệu booking trong tin nhắn là ảnh chụp lúc vừa tạo đơn (luôn UNPAID). Hỏi trạng
   // thái thật mỗi lần thẻ hiện ra, KỂ CẢ khi QR đã hết hạn: khách có thể đã chuyển khoản
