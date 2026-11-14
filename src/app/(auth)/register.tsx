@@ -56,7 +56,7 @@ export default function RegisterScreen() {
     try {
       const { fullName, email, phone, password } = values;
       // Step 1/2: this only sends an OTP to the email — the account is not
-      // created yet (doc/API.md 1.1). Verification happens on the next screen.
+      // created yet (AuthService.register). Verification happens on the next screen.
       await authApi.register({ fullName, email, phone, password });
       router.push({ pathname: '/(auth)/verify-otp', params: { email } });
     } catch (error) {
@@ -74,7 +74,8 @@ export default function RegisterScreen() {
           style={({ pressed }) => [
             styles.backButton,
             { borderColor: theme.border, backgroundColor: theme.backgroundElement, opacity: pressed ? 0.7 : 1 },
-          ]}>
+          ]}
+        >
           <Ionicons name="chevron-back" size={22} color={theme.text} />
         </Pressable>
         <ThemedText type="bodyBold">{t('auth.register.headerTitle')}</ThemedText>
@@ -207,7 +208,6 @@ export default function RegisterScreen() {
           {errors.agree.message}
         </ThemedText>
       ) : null}
-
 
       <Button
         label={t('auth.register.registerButton')}

@@ -43,14 +43,16 @@ export function AppErrorFallback({ error, onRetry }: AppErrorFallbackProps) {
           accessibilityRole="button"
           accessibilityLabel="Thử lại"
           onPress={onRetry}
-          style={({ pressed }) => [styles.button, styles.primaryButton, { opacity: pressed ? 0.85 : 1 }]}>
+          style={({ pressed }) => [styles.button, styles.primaryButton, { opacity: pressed ? 0.85 : 1 }]}
+        >
           <Text style={styles.primaryButtonText}>Thử lại</Text>
         </Pressable>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Về trang chủ"
           onPress={() => router.replace('/')}
-          style={({ pressed }) => [styles.button, styles.secondaryButton, { opacity: pressed ? 0.7 : 1 }]}>
+          style={({ pressed }) => [styles.button, styles.secondaryButton, { opacity: pressed ? 0.7 : 1 }]}
+        >
           <Text style={styles.secondaryButtonText}>Về trang chủ</Text>
         </Pressable>
       </ScrollView>

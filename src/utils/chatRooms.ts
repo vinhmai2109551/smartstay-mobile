@@ -15,8 +15,10 @@ function normalize(text: string) {
 
 type Superlative = (rooms: AvailableRoomType[]) => AvailableRoomType;
 
-const byPrice = (direction: 1 | -1): Superlative => (rooms) =>
-  rooms.reduce((best, room) => (direction * (room.basePrice - best.basePrice) < 0 ? room : best));
+const byPrice =
+  (direction: 1 | -1): Superlative =>
+  (rooms) =>
+    rooms.reduce((best, room) => (direction * (room.basePrice - best.basePrice) < 0 ? room : best));
 const byCapacity: Superlative = (rooms) => rooms.reduce((best, room) => (room.capacity > best.capacity ? room : best));
 
 // Question phrasings (already normalized) that ask for exactly one room.

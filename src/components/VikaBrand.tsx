@@ -35,13 +35,17 @@ export function VikaEmblem({ size = 96, style, elevated = true }: EmblemProps) {
       accessible
       accessibilityRole="image"
       accessibilityLabel="Logo Vika Hotel"
-      style={[
-        { width: size, height: size, borderRadius: r },
-        elevated && styles.elevated,
-        style,
-      ]}>
+      style={[{ width: size, height: size, borderRadius: r }, elevated && styles.elevated, style]}
+    >
       <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-        <Circle cx={r} cy={r} r={r - stroke / 2} fill={VikaBrandColors.navy} stroke={VikaBrandColors.gold} strokeWidth={stroke} />
+        <Circle
+          cx={r}
+          cy={r}
+          r={r - stroke / 2}
+          fill={VikaBrandColors.navy}
+          stroke={VikaBrandColors.gold}
+          strokeWidth={stroke}
+        />
         <Circle
           cx={r}
           cy={r}
@@ -101,7 +105,8 @@ export function VikaWordmark({ size = 34, style }: WordmarkProps) {
           fontSize: size,
           lineHeight: size * 1.18,
           letterSpacing: size * 0.04,
-        }}>
+        }}
+      >
         VIKA
       </ThemedText>
       <View style={[styles.divider, { gap: size * 0.16, marginTop: size * 0.08 }]}>
@@ -117,7 +122,8 @@ export function VikaWordmark({ size = 34, style }: WordmarkProps) {
           lineHeight: size * 0.5,
           letterSpacing: size * 0.12,
           marginTop: size * 0.08,
-        }}>
+        }}
+      >
         HOTEL
       </ThemedText>
     </View>

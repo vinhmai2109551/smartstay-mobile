@@ -31,7 +31,8 @@ export function Chip({ label, selected = false, onPress, icon, disabled }: ChipP
           borderColor: selected ? theme.primary : theme.border,
           opacity: disabled ? 0.5 : pressed ? 0.85 : 1,
         },
-      ]}>
+      ]}
+    >
       {icon ? <Ionicons name={icon} size={16} color={textColor} /> : null}
       <ThemedText type="small" style={{ color: textColor }}>
         {label}

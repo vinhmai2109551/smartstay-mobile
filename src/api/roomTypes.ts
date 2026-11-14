@@ -9,9 +9,7 @@ export type RoomTypeListParams = {
 };
 
 export const roomTypesApi = {
-  list: (params?: RoomTypeListParams) =>
-    apiClient.get<RoomType[]>('/room-types', { params }).then((r) => r.data),
+  list: (params?: RoomTypeListParams) => apiClient.get<RoomType[]>('/room-types', { params }).then((r) => r.data),
 
-  detail: (id: string) =>
-    apiClient.get<RoomTypeDetail>(`/room-types/${id}`).then((r) => r.data),
+  detail: (id: string) => apiClient.get<RoomTypeDetail>(`/room-types/${id}`).then((r) => r.data),
 };

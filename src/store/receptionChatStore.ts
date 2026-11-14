@@ -1,10 +1,10 @@
-import { create } from "zustand";
-import { createJSONStorage, persist } from "zustand/middleware";
+import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
 
-import { receptionChatApi } from "@/api/chat";
-import { useAuthStore } from "@/store/authStore";
-import { plainStorage } from "@/store/persistedStorage";
-import { ReceptionMessage } from "@/types/chat";
+import { receptionChatApi } from '@/api/chat';
+import { useAuthStore } from '@/store/authStore';
+import { plainStorage } from '@/store/persistedStorage';
+import { ReceptionMessage } from '@/types/chat';
 
 type ReceptionChatState = {
   conversationId: string | null;
@@ -21,8 +21,7 @@ type ReceptionChatState = {
   readElsewhere: (conversationId: string) => void;
 };
 
-const isFromStaff = (m: ReceptionMessage) =>
-  m.senderId !== useAuthStore.getState().user?.userId;
+const isFromStaff = (m: ReceptionMessage) => m.senderId !== useAuthStore.getState().user?.userId;
 
 export const useReceptionChatStore = create<ReceptionChatState>()(
   persist(
@@ -45,8 +44,7 @@ export const useReceptionChatStore = create<ReceptionChatState>()(
       // The guest is typing in this conversation on another device (web), so they are reading it there.
       readElsewhere: (conversationId) => {
         const { latestAt } = get();
-        if (conversationId === get().conversationId && latestAt)
-          get().markRead(latestAt);
+        if (conversationId === get().conversationId && latestAt) get().markRead(latestAt);
       },
       // Backend only tracks unread for staff, so the guest's count is worked out here.
       sync: async () => {
@@ -61,11 +59,10 @@ export const useReceptionChatStore = create<ReceptionChatState>()(
         }
         set({ unread, latestAt: messages.at(-1)?.createdAt ?? null });
       },
-      reset: () =>
-        set({ conversationId: null, lastReadAt: null, unread: 0, latestAt: null }),
+      reset: () => set({ conversationId: null, lastReadAt: null, unread: 0, latestAt: null }),
     }),
     {
-      name: "smartstay-reception-chat",
+      name: 'smartstay-reception-chat',
       storage: createJSONStorage(() => plainStorage),
       partialize: (s) => ({
         conversationId: s.conversationId,

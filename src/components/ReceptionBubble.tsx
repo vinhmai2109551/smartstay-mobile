@@ -1,12 +1,12 @@
-import { Image } from "expo-image";
-import { useTranslation } from "react-i18next";
-import { StyleSheet, View } from "react-native";
+import { Image } from 'expo-image';
+import { useTranslation } from 'react-i18next';
+import { StyleSheet, View } from 'react-native';
 
-import { ThemedText } from "@/components/themed-text";
-import { Radius, Space } from "@/constants/theme";
-import { useTheme } from "@/hooks/use-theme";
-import { ReceptionMessage } from "@/types/chat";
-import { formatDate } from "@/utils/date";
+import { ThemedText } from '@/components/themed-text';
+import { Radius, Space } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
+import { ReceptionMessage } from '@/types/chat';
+import { formatDate } from '@/utils/date';
 
 // The corner pointing at the sender — gives each bubble a small "tail".
 const TAIL_RADIUS = 4;
@@ -47,29 +47,19 @@ export function ReceptionBubble({
       >
         {showName && !mine ? (
           <ThemedText type="smallBold" themeColor="primary">
-            {t("receptionChat.staffLabel", { name: message.senderName })}
+            {t('receptionChat.staffLabel', { name: message.senderName })}
           </ThemedText>
         ) : null}
         {message.attachmentUrl ? (
-          <Image
-            source={{ uri: message.attachmentUrl }}
-            style={styles.image}
-            contentFit="cover"
-          />
+          <Image source={{ uri: message.attachmentUrl }} style={styles.image} contentFit="cover" />
         ) : null}
         {message.content ? (
-          <ThemedText style={mine ? { color: theme.primaryText } : undefined}>
-            {message.content}
-          </ThemedText>
+          <ThemedText style={mine ? { color: theme.primaryText } : undefined}>{message.content}</ThemedText>
         ) : null}
       </View>
       {showTime ? (
-        <ThemedText
-          type="caption"
-          themeColor="textSecondary"
-          style={styles.time}
-        >
-          {formatDate(message.createdAt, "HH:mm")}
+        <ThemedText type="caption" themeColor="textSecondary" style={styles.time}>
+          {formatDate(message.createdAt, 'HH:mm')}
         </ThemedText>
       ) : null}
     </View>
@@ -77,9 +67,9 @@ export function ReceptionBubble({
 }
 
 const styles = StyleSheet.create({
-  row: { maxWidth: "80%", gap: Space.xs },
-  mine: { alignSelf: "flex-end", alignItems: "flex-end" },
-  theirs: { alignSelf: "flex-start", alignItems: "flex-start" },
+  row: { maxWidth: '80%', gap: Space.xs },
+  mine: { alignSelf: 'flex-end', alignItems: 'flex-end' },
+  theirs: { alignSelf: 'flex-start', alignItems: 'flex-start' },
   bubble: {
     borderRadius: Radius.lg,
     paddingHorizontal: Space.lg,

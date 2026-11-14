@@ -28,7 +28,8 @@ export function PerkRow() {
         <Animated.View
           key={perk.key}
           entering={FadeInUp.duration(500).delay(150 + index * 100)}
-          style={[styles.perk, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
+          style={[styles.perk, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}
+        >
           <View style={[styles.icon, { backgroundColor: theme.primarySoft }]}>
             <Ionicons name={perk.icon} size={20} color={theme.primary} />
           </View>

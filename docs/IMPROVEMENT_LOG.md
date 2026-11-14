@@ -9,22 +9,26 @@ giai đoạn, dừng lại chờ xác nhận trước khi sang giai đoạn kế
 ## Danh sách task
 
 ### Giai đoạn A — Nghiệp vụ cấp bách & demo
+
 - [x] A1. Vé check-in chỉ hiện khi đơn đã được xác nhận
 - [x] A2. Biến môi trường cho bản build EAS
 - [x] A3. Refresh token ổn định trên native (đã chọn (b): giữ cookie)
 
 ### Giai đoạn B — Dọn nền dự án
+
 - [x] B1. Lỗi tsc với global.css
 - [x] B2. Lint (0 warning trừ checkout)
 - [x] B3. README, .env.example, scripts, tên app (đã chọn: "Vika Hotel")
 
 ### Giai đoạn C — Sửa nghiệp vụ đặt phòng & thanh toán
+
 - [x] C1. Mã khuyến mãi bị treo
 - [x] C2. Số khách + form bằng Zod (numberOfGuests: chỉ thêm type, không gửi)
 - [x] C3. Giá tạm tính (không có endpoint báo giá — đổi nhãn + chú thích)
 - [x] C4. Luồng thanh toán PayOS (usePayosCheckout)
 
 ### Giai đoạn D — Độ bền, tính năng còn thiếu, UX
+
 - [x] D1. useApi chống race
 - [x] D2. Tách lưu trữ (secureStorage/plainStorage)
 - [x] D3. Quên mật khẩu
@@ -34,6 +38,7 @@ giai đoạn, dừng lại chờ xác nhận trước khi sang giai đoạn kế
 - [x] D7. Hiệu năng danh sách
 
 ### Giai đoạn E — Kiểm thử & CI
+
 - [x] E1. Jest
 - [x] E2a. Prettier (cấu hình xong, **chưa chạy `format`** — chờ bạn)
 - [x] E2b. CI workflow (`.github/workflows/ci.yml`)
@@ -52,23 +57,24 @@ quy tắc, không phải hỏi lại.
 
 **Bảng quy tắc** (`canShowCheckInPass`, `src/utils/bookingQr.ts`):
 
-| status | paymentMethod | paymentStatus | Hiện vé? |
-|---|---|---|---|
-| PENDING | bất kỳ | bất kỳ | ❌ (chưa xác nhận) |
-| CONFIRMED | CASH | bất kỳ | ✅ |
-| CONFIRMED | PAYOS | PAID | ✅ |
-| CONFIRMED | PAYOS | UNPAID/FAILED | ❌ (chờ thanh toán) |
-| CHECKED_IN | CASH | bất kỳ | ✅ |
-| CHECKED_IN | PAYOS | PAID | ✅ |
-| CHECKED_IN | PAYOS | UNPAID/FAILED | ❌ (chờ thanh toán — hiếm, phòng hờ) |
-| CHECKED_OUT | bất kỳ | bất kỳ | ❌ (đã trả phòng) |
-| CANCELLED | bất kỳ | bất kỳ | ❌ (đã huỷ) |
+| status      | paymentMethod | paymentStatus | Hiện vé?                             |
+| ----------- | ------------- | ------------- | ------------------------------------ |
+| PENDING     | bất kỳ        | bất kỳ        | ❌ (chưa xác nhận)                   |
+| CONFIRMED   | CASH          | bất kỳ        | ✅                                   |
+| CONFIRMED   | PAYOS         | PAID          | ✅                                   |
+| CONFIRMED   | PAYOS         | UNPAID/FAILED | ❌ (chờ thanh toán)                  |
+| CHECKED_IN  | CASH          | bất kỳ        | ✅                                   |
+| CHECKED_IN  | PAYOS         | PAID          | ✅                                   |
+| CHECKED_IN  | PAYOS         | UNPAID/FAILED | ❌ (chờ thanh toán — hiếm, phòng hờ) |
+| CHECKED_OUT | bất kỳ        | bất kỳ        | ❌ (đã trả phòng)                    |
+| CANCELLED   | bất kỳ        | bất kỳ        | ❌ (đã huỷ)                          |
 
 Không có trạng thái "từ chối/hết hạn" riêng trong `BookingStatus` hiện tại
 (`PENDING | CONFIRMED | CHECKED_IN | CHECKED_OUT | CANCELLED`) — không tự đặt
 thêm trạng thái mới, chỉ dùng union có sẵn.
 
 **File đã đổi:**
+
 - `src/utils/bookingQr.ts` — thêm `canShowCheckInPass(booking: Pick<Booking,'status'|'paymentMethod'|'paymentStatus'>): boolean`.
 - `src/app/booking/[id].tsx` — bỏ `CHECK_IN_PASS_STATUSES`, dùng `canShowCheckInPass`; thêm Card khoá (icon `lock-closed-outline`) hiện "Chờ thanh toán" hoặc "Chờ xác nhận" khi chưa đủ điều kiện (không hiện card nào khi CHECKED_OUT/CANCELLED).
 - `src/components/ChatBookingCreatedCard.tsx` — thay biến `showTicket` (chỉ check `status !== CANCELLED`, bug gốc) bằng `showCheckInPass` qua `canShowCheckInPass`; dùng `paid` thật (từ `syncPayosStatus`) thay vì field tĩnh; thêm `liveStatus` + `useBookingUpdates` để tự `bookingsApi.detail()` lại khi có event `booking:updated` (vd. lễ tân xác nhận đơn CASH ngay trong lúc khách đang xem lại thẻ trong chat) — header/tone/thông báo cập nhật theo `liveStatus`, không cần thoát chat ra vào lại.
@@ -82,6 +88,7 @@ PayOS (`ChatBookingCreatedCard`/`PaymentQrSlip`), đã tự nằm trong nhánh
 hiện".
 
 **Cách test thủ công:**
+
 1. Đơn CASH, status PENDING → vào `booking/[id]` và thẻ trong chat: thấy card/
    thông báo "Mã check-in sẽ hiện khi khách sạn xác nhận đơn", không thấy QR.
 2. Lễ tân (web/Postman) xác nhận đơn đó → `booking/[id]` tự refetch khi focus lại
@@ -94,6 +101,7 @@ hiện".
 5. Đơn CHECKED_OUT hoặc CANCELLED → không thấy vé, không thấy card khoá nào.
 
 **Commit message đề xuất:**
+
 ```
 fix(booking): gate check-in pass on confirmed + payable status
 
@@ -107,11 +115,12 @@ without needing to reopen the chat.
 ### A2. Biến môi trường cho bản build EAS — ✅
 
 **File đã đổi:**
+
 - `eas.json` — thêm `"environment": "development"|"preview"|"production"` cho từng
   build profile tương ứng, để EAS lấy biến môi trường đã khai báo trên EAS (không
   ghi giá trị thật vào repo).
 - `src/config/env.ts` — gom vào `export const ENV = { API_URL, GOOGLE_*_CLIENT_ID,
-  TURNSTILE_*, isMisconfigured }`; **giữ nguyên các named export cũ** (`API_URL`,
+TURNSTILE_*, isMisconfigured }`; **giữ nguyên các named export cũ** (`API_URL`,
   `GOOGLE_WEB_CLIENT_ID`, ...) nên 4 chỗ import cũ (`api/client.ts`,
   `useRealtimeNotifications.ts`, `login.tsx`, `TurnstileWidget.tsx`) không cần sửa.
   `isMisconfigured = !__DEV__ && API_URL chứa localhost/127.0.0.1/10.0.2.2`.
@@ -124,6 +133,7 @@ without needing to reopen the chat.
 EAS + safety-net, không đổi danh sách biến.
 
 **Cách test thủ công:**
+
 1. Local dev (`__DEV__` true) với `.env` trỏ localhost: app chạy bình thường, không
    hiện màn lỗi (vì `__DEV__` loại trừ).
 2. Build preview/production thật thì không test được ở đây — xem lệnh EAS bên dưới.
@@ -132,6 +142,7 @@ EAS + safety-net, không đổi danh sách biến.
    xác nhận màn lỗi hiện đúng, sau đó set lại env đúng và build lại.
 
 **Việc bạn cần tự làm (lệnh EAS):**
+
 > Cú pháp tham khảo theo `eas env:create` — kiểm tra lại với `eas env:create --help`
 > vì có thể khác đôi chút theo phiên bản `eas-cli` bạn đang cài; mình không chạy được
 > lệnh này ở đây (cần đăng nhập Expo account của bạn).
@@ -164,6 +175,7 @@ Các biến `EXPO_PUBLIC_*` đều bị đóng gói vào bundle JS nên không p
 — `--visibility plaintext` là hợp lý (không cần `secret`/`sensitive`).
 
 **Commit message đề xuất:**
+
 ```
 feat(config): wire EAS build environments and add a build-misconfiguration guard
 
@@ -177,9 +189,10 @@ instead of silently failing every request when that still happens.
 
 **Chẩn đoán (đã đọc `types/auth.ts`, `store/authStore.ts`, `api/auth.ts`, 2 chỗ gọi
 `setSession` trong `login.tsx`):**
+
 - `LoginResponse = { accessToken: string; user: User }` — **không có `refreshToken`**.
-  Có comment sẵn trong code: *"Refresh token is not returned in JSON — it is set as
-  an httpOnly cookie by the backend (see doc/API.md 0.2)"*.
+  Có comment sẵn trong code: _"Refresh token is not returned in JSON — it is set as
+  an httpOnly cookie by the backend (see doc/API.md 0.2)"_.
 - `authStore.setSession(accessToken, user)` chỉ nhận access token — xác nhận
   không có refresh token nào được truyền qua tay ở phía app hiện tại.
 - 2 chỗ gọi `setSession`: `login.tsx:84` (đăng nhập mật khẩu) và `login.tsx:113`
@@ -189,6 +202,7 @@ instead of silently failing every request when that still happens.
   tắc không được tự đoán việc backend "có hay sẽ" trả thêm field này.
 
 **Đã chọn: (b) giữ cookie httpOnly như hiện tại.** Đã làm:
+
 - `docs/backend-requests.md` (mới) — đặc tả vấn đề (cờ `Secure` qua HTTP LAN, đổi
   IP/domain giữa phiên, cookie sống qua app bị kill) + đề xuất hướng cho backend,
   không tự đoán tên field/endpoint.
@@ -196,6 +210,7 @@ instead of silently failing every request when that still happens.
   `docs/backend-requests.md`.
 
 **Đã làm xong, không phụ thuộc lựa chọn (a)/(b):**
+
 - Sửa race trong interceptor (`src/api/client.ts`): đổi từ
   `refreshPromise = refreshPromise ?? refreshAccessToken(); ...; refreshPromise = null;`
   (mỗi request đang chờ đều tự gán `null`) sang
@@ -211,6 +226,7 @@ hạn — chỉ nên thấy **một** request `/auth/refresh` trong network log/
 không phải nhiều request refresh chồng lên nhau.
 
 **Commit message đề xuất (phần đã xong):**
+
 ```
 fix(api): dedupe concurrent token refreshes via a single finally()
 
@@ -238,6 +254,7 @@ khi kiểm tra xong (file này vẫn gitignore, không track).
 pass (đã test, pass). Đổi tên lại, test lần nữa → vẫn pass.
 
 **Commit message đề xuất:**
+
 ```
 fix(types): declare *.css module explicitly, independent of expo-env.d.ts
 
@@ -250,6 +267,7 @@ TS2882. Declare it in a tracked file instead.
 ### B2. Lint — ✅ (0 lỗi, chỉ còn warning checkout để dành cho C4)
 
 **File đã đổi:**
+
 - `src/app/(tabs)/profile.tsx` — bỏ import `Constants` không dùng (sẽ cần lại ở
   B3 khi hiện "Phiên bản x.y.z", sẽ thêm lại lúc đó).
 - `src/app/notifications.tsx` — bỏ import `Button` không dùng (nút "đánh dấu đã
@@ -273,6 +291,7 @@ TS2882. Declare it in a tracked file instead.
 warning (`checkout/[bookingId].tsx` exhaustive-deps, cố ý để dành C4).
 
 **Commit message đề xuất:**
+
 ```
 chore(lint): fix named-default-member warnings and drop unused imports
 
@@ -285,6 +304,7 @@ left over from UI that moved elsewhere.
 ### B3. README, .env.example, scripts, tên app — ✅ (đã chọn: "Vika Hotel")
 
 **File đã đổi:**
+
 - `app.json` — `"name": "smartstay-mobile"` → `"Vika Hotel"` (tên hiển thị dưới
   icon). **Không đổi** `slug`, `owner`, `extra.eas.projectId`, `scheme`,
   `ios.bundleIdentifier`/`android.package` (đúng yêu cầu). Grep "SmartStay" trong
@@ -317,6 +337,7 @@ chỉ khác bộ field: account.tsx có thêm `idNumber`). Không chắc đây l
 (hai luồng khác nhau) hay dư thừa — không tự xoá/gộp vì ngoài phạm vi B3.
 
 **Cách test thủ công:**
+
 1. Mở app, vào Hồ sơ → cuối màn thấy "Vika Hotel · phiên bản 1.0.0".
 2. `npm run reset-project` không còn trong `package.json`; `npm run <tab>` không
    còn gợi ý lệnh này.
@@ -324,6 +345,7 @@ chỉ khác bộ field: account.tsx có thêm `idNumber`). Không chắc đây l
    máy sạch — không có bước nào trỏ tới thứ không tồn tại.
 
 **Commit message đề xuất:**
+
 ```
 docs(readme): rewrite README to match current code, set display name to Vika Hotel
 
@@ -358,8 +380,8 @@ Motion", không có code rác). 5 việc cụ thể bạn chọn làm luôn:
    cả 2 nơi dùng nó — giữ đúng thiết kế "decorative, im lặng nếu lỗi" đã có sẵn
    trong comment gốc.
 4. **`PromoTicket` copy mã khuyến mãi** giờ có haptic (`Haptics.selectionAsync`)
-   + `toast.success` giống mọi chỗ copy khác trong app (CheckInPass, đổi mật
-   khẩu...), bỏ state `copied`/đổi icon-tại-chỗ cũ (giờ dư thừa vì đã có toast).
+   - `toast.success` giống mọi chỗ copy khác trong app (CheckInPass, đổi mật
+     khẩu...), bỏ state `copied`/đổi icon-tại-chỗ cũ (giờ dư thừa vì đã có toast).
 5. **Skeleton cho `PromoTicket`** khi `promotions.loading` — trước đó không có
    gì hiện ra, nội dung "nhảy" vào khi mạng chậm. (Kiểm tra lại: `ExperienceGallery`
    là ảnh demo tĩnh, không gọi API, nên không cần skeleton — bỏ ý ban đầu về
@@ -373,6 +395,7 @@ Motion", không có code rác). 5 việc cụ thể bạn chọn làm luôn:
 `home.searchDate`, `home.searchAddGuests`, `promo.copied`).
 
 **Cách test thủ công:**
+
 1. Trang chủ → kéo xuống làm mới trong lúc tắt mạng → thấy toast lỗi (trước đây im lặng).
 2. Tìm phòng với ngày/số khách bất kỳ → bấm Tìm → thành công → quay lại Trang
    chủ → ô tìm kiếm hiện đúng ngày + số khách vừa tìm (không phải chữ tĩnh).
@@ -385,6 +408,7 @@ Motion", không có code rác). 5 việc cụ thể bạn chọn làm luôn:
    chép" (không còn icon đổi thành dấu tick tại chỗ).
 
 **Commit message đề xuất:**
+
 ```
 feat(ux): reflect real search state on home and surface silent failures
 
@@ -416,6 +440,7 @@ tổng tiền tự bỏ phần giảm giá → nếu bấm Đặt luôn mà khô
 **không có** `promotionCode`. Tương tự khi sửa chữ trong ô mã sau khi đã áp.
 
 **Commit message đề xuất:**
+
 ```
 fix(booking): invalidate the applied promo when services or the code change
 
@@ -457,6 +482,7 @@ không nằm trong phạm vi C2, không tự sửa. `phoneSchema()` đã đặt 
 (`090 123 4567`) → báo lỗi / hoặc tự làm sạch khoảng trắng rồi submit đúng số.
 
 **Commit message đề xuất:**
+
 ```
 refactor(booking): move guest-info form to react-hook-form + zod
 
@@ -496,6 +522,7 @@ chú thích nhỏ bên dưới, ở cả khối chi tiết giá và thanh dướ
 "Tổng" như cũ.
 
 **Commit message đề xuất:**
+
 ```
 fix(booking): label the pre-booking total as an estimate
 
@@ -545,8 +572,8 @@ Tách toàn bộ vòng đời link PayOS ra `src/hooks/usePayosCheckout.ts` — 
   2. Effect lên lịch hết hạn: bỏ nhánh rẽ `if (delay <= 0) setPhase('expired')`
      đồng bộ, thay bằng `Math.max(0, delay)` rồi luôn dùng `setTimeout` (dù 0ms
      vẫn là bất đồng bộ, không bị rule này soi).
-  Cảnh báo `exhaustive-deps` CŨ ở file này (thiếu `t`) tự nhiên biến mất vì
-  effect gốc gây ra nó đã không còn tồn tại sau khi viết lại.
+     Cảnh báo `exhaustive-deps` CŨ ở file này (thiếu `t`) tự nhiên biến mất vì
+     effect gốc gây ra nó đã không còn tồn tại sau khi viết lại.
 - **TODO thêm:** comment ngay trong `createLink()` hỏi backend endpoint
   `POST /payments/payos/:bookingId/link` có idempotent không (gọi lại —
   `regenerate()` hoặc remount màn — cho đơn đã có link có trả về đúng link cũ
@@ -561,6 +588,7 @@ clipboard, khối thông tin chuyển khoản), `src/i18n/locales/vi.json`/`en.j
 tạo đơn mới" đã sai từ khi có nút "Tạo mã mới").
 
 **Cách test thủ công:**
+
 1. Vào thanh toán 1 đơn PAYOS mới → thấy QR + số tiền hiện ngay (không trễ 4s).
 2. Chờ hết hạn (hoặc sửa tạm `expiredAt` ngắn lại để test nhanh) → đúng lúc hết
    hạn (không phải tới tick poll kế) chuyển sang "Mã QR đã hết hạn" + nút "Tạo
@@ -574,6 +602,7 @@ tạo đơn mới" đã sai từ khi có nút "Tạo mã mới").
    đúng `regenerate` (trước đây không có nút thử lại nào ở bước này).
 
 **Commit message đề xuất:**
+
 ```
 refactor(checkout): extract PayOS link lifecycle into usePayosCheckout
 
@@ -608,6 +637,7 @@ nhất) — mình sẽ thêm vào danh sách test khi tới E1. Tạm thời đ�
 đổi hành vi bình thường qua `tsc`/`lint` sạch và đọc lại logic tay.
 
 **Commit message đề xuất:**
+
 ```
 fix(useApi): ignore stale responses from superseded requests
 
@@ -654,6 +684,7 @@ Cài `@react-native-async-storage/async-storage` bằng `npx expo install` (bả
 "ngân hàng dùng gần nhất", không nhạy cảm).
 
 **Cách test thủ công:**
+
 1. **Trước khi cập nhật code này** (hoặc giả lập): đăng nhập, đóng app.
 2. Cập nhật lên bản có D2, mở lại app → **vẫn đăng nhập**, vẫn thấy đúng tên
    (không phải màn trắng/tên rỗng rồi mới hiện).
@@ -662,6 +693,7 @@ Cài `@react-native-async-storage/async-storage` bằng `npx expo install` (bả
    theme, ngôn ngữ đều giữ đúng.
 
 **Commit message đề xuất:**
+
 ```
 refactor(storage): split secure (token) and plain (everything else) storage
 
@@ -685,6 +717,7 @@ nên không cần (và không nên) gắn `TurnstileWidget` vào 3 màn này.
 **Việc mới làm trong D3 — gộp schema mật khẩu dùng chung:** đọc lại
 `docs/API.md` (repo backend) thì phát hiện `register`/`reset-password` và
 `change-password` **không cùng quy tắc** như câu lệnh ban đầu ngỡ:
+
 - `register` (mục 1.1) + `reset-password` (mục 1.3): tối thiểu **6** ký tự.
 - `change-password` (mục 6.x): tối thiểu **8** ký tự, **phải có cả chữ và
   số** — khác hẳn, không thể dùng chung 1 schema.
@@ -710,6 +743,7 @@ gọi) làm vừa hint vừa message lỗi.
 toàn phần form, giữ nguyên giao diện/hero navy/security tip card).
 
 **Cách test thủ công:**
+
 1. Đổi mật khẩu → gõ mật khẩu mới toàn số (vd `12345678`, đủ 8 ký tự) → phải
    thấy lỗi inline ngay (trước đây sẽ cho qua, chỉ bị backend từ chối sau).
 2. Gõ mật khẩu mới hợp lệ (có chữ+số, ≥8 ký tự) nhưng xác nhận gõ sai → lỗi
@@ -718,6 +752,7 @@ toàn phần form, giữ nguyên giao diện/hero navy/security tip card).
    số) vẫn qua được như trước — không đổi hành vi 2 màn này.
 
 **Commit message đề xuất:**
+
 ```
 fix(auth): enforce change-password's real letter+digit rule client-side
 
@@ -777,6 +812,7 @@ không thấy nút test này, và nếu CÓ lỗi khác xảy ra thì màn fallb
 câu chung, không rò `error.stack`.
 
 **Commit message đề xuất:**
+
 ```
 feat(errors): add an ErrorBoundary fallback via Expo Router's convention
 
@@ -823,6 +859,7 @@ Cài `@react-native-community/netinfo` bằng `npx expo install`.
 errorServer/offline/reconnected`, `chat.offlineBlocked`).
 
 **Cách test thủ công:**
+
 1. Bật chế độ máy bay → banner đỏ "Mất kết nối mạng" hiện ngay ở đỉnh màn,
    không tự ẩn.
 2. Tắt chế độ máy bay → banner đổi xanh "Đã kết nối lại" đúng 2 giây rồi mất;
@@ -833,6 +870,7 @@ errorServer/offline/reconnected`, `chat.offlineBlocked`).
    thấy đúng câu phân loại (mạng/timeout/server) thay vì câu chung mơ hồ.
 
 **Commit message đề xuất:**
+
 ```
 feat(network): add offline banner, classify network errors, block chat sends
 
@@ -849,10 +887,10 @@ notifications on reconnect, and block chat sends while offline.
 **Quét toàn repo** (59 `Pressable` trong 41 file, trừ `ui/Button.tsx` theo yêu
 cầu). Kết quả: codebase vốn đã khá chuẩn — chỉ **2 lỗ hổng thật**:
 
-| File | Dòng | Thiếu gì |
-|---|---|---|
-| `components/DateField.tsx` | 69 | backdrop đóng modal chọn ngày (iOS) có `accessibilityLabel` nhưng thiếu `accessibilityRole` |
-| `components/ui/Checkbox.tsx` (qua chỗ dùng ở `register.tsx`) | — | checkbox "đồng ý điều khoản" chỉ icon, không có `accessibilityLabel` nào được truyền vào |
+| File                                                         | Dòng | Thiếu gì                                                                                    |
+| ------------------------------------------------------------ | ---- | ------------------------------------------------------------------------------------------- |
+| `components/DateField.tsx`                                   | 69   | backdrop đóng modal chọn ngày (iOS) có `accessibilityLabel` nhưng thiếu `accessibilityRole` |
+| `components/ui/Checkbox.tsx` (qua chỗ dùng ở `register.tsx`) | —    | checkbox "đồng ý điều khoản" chỉ icon, không có `accessibilityLabel` nào được truyền vào    |
 
 Đã sửa cả 2: thêm `accessibilityRole="button"` cho backdrop; checkbox đồng ý
 điều khoản ở `register.tsx` giờ nhận `accessibilityLabel` ghép từ đúng các
@@ -908,6 +946,7 @@ với Điều khoản sử dụng và Chính sách bảo mật của Vika Hotel.
 thoại ở 1 form bất kỳ rồi focus lại field đó → đọc cả label và lỗi.
 
 **Commit message đề xuất:**
+
 ```
 fix(a11y): close two Pressable gaps, mute decorative images, link field errors
 
@@ -925,13 +964,13 @@ hears what's wrong, not just sees it.
 
 **Đo trước (bảng 5 màn nêu trong prompt):**
 
-| Màn | Kiểu list | keyExtractor | Ảnh |
-|---|---|---|---|
-| Chat (`(tabs)/chat.tsx`) | `FlatList` | ⚠️ `(_, index) => String(index)` — **dùng index, không ổn định** | `ChatRoomCard` dùng `expo-image`, chưa set `cachePolicy` |
-| Đơn của tôi (`(tabs)/bookings.tsx`) | `FlatList` | ✅ `item.bookingId` | `BookingCard` dùng `expo-image`, chưa set `cachePolicy` |
-| Thông báo (`notifications.tsx`) | `SectionList` | ✅ `item.id` | Không có ảnh (chỉ icon) |
-| Tìm phòng (`(tabs)/search.tsx`) | `FlatList` | ✅ `item.roomTypeId` | `RoomTypeCard` dùng `expo-image`, chưa set `cachePolicy` |
-| Trang chủ (`(tabs)/index.tsx`) | `FlatList` ×2 (chính + carousel ngang) | ✅ `item.roomTypeId` cả 2 | `RoomTypeCard`/`FeaturedRoomCard`, chưa set `cachePolicy` |
+| Màn                                 | Kiểu list                              | keyExtractor                                                     | Ảnh                                                       |
+| ----------------------------------- | -------------------------------------- | ---------------------------------------------------------------- | --------------------------------------------------------- |
+| Chat (`(tabs)/chat.tsx`)            | `FlatList`                             | ⚠️ `(_, index) => String(index)` — **dùng index, không ổn định** | `ChatRoomCard` dùng `expo-image`, chưa set `cachePolicy`  |
+| Đơn của tôi (`(tabs)/bookings.tsx`) | `FlatList`                             | ✅ `item.bookingId`                                              | `BookingCard` dùng `expo-image`, chưa set `cachePolicy`   |
+| Thông báo (`notifications.tsx`)     | `SectionList`                          | ✅ `item.id`                                                     | Không có ảnh (chỉ icon)                                   |
+| Tìm phòng (`(tabs)/search.tsx`)     | `FlatList`                             | ✅ `item.roomTypeId`                                             | `RoomTypeCard` dùng `expo-image`, chưa set `cachePolicy`  |
+| Trang chủ (`(tabs)/index.tsx`)      | `FlatList` ×2 (chính + carousel ngang) | ✅ `item.roomTypeId` cả 2                                        | `RoomTypeCard`/`FeaturedRoomCard`, chưa set `cachePolicy` |
 
 → 4/5 màn đã dùng `FlatList`/`SectionList` + `keyExtractor` theo id thật từ
 đầu — **không có vấn đề ScrollView+map cho list dài** ở các màn này. Danh
@@ -941,6 +980,7 @@ tình không chỉnh** 2 prop này ở bất kỳ đâu, tránh tối ưu khi ch
 thật (đúng nguyên tắc "sửa vấn đề có thật").
 
 **2 vấn đề thật tìm được, đã sửa:**
+
 1. **Chat dùng index làm key** — nguy hiểm thật, không phải lý thuyết: màn
    chat có 2 chỗ **thay nguyên mảng `messages`** (tiếp tục hội thoại cũ lúc mở
    app, và khôi phục lịch sử sau lỗi timeout) — nếu tin nhắn mới có ít/nhiều
@@ -986,6 +1026,7 @@ không tự mở do key trùng. Tắt app, mở lại (tiếp tục hội thoạ
 bị nhấp nháy/load lại từ đầu mỗi lần ô đó quay lại màn hình.
 
 **Commit message đề xuất:**
+
 ```
 perf(lists): stable chat message ids and memory-disk image caching
 
@@ -1000,6 +1041,7 @@ in memory, not just on disk, since FlatList recycles their cells on scroll.
 ### E1. Jest (thiết lập + test cho src/utils và helper lỗi API) — ✅
 
 **Cài đặt:**
+
 - `npx expo install jest-expo jest -- --save-dev` — lệnh này đưa cả 2 package
   vào `dependencies` thay vì `devDependencies` (có vẻ là bug/quirk của chính
   `expo install -- --save-dev`, không liên quan gì đến task) → tự phát hiện
@@ -1011,6 +1053,7 @@ in memory, not just on disk, since FlatList recycles their cells on scroll.
   `"coverage": "jest --coverage"`.
 
 **Cấu hình:**
+
 - `jest.config.js` — preset `jest-expo`; `setupFiles: ['<rootDir>/jest.setup.ts']`;
   `moduleNameMapper` cho alias `@/*` + `@/assets/*` (khớp đúng `tsconfig.json`)
   và mock `.css`; `collectCoverageFrom: ['src/utils/**/*.{ts,tsx}']` (đúng
@@ -1036,6 +1079,7 @@ auto-scan). **Không sửa bằng cách thêm `"types": ["jest"]` vào
 tên liệt kê trong mảng, có rủi ro làm mất ambient type khác đang được project
 dùng ngầm mà không rõ hết danh sách (vd `@types/react`, `hammerjs`...). Thay
 vào đó thêm 1 file mới, không đụng `tsconfig.json`:
+
 - `src/types/jest.d.ts` (mới) — chỉ có `/// <reference types="jest" />`.
   File này đã nằm sẵn trong `include: ["**/*.ts", ...]` của tsconfig; chỉ cần
   "có mặt" trong compilation là đủ để toàn bộ khai báo global của
@@ -1061,6 +1105,7 @@ nguồn nên không cần hỏi, chỉ sửa **test** dùng ` `.
 **File test mới (đúng phạm vi `src/utils/**` + `getApiErrorMessage`; không
 test `chatRooms.ts`/`pickRelevantRooms` — đã xác nhận với bạn là dead code
 sau merge dev #21, xem mục "Phát hiện thêm" bên dưới):**
+
 - `bookingQr.test.ts` — `canShowCheckInPass`: đủ bảng 18 dòng
   status × paymentMethod × paymentStatus (bảng gốc từ task A1).
 - `aiChatHistory.test.ts` — `buildMessagesFromHistory`: lịch sử rỗng, gắn
@@ -1080,20 +1125,21 @@ sau merge dev #21, xem mục "Phát hiện thêm" bên dưới):**
 
 **Coverage (`npx jest --coverage`, phạm vi `src/utils/**`):**
 
-| File | Stmts | Branch | Funcs | Lines |
-|---|---|---|---|---|
-| currency.ts | 100% | 100% | 100% | 100% |
-| validation.ts | 100% | 100% | 100% | 100% |
-| date.ts | 100% | 80% | 100% | 100% |
-| bookingQr.ts | 60% | 100% | 33% | 60% |
-| aiChatHistory.ts | 61% | 52% | 20% | 64% |
-| chatRooms.ts | 0% | 0% | 0% | 0% (dead code, cố tình không test) |
-| logger.ts | 0% | — | — | 0% (ngoài phạm vi E1) |
-| saveQr.ts | 0% | — | — | 0% (ngoài phạm vi E1) |
+| File             | Stmts | Branch | Funcs | Lines                              |
+| ---------------- | ----- | ------ | ----- | ---------------------------------- |
+| currency.ts      | 100%  | 100%   | 100%  | 100%                               |
+| validation.ts    | 100%  | 100%   | 100%  | 100%                               |
+| date.ts          | 100%  | 80%    | 100%  | 100%                               |
+| bookingQr.ts     | 60%   | 100%   | 33%   | 60%                                |
+| aiChatHistory.ts | 61%   | 52%    | 20%   | 64%                                |
+| chatRooms.ts     | 0%    | 0%     | 0%    | 0% (dead code, cố tình không test) |
+| logger.ts        | 0%    | —      | —     | 0% (ngoài phạm vi E1)              |
+| saveQr.ts        | 0%    | —      | —     | 0% (ngoài phạm vi E1)              |
 
 `Test Suites: 6 passed, 6 total` / `Tests: 53 passed, 53 total`.
 
 **File đã đổi/tạo:**
+
 - Mới: `jest.config.js`, `jest.setup.ts`, `jest/cssMock.js`,
   `src/types/jest.d.ts`, `src/api/client.test.ts`,
   `src/utils/aiChatHistory.test.ts`, `src/utils/bookingQr.test.ts`,
@@ -1107,6 +1153,7 @@ sau merge dev #21, xem mục "Phát hiện thêm" bên dưới):**
 file test mới.
 
 **Commit message đề xuất:**
+
 ```
 test(utils): add Jest setup and unit tests for src/utils helpers
 
@@ -1127,6 +1174,7 @@ silently dropped other implicitly-relied-on @types packages.
 thường, không phải lib Expo-aware).
 
 **File mới:**
+
 - `.prettierrc` — `singleQuote`, `semi: true`, `printWidth: 120`,
   `trailingComma: "all"`, `bracketSameLine: false`, `arrowParens: "always"`
   (đúng theo yêu cầu ban đầu).
@@ -1136,6 +1184,7 @@ thường, không phải lib Expo-aware).
   `package-lock.json` (không nên format lock file).
 
 **Sửa:**
+
 - `eslint.config.js` — thêm `eslint-config-prettier` làm phần tử **cuối cùng**
   trong mảng `defineConfig([...])` (sau `expoConfig`), để tắt các rule stylistic
   của ESLint có thể xung đột với Prettier, không chỉnh gì khác.
@@ -1143,6 +1192,7 @@ thường, không phải lib Expo-aware).
   `"format": "prettier --write ."`, `"format:check": "prettier --check ."`.
 
 **Đã kiểm tra (không chạy `format`):**
+
 - `npm run typecheck` và `npm run lint` → sạch, không bị ảnh hưởng bởi việc
   thêm `eslint-config-prettier`.
 - `npm run format:check` (chỉ đọc, không ghi file) → báo **84 file chưa đúng
@@ -1165,6 +1215,7 @@ format (như trên). Khi bạn sẵn sàng, gõ "format" để mình chạy
 chắc không có gì vỡ sau khi format.
 
 **Commit message đề xuất:**
+
 ```
 chore(tooling): add Prettier config and typecheck/format scripts
 
@@ -1192,6 +1243,7 @@ luôn, chấp nhận CI đỏ tạm thời cho tới khi chạy `format`, (b) th
 
 **Đã chạy thử đủ cả 5 bước ở máy (trừ chấp nhận `format:check` fail theo
 quyết định trên):**
+
 - `npm ci` — cài sạch từ `package-lock.json`, không lỗi.
 - `npm run typecheck` — sạch.
 - `npm run lint` — sạch (0 lỗi, kể cả sau khi thêm `eslint-config-prettier`
@@ -1213,6 +1265,7 @@ chạy `npm run format` (gõ "format" để mình chạy, rồi CI sẽ xanh t�
 kế tiếp).
 
 **Commit message đề xuất:**
+
 ```
 ci: add GitHub Actions workflow and CI badge
 
@@ -1270,7 +1323,7 @@ reflects the repo's real state instead of hiding the pending formatting debt.
 - **(tuỳ chọn, không gấp) `account.tsx` vs `edit-profile.tsx`** — xem lại có
   đúng là 2 chức năng khác nhau hay nên gộp (xem "Phát hiện thêm").
 - Xem lại từng "Commit message đề xuất" trong log này và tự `git add`/`git
-  commit` theo cách bạn muốn (theo từng task hay gộp theo giai đoạn) — mình
+commit` theo cách bạn muốn (theo từng task hay gộp theo giai đoạn) — mình
   không tự commit theo đúng quy tắc đã thống nhất từ đầu.
 
 ## Tổng kết toàn bộ Giai đoạn A–E
@@ -1278,30 +1331,30 @@ reflects the repo's real state instead of hiding the pending formatting debt.
 20/20 task đã xong (kể cả 2 ⏸ đã hỏi và chốt, và E2a mới xong phần cấu hình —
 tự thừa nhận chưa chạy `npm run format` theo đúng chủ ý ban đầu).
 
-| Task | Trạng thái | Tóm tắt 1 dòng |
-|---|---|---|
-| A1 | ✅ | Vé check-in chỉ hiện khi đơn đã xác nhận + (nếu PayOS) đã thanh toán |
-| A2 | ✅ | `ENV.isMisconfigured` + màn chặn khi thiếu biến môi trường bản EAS build |
-| A3 | ✅ ⏸(b) | Sửa race condition ở interceptor refresh token; giữ cookie httpOnly như cũ |
-| B1 | ✅ | `src/types/css.d.ts` — hết lỗi `tsc` với `global.css` |
-| B2 | ✅ | Lint về 0 lỗi (trừ 1 warning để dành cho C4, đã hết sau C4) |
-| B3 | ✅ ⏸ | README viết lại, `.env.example`, bỏ script `reset-project`, đổi tên app "Vika Hotel" |
-| *(ngoài kế hoạch)* | ✅ | Rà soát "chuyên nghiệp hơn": searchPrefsStore cho trang chủ, toast lỗi khi refetch nền, haptic khi copy mã khuyến mãi |
-| C1 | ✅ | Reset mã khuyến mãi đã áp khi đổi dịch vụ đặt phòng |
-| C2 | ✅ ⏸ | `phoneSchema` (Zod) cho SĐT; `numberOfGuests` chỉ thêm type + TODO, không gửi server |
-| C3 | ✅ | Đổi nhãn "Tạm tính" + chú thích (không có endpoint báo giá trước) |
-| C4 | ✅ | `usePayosCheckout` — tách rõ `loading/waiting/paid/expired/failed`, polling + AppState |
-| D1 | ✅ | `useApi` chống race bằng `requestId` + `mountedRef` |
-| D2 | ✅ | Tách `secureStorage` (chỉ access token) / `plainStorage` (còn lại), migrate blob cũ |
-| D3 | ✅ | `strongPasswordSchema` (8 ký tự, có chữ+số) — sửa đúng luật backend cho đổi mật khẩu |
-| D4 | ✅ | `ErrorBoundary` qua Expo Router + `AppErrorFallback` + `logger.ts` |
-| D5 | ✅ | `useNetworkStatus` + `OfflineBanner`; chặn gửi chat khi mất mạng |
-| D6 | ✅ | Thêm accessibilityLabel/Role cho nhiều component (audit qua subagent) |
-| D7 | ✅ | Key ổn định cho tin nhắn chat (UUID thay index); `cachePolicy="memory-disk"` cho ảnh trong list |
-| *(interlude)* | ✅ | Review merge dev #21 và #22 — không có bug, resolve conflict đúng "Updated upstream" |
-| E1 | ✅ ⏸ | Jest + 6 file test (53 test) cho `src/utils` + `getApiErrorMessage`; sửa gap `@types/jest` không tới được `tsc` |
-| E2a | ✅ (⏳ chưa `format`) | Cấu hình Prettier + script `typecheck`/`format`/`format:check` |
-| E2b | ✅ ⏸ | CI workflow GitHub Actions (đỏ tạm ở `format:check` — đã hỏi, bạn chọn vậy) |
+| Task               | Trạng thái            | Tóm tắt 1 dòng                                                                                                        |
+| ------------------ | --------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| A1                 | ✅                    | Vé check-in chỉ hiện khi đơn đã xác nhận + (nếu PayOS) đã thanh toán                                                  |
+| A2                 | ✅                    | `ENV.isMisconfigured` + màn chặn khi thiếu biến môi trường bản EAS build                                              |
+| A3                 | ✅ ⏸(b)               | Sửa race condition ở interceptor refresh token; giữ cookie httpOnly như cũ                                            |
+| B1                 | ✅                    | `src/types/css.d.ts` — hết lỗi `tsc` với `global.css`                                                                 |
+| B2                 | ✅                    | Lint về 0 lỗi (trừ 1 warning để dành cho C4, đã hết sau C4)                                                           |
+| B3                 | ✅ ⏸                  | README viết lại, `.env.example`, bỏ script `reset-project`, đổi tên app "Vika Hotel"                                  |
+| _(ngoài kế hoạch)_ | ✅                    | Rà soát "chuyên nghiệp hơn": searchPrefsStore cho trang chủ, toast lỗi khi refetch nền, haptic khi copy mã khuyến mãi |
+| C1                 | ✅                    | Reset mã khuyến mãi đã áp khi đổi dịch vụ đặt phòng                                                                   |
+| C2                 | ✅ ⏸                  | `phoneSchema` (Zod) cho SĐT; `numberOfGuests` chỉ thêm type + TODO, không gửi server                                  |
+| C3                 | ✅                    | Đổi nhãn "Tạm tính" + chú thích (không có endpoint báo giá trước)                                                     |
+| C4                 | ✅                    | `usePayosCheckout` — tách rõ `loading/waiting/paid/expired/failed`, polling + AppState                                |
+| D1                 | ✅                    | `useApi` chống race bằng `requestId` + `mountedRef`                                                                   |
+| D2                 | ✅                    | Tách `secureStorage` (chỉ access token) / `plainStorage` (còn lại), migrate blob cũ                                   |
+| D3                 | ✅                    | `strongPasswordSchema` (8 ký tự, có chữ+số) — sửa đúng luật backend cho đổi mật khẩu                                  |
+| D4                 | ✅                    | `ErrorBoundary` qua Expo Router + `AppErrorFallback` + `logger.ts`                                                    |
+| D5                 | ✅                    | `useNetworkStatus` + `OfflineBanner`; chặn gửi chat khi mất mạng                                                      |
+| D6                 | ✅                    | Thêm accessibilityLabel/Role cho nhiều component (audit qua subagent)                                                 |
+| D7                 | ✅                    | Key ổn định cho tin nhắn chat (UUID thay index); `cachePolicy="memory-disk"` cho ảnh trong list                       |
+| _(interlude)_      | ✅                    | Review merge dev #21 và #22 — không có bug, resolve conflict đúng "Updated upstream"                                  |
+| E1                 | ✅ ⏸                  | Jest + 6 file test (53 test) cho `src/utils` + `getApiErrorMessage`; sửa gap `@types/jest` không tới được `tsc`       |
+| E2a                | ✅ (⏳ chưa `format`) | Cấu hình Prettier + script `typecheck`/`format`/`format:check`                                                        |
+| E2b                | ✅ ⏸                  | CI workflow GitHub Actions (đỏ tạm ở `format:check` — đã hỏi, bạn chọn vậy)                                           |
 
 **Trạng thái kiểm tra ở lần log cuối:** `npm run typecheck` sạch, `npm run
 lint` sạch, `npm test` 53/53 pass, `npm run format:check` fail ở 84 file
@@ -1338,6 +1391,7 @@ các devDependencies mình thêm ở E1/E2 (`jest`, `jest-expo`, `@types/jest`,
 
 **Đã hỏi bạn — bạn chọn giữ bản nâng cấp SDK 58** và cộng thêm lại phần của
 mình. Đã làm:
+
 - Resolve `package.json`: giữ hết các bản 58.x/19.3.0 phía "Updated upstream",
   cộng lại `@types/jest`/`eslint-config-prettier`/`prettier` từ stash, và
   **nâng `jest` (29→30) + `jest-expo` (57→58)** cho khớp SDK 58 (kiểm tra qua
@@ -1353,9 +1407,9 @@ mình. Đã làm:
   2. `expo-modules-core` bị nest sai chỗ (`expo/node_modules/...` thay vì
      hoist lên top-level) dù không có xung đột version nào → jest-expo không
      `require` được, test gãy hết.
-  Cách sửa cả 2: xoá sạch `node_modules` **và** `package-lock.json`, cài lại
-  từ đầu hoàn toàn (không để npm "kế thừa" layout cũ từ lockfile) — làm đúng
-  2 lần mới hết sạch (lần 1 còn sót nest sai ở `expo-modules-core`).
+     Cách sửa cả 2: xoá sạch `node_modules` **và** `package-lock.json`, cài lại
+     từ đầu hoàn toàn (không để npm "kế thừa" layout cũ từ lockfile) — làm đúng
+     2 lần mới hết sạch (lần 1 còn sót nest sai ở `expo-modules-core`).
 - `jest-expo@58` tách `@react-native/jest-preset` thành peer dependency riêng
   (trước đây đi kèm luôn) — đã thêm `@react-native/jest-preset` vào
   devDependencies (bản `^0.88.1`, khớp đúng `react-native@0.88.0`).
@@ -1369,6 +1423,7 @@ mình. Đã làm:
 `package.json`/`package-lock.json` đã `git add` đánh dấu resolve xong.
 
 **Bug phát hiện ngoài phạm vi — đã sửa sau khi bạn xác nhận:**
+
 - **`src/app/favorites.tsx` dòng 27-29** — `return;` dư dấu `;` khiến
   `<ErrorView .../>` phía dưới thành dead code (lint báo `no-unreachable`) →
   khi tải "Yêu thích" lỗi, màn hình trắng trơn thay vì hiện lỗi + nút thử
@@ -1377,6 +1432,7 @@ mình. Đã làm:
   `typecheck`/`lint` sạch hoàn toàn (hết cả 2 warning).
 
 **Việc bạn cần tự làm thêm (bổ sung, do SDK 58):**
+
 - Rebuild lại dev client / app native (`npx expo run:android` hoặc
   `run:ios`, hoặc tạo build EAS mới) — bản trên điện thoại hiện đang build
   với SDK 57, không còn khớp JS bundle SDK 58 nữa.
@@ -1389,6 +1445,7 @@ mình. Đã làm:
 `jest` đều crash hết heap, giống lỗi hết RAM khi chạy `expo start` ban đầu.**
 Đã sửa 2 script để chịu được máy ít RAM hơn (không phải lỗi code, lỗi môi
 trường):
+
 - `typecheck`: đổi thành `node --max-old-space-size=4096 .../tsc --noEmit`
   (gọi `node` trực tiếp với heap lớn hơn thay vì để tsc tự tính — cách này
   chạy đúng trên cả Windows/Mac/Linux, không cần cài `cross-env`).
@@ -1415,8 +1472,9 @@ tự kiểm tra và commit riêng ở repo đó.
 
 **Backend (`t:/kltn-vika-hotel-booking/backend`) — theo đúng pattern có sẵn
 của `booking:updated`/`RealtimeGateway`:**
+
 - `src/realtime/realtime.gateway.ts` — thêm `emitFavoriteUpdated(userId,
-  payload)`, bắn vào room riêng của user (`user:<userId>`), event tên
+payload)`, bắn vào room riêng của user (`user:<userId>`), event tên
   `favorite:updated` — giống hệt cách `emitBookingUpdatedForCustomer` đang
   làm.
 - `src/room-types/favorite.service.ts` — tiêm `RealtimeGateway` (đã có sẵn
@@ -1427,6 +1485,7 @@ của `booking:updated`/`RealtimeGateway`:**
 
 **Web (`t:/kltn-vika-hotel-booking/frontend`) — theo đúng pattern có sẵn của
 `BookingHistoryPage.jsx` nghe `booking:updated`:**
+
 - `src/components/user/FavoritesPage.jsx` — thêm `useEffect` nghe
   `socket.on('favorite:updated', ...)` (qua `useSocket()` có sẵn), dispatch
   `favoriteApi.util.invalidateTags(['Favorite'])` để RTK Query tự refetch.
@@ -1435,6 +1494,7 @@ của `booking:updated`/`RealtimeGateway`:**
 
 **Mobile (`src/`) — theo đúng pattern có sẵn của `bookingsVersion`/
 `useBookingUpdates` (xem D1/useApi):**
+
 - `src/store/notificationStore.ts` — thêm `favoritesVersion` + `bumpFavorites()`,
   song song hệt `bookingsVersion`/`bumpBookings`.
 - `src/hooks/useFavoriteUpdates.ts` (mới) — bản sao của `useBookingUpdates`
@@ -1456,6 +1516,7 @@ bên kia tự cập nhật danh sách không cần F5/rời màn hình (cần c�
 chạy code mới và FE/mobile đã build lại).
 
 **Commit message đề xuất (mobile):**
+
 ```
 feat(favorites): sync favorites list in realtime via socket
 
@@ -1466,6 +1527,7 @@ useBookingUpdates pattern used for booking:updated.
 ```
 
 **Commit message đề xuất (backend, repo khác — bạn tự commit ở đó):**
+
 ```
 feat(favorites): emit favorite:updated over the realtime gateway
 
@@ -1473,3 +1535,76 @@ Favorites were REST-only with no realtime signal, so a change made on one
 device (web or mobile) never reached another open session. Emit to the
 user's own room on add/remove, mirroring emitBookingUpdatedForCustomer.
 ```
+
+## Rà soát sau khi merge `dev` và dọn dẹp (2026-11-14)
+
+Sau khi merge `dev` (fast-forward, `Vinh == dev`), rà soát toàn bộ app và xử lý
+các vấn đề tìm được. `typecheck` ✅, `lint` ✅ (0 lỗi, 0 warning), `test` ✅
+83/83, `prettier --check` ✅.
+
+**Môi trường / git**
+
+- Working tree dính lại conflict marker ở `package.json`, `package-lock.json`,
+  `docs/IMPROVEMENT_LOG.md`, `src/utils/date.test.ts` do một lần `git stash pop`
+  áp lại `stash@{0}` cũ (2026-11-01, thời SDK 57) — stash đó chưa bị xoá sau lần
+  pop conflict trước (xem mục "nâng cấp Expo SDK 57 → 58"). Nội dung stash hoặc
+  trùng HEAD hoặc cũ hơn nên đã khôi phục 4 file về HEAD. **Đừng `git stash pop`
+  lại** — dùng `git stash drop` sau khi chắc chắn không còn cần.
+- CI chạy Node 20 trong khi React Native 0.88 / Expo SDK 58 yêu cầu Node
+  `^22.13 || ^24.3 || >=26` → đổi CI sang Node 22 và thêm `engines` vào
+  `package.json` (đồng bộ vào `package-lock.json`).
+- `npm run format:check` (bước của CI) đang fail trên 92 file → đã chạy
+  `npm run format` cho toàn repo. `.vscode/` bị gitignore và editor không format
+  theo `.prettierrc` (nguyên nhân các file dấu nháy kép) — cần bật Prettier làm
+  formatter mặc định + format on save cục bộ để không lặp lại.
+
+**Tính năng**
+
+- **Hoàn tiền khi huỷ đơn** (`feat/refund`, commit `b9f5c13`) chưa từng được đưa
+  vào nhánh chính: commit "hoàn tiền mobile" `7368295` thực chất chỉ là tính
+  năng "Đặt lại phòng". Đã merge `feat/refund` (1 conflict duy nhất ở
+  `booking/[id].tsx`, giữ cả nút "Đặt lại" lẫn `RefundStatusCard`). Đã đối chiếu
+  trực tiếp với source backend: kiểu dữ liệu `CancellationPreview`,
+  `BookingRefundRequest`, `MyRefundRequest` khớp đúng
+  `RefundRequestService`/`BookingService`.
+
+**Sửa lỗi — `src/api/client.ts` (refresh token)**
+
+- Lệnh refresh dùng `axios` trần nên **không có timeout** → mạng treo là mọi
+  request xếp hàng sau refresh treo theo. Nay dùng `refreshClient` riêng, cùng
+  timeout với `apiClient`.
+- Mọi lỗi refresh (kể cả mất mạng thoáng qua, 5xx) đều `clearSession()` → khách
+  bị đăng xuất oan. Nay chỉ xoá phiên khi server từ chối chính refresh token
+  (401/403); lỗi mạng/timeout/5xx giữ nguyên phiên và trả lỗi thật cho màn hình
+  (vd. "kiểm tra kết nối").
+- `/auth/me` bị loại khỏi cơ chế refresh (cả nhóm `/auth/*` bị loại) nên lúc mở
+  app với access token đã hết hạn thì `/auth/me` thất bại im lặng. Nay chỉ các
+  endpoint thông tin đăng nhập (login/OTP/google...) bị loại; `/auth/me` được
+  refresh và thử lại.
+- Thêm 10 test cho luồng này (`client.test.ts`).
+
+**Dọn dẹp**
+
+- Xoá nút `[DEV] Test Error Boundary` ở `profile.tsx` (task D4).
+- Comment tham chiếu `doc/API.md` (đã bị xoá khỏi repo) đổi sang tên
+  controller/service/DTO backend tương ứng.
+- Hai TODO chờ backend đã tự tra source và thay bằng sự thật đã xác minh:
+  - `POST /payments/payos/:bookingId/link` **không idempotent** — link cũ còn
+    PENDING sẽ bị huỷ và cấp orderCode mới, nên mở lại màn thanh toán làm QR đã
+    lưu trước đó mất hiệu lực (hành vi giữ nguyên, chỉ ghi chú lại).
+  - `CreateBookingDto` backend không có trường số khách và `ValidationPipe` chỉ
+    `whitelist` (lặng lẽ bỏ trường lạ, không 400) → bỏ `numberOfGuests` khỏi
+    `CreateBookingDto` mobile (vốn không dùng ở đâu).
+- Bỏ một `eslint-disable` thừa ở `ChatBookingCreatedCard.tsx`.
+
+**Chưa làm / cần bạn quyết**
+
+- **Đăng nhập bằng Turnstile** (`/auth/login` + `TurnstileWidget`, commit
+  `78aa79c` của đồng đội) trái với quy ước "mobile không phụ thuộc Turnstile"
+  và comment backend ở `/auth/mobile/login`. Chưa đổi vì là thay đổi có chủ ý
+  của đồng đội — cần thống nhất.
+- Độ phủ test mới ~52% và chỉ ở `utils`; màn hình/component chưa có test.
+  `booking/[id].tsx` (~800 dòng) nên được tách nhỏ.
+- Chưa có crash reporter (`logger.ts` còn ghi TODO).
+- `git stash drop "stash@{0}"` chưa chạy (bị chặn trong phiên này) — bạn tự chạy;
+  `stash@{1}`/`stash@{2}` (tháng 10) chưa kiểm tra có cần giữ không.

@@ -23,8 +23,6 @@ export function filterRooms<T extends Pick<RoomType, 'basePrice' | 'name'>>(
   const range = PRICE_RANGES.find((r) => r.key === priceKey) ?? PRICE_RANGES[0];
   return rooms.filter(
     (room) =>
-      room.basePrice >= range.min &&
-      room.basePrice < range.max &&
-      (names.length === 0 || names.includes(room.name)),
+      room.basePrice >= range.min && room.basePrice < range.max && (names.length === 0 || names.includes(room.name)),
   );
 }

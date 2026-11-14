@@ -362,7 +362,39 @@
       "UNPAID": "Unpaid",
       "FAILED": "Failed"
     },
-    "cancelSuccess": "Your booking has been cancelled."
+    "cancelSuccess": "Your booking has been cancelled.",
+    "cancelSuccessWithRefund": "Booking cancelled. A refund request has been created.",
+    "cancelReasonDefault": "Cancelled by the guest",
+    "cancelReasonInputLabel": "Reason for cancelling (optional)",
+    "cancelReasonInputPlaceholder": "Let us know why so we can help better, especially if the booking is paid and needs a refund.",
+    "cancelReasonCount": "{{count}}/{{max}} characters",
+    "cancelReasonChipScheduleChange": "Schedule changed",
+    "cancelReasonChipWrongBooking": "Booked by mistake",
+    "cancelReasonChipFoundElsewhere": "Found another place",
+    "cancelReasonChipOther": "Other",
+    "cancelPreviewError": "Couldn't load the refund estimate.",
+    "cancellationPreviewFull": "You'll get a 100% refund ({{amount}}) — {{hours}} hours left until check-in.",
+    "cancellationPreviewPartial": "Cancelling now refunds {{percent}}% ({{amount}} of the {{paidAmount}} paid) — fewer than {{freeHours}} hours left until check-in.",
+    "cancellationPreviewNone": "Check-in time has passed, so this booking won't be refunded.",
+    "cancelRefundProcessNote": "The hotel will reach out to verify and process the refund manually.",
+    "refundTitle": "Refund",
+    "refundState": {
+      "pending": "Refund pending",
+      "overdue": "Not received yet",
+      "completed": "Refunded",
+      "rejected": "Request rejected"
+    },
+    "refundAmountAccessibility": "Refund amount: {{amount}}, {{percent}} percent",
+    "refundRejectedReason": "Reason: {{reason}}",
+    "refundProofAccessibility": "Refund receipt photo, tap to view fullscreen",
+    "refundContactReception": "Contact reception",
+    "refundContactPrefill": "I need help with the refund for booking {{code}}",
+    "refundQrHint": "You can send a photo of your bank QR code to reception to get paid faster.",
+    "refundOpenChat": "Open chat with reception",
+    "refundTimelineCreated": "Request created",
+    "refundTimelineCompleted": "Refunded",
+    "refundTimelineRejected": "Rejected",
+    "refundTimelineProcessing": "Processing"
   },
   "checkout": {
     "createLinkFailed": "Couldn't start the payment.",
@@ -612,11 +644,7 @@
     "sendFailed": "Couldn't send the message, please try again.",
     "imageType": "Only JPG, PNG or WEBP images are accepted.",
     "imageTooLarge": "The image is too large (max 5MB).",
-    "prompts": [
-      "I have a question about a refund",
-      "I'd like to change my check-in date",
-      "I need an extra service"
-    ],
+    "prompts": ["I have a question about a refund", "I'd like to change my check-in date", "I need an extra service"],
     "typing": "Reception is typing."
   }
 }

@@ -26,10 +26,11 @@ export function usePayosCheckout(bookingId: string) {
     setError(null);
     setLink(null);
     try {
-      // TODO: confirm with backend whether POST /payments/payos/:bookingId/link is
-      // idempotent — calling it again here (regenerate(), or simply remounting this
-      // screen) for a booking that already has an active link should return that
-      // same link rather than silently creating a second payment intent.
+      // NOT idempotent (PaymentService.createLinkForBooking): when the booking's current
+      // PayOS link is still PENDING the backend cancels it and issues a new orderCode, so
+      // every call here — regenerate(), or simply remounting this screen — invalidates any
+      // QR the guest saved or screenshotted earlier. A link that is already PAID, or in a
+      // half-processed state (UNDERPAID/PROCESSING/FAILED), answers 400 instead.
       const created = await paymentsApi.createPayosLink(bookingId);
       setLink(created);
 

@@ -54,7 +54,8 @@ export function ConfirmDialog({
       <Animated.View
         entering={animated ? FadeIn.duration(180) : undefined}
         exiting={animated ? FadeOut.duration(150) : undefined}
-        style={styles.backdrop}>
+        style={styles.backdrop}
+      >
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={t('common.close')}
@@ -64,7 +65,8 @@ export function ConfirmDialog({
         <Animated.View
           entering={animated ? ZoomIn.duration(200).springify().damping(18) : undefined}
           exiting={animated ? ZoomOut.duration(150) : undefined}
-          style={[styles.card, shadows.floating, { backgroundColor: theme.backgroundElement }]}>
+          style={[styles.card, shadows.floating, { backgroundColor: theme.backgroundElement }]}
+        >
           <ThemedText type="heading" style={styles.center}>
             {title}
           </ThemedText>

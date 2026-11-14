@@ -15,15 +15,12 @@ import {
 
 export const authApi = {
   // Step 1/2 of registration — only sends an OTP, the account isn't created yet.
-  register: (dto: RegisterDto) =>
-    apiClient.post<RegisterResponse>('/auth/register', dto).then((r) => r.data),
+  register: (dto: RegisterDto) => apiClient.post<RegisterResponse>('/auth/register', dto).then((r) => r.data),
 
   // Step 2/2 — creates the account once the OTP is confirmed.
-  verifyOtp: (dto: VerifyOtpDto) =>
-    apiClient.post<{ message: string }>('/auth/verify-otp', dto).then((r) => r.data),
+  verifyOtp: (dto: VerifyOtpDto) => apiClient.post<{ message: string }>('/auth/verify-otp', dto).then((r) => r.data),
 
-  resendOtp: (dto: ResendOtpDto) =>
-    apiClient.post<{ message: string }>('/auth/resend-otp', dto).then((r) => r.data),
+  resendOtp: (dto: ResendOtpDto) => apiClient.post<{ message: string }>('/auth/resend-otp', dto).then((r) => r.data),
 
   // turnstileToken comes from the Turnstile widget running in a WebView (see TurnstileWidget).
   login: (dto: LoginDto) => apiClient.post<LoginResponse>('/auth/login', dto).then((r) => r.data),

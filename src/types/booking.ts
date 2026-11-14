@@ -2,6 +2,7 @@ import { RoomType } from './room';
 import { Service } from './service';
 import { Promotion } from './promotion';
 import { User } from './auth';
+import { BookingRefundRequest } from './refund';
 
 export type BookingStatus = 'PENDING' | 'CONFIRMED' | 'CHECKED_IN' | 'CHECKED_OUT' | 'CANCELLED';
 export type PaymentMethod = 'CASH' | 'PAYOS';
@@ -24,8 +25,8 @@ export type BookingServiceItem = {
   createdAt?: string;
 };
 
-// Full shape returned by every booking endpoint (doc/API.md 5.6) — the
-// backend sends the raw entity with nested relations, not a slimmed-down DTO.
+// Full shape returned by every booking endpoint (BookingService) — the backend
+// sends the raw entity with nested relations, not a slimmed-down DTO.
 export type Booking = {
   bookingId: string;
   user: User;
@@ -53,6 +54,9 @@ export type Booking = {
   vatAmount: number;
   totalAmount: number;
   dueAmount: number;
+  // Only present on GET /bookings/:id (BookingService.findById) — null if the booking
+  // was never cancelled-while-paid (no RefundRequest ever created for it).
+  refundRequest?: BookingRefundRequest | null;
 };
 
 export type BookingDetail = Booking;
@@ -65,11 +69,9 @@ export type CreateBookingDto = {
   extraServiceIds?: string[];
   promotionCode?: string;
   paymentMethod?: PaymentMethod;
-  // TODO: not confirmed with backend yet — POST /bookings currently has no guest-count
-  // field in its body (see docs/API.md 5.1). The guest count collected in booking/new.tsx
-  // is only ever shown to the user, never sent. Do NOT start sending this until backend
-  // confirms a field name and that an extra unknown field won't 400 under DTO whitelisting.
-  numberOfGuests?: number;
+  // No guest-count field on purpose: the backend's CreateBookingDto has none and its global
+  // ValidationPipe uses `whitelist: true`, so an extra property would be silently dropped
+  // (never persisted, never a 400). Add it here only together with a backend DTO field.
 };
 
 export type AddBookingServiceDto = {

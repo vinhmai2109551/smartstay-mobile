@@ -52,7 +52,8 @@ export default function ForgotPasswordScreen() {
         style={({ pressed }) => [
           styles.backButton,
           { borderColor: theme.border, backgroundColor: theme.backgroundElement, opacity: pressed ? 0.7 : 1 },
-        ]}>
+        ]}
+      >
         <Ionicons name="chevron-back" size={22} color={theme.text} />
       </Pressable>
 

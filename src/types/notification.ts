@@ -8,7 +8,9 @@ export type NotificationType =
   | 'PAYMENT_SUCCESS'
   | 'PAYMENT_FAILED'
   | 'REVIEW_REPLIED'
-  | 'STAFF_NEW_BOOKING';
+  | 'STAFF_NEW_BOOKING'
+  | 'REFUND_COMPLETED'
+  | 'REFUND_REJECTED';
 
 // Same shape for REST rows and the `notification:new` socket payload (toResponse on the backend).
 export type AppNotification = {
