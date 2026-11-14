@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import dayjs from "dayjs";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -72,13 +72,16 @@ export default function ReceptionChatScreen() {
   const userId = useAuthStore((s) => s.user?.userId);
   const socket = useSocketStore((s) => s.socket);
   const listRef = useRef<FlatList<ReceptionMessage>>(null);
+  // Opened from elsewhere (e.g. the refund card's "Liên hệ lễ tân") with a suggested
+  // message already typed in — the guest still has to review/send it themselves.
+  const { prefill } = useLocalSearchParams<{ prefill?: string }>();
 
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ReceptionMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
   const [attempt, setAttempt] = useState(0); // bumped by "Retry"
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState(prefill ?? "");
   const [pending, setPending] = useState<ImagePicker.ImagePickerAsset | null>(
     null,
   );

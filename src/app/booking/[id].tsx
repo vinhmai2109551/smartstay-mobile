@@ -10,7 +10,9 @@ import { RefreshControl, ScrollView, type ScrollViewInstance, StyleSheet, View }
 import { bookingsApi } from "@/api/bookings";
 import { getApiErrorMessage } from "@/api/client";
 import { reviewsApi } from "@/api/reviews";
+import { CancelBookingSheet } from "@/components/CancelBookingSheet";
 import { CheckInPass } from "@/components/CheckInPass";
+import { RefundStatusCard } from "@/components/RefundStatusCard";
 import { ReviewCard } from "@/components/ReviewCard";
 import { StarRatingInput } from "@/components/StarRatingInput";
 import { roomImageSource } from "@/components/RoomTypeCard";
@@ -18,7 +20,6 @@ import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { ErrorView } from "@/components/ui/ErrorView";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { StatusBadge } from "@/components/ui/StatusBadge";
@@ -137,12 +138,13 @@ export default function BookingDetailScreen() {
       <ErrorView message={error ?? t("booking.notFound")} onRetry={refetch} />
     );
 
-  const handleConfirmCancel = async () => {
+  const handleConfirmCancel = async (reason: string) => {
     setCancelling(true);
     try {
-      await bookingsApi.cancel(id, { reason: "Khách hàng yêu cầu huỷ" });
+      const hadPaidAmount = booking.paidAmount > 0;
+      await bookingsApi.cancel(id, { reason });
       setShowCancelConfirm(false);
-      toast.success(t("booking.cancelSuccess"));
+      toast.success(hadPaidAmount ? t("booking.cancelSuccessWithRefund") : t("booking.cancelSuccess"));
       refetch();
     } catch (err) {
       toast.error(getApiErrorMessage(err, t("booking.cancelFailed")));
@@ -464,6 +466,13 @@ export default function BookingDetailScreen() {
           ) : null}
         </Card>
 
+        {booking.refundRequest ? (
+          <RefundStatusCard
+            bookingId={booking.bookingId}
+            refund={booking.refundRequest}
+          />
+        ) : null}
+
         {needsPayment ||
         CANCELLABLE_STATUSES.has(booking.status) ||
         booking.status === "CANCELLED" ? (
@@ -583,14 +592,10 @@ export default function BookingDetailScreen() {
         ) : null}
       </ScrollView>
 
-      <ConfirmDialog
+      <CancelBookingSheet
         visible={showCancelConfirm}
-        title={t("booking.cancelTitle")}
-        message={t("booking.cancelMessage")}
-        confirmLabel={t("booking.cancelConfirm")}
-        cancelLabel={t("booking.cancelDismiss")}
-        destructive
-        animated={false}
+        bookingId={booking.bookingId}
+        paidAmount={booking.paidAmount}
         loading={cancelling}
         onConfirm={handleConfirmCancel}
         onCancel={() => setShowCancelConfirm(false)}
