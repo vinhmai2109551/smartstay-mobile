@@ -212,12 +212,25 @@
     "searchButton_one": "Tìm phòng · {{count}} đêm",
     "searchButton_other": "Tìm phòng · {{count}} đêm",
     "searchFailed": "Không thể tìm phòng, vui lòng thử lại.",
-    "resultsCount": "{{count}} loại phòng còn trống",
-    "resultsTitle": "Kết quả",
     "emptyInitialTitle": "Sẵn sàng cho chuyến đi?",
     "emptyInitialDescription": "Kết quả phòng trống sẽ hiện ở đây sau khi bạn bấm Tìm phòng.",
     "emptyResultsTitle": "Không còn phòng phù hợp",
     "emptyResultsDescription": "Thử đổi ngày khác hoặc giảm số khách nhé.",
+    "filter": {
+      "title": "Bộ lọc",
+      "reset": "Đặt lại",
+      "priceRange": "Khoảng giá (mỗi đêm)",
+      "roomType": "Loại phòng",
+      "price": {
+        "all": "Tất cả",
+        "under1m": "Dưới 1 triệu",
+        "1to2m": "1 – 2 triệu",
+        "2to4m": "2 – 4 triệu",
+        "over4m": "Từ 4 triệu"
+      },
+      "emptyTitle": "Không có phòng khớp bộ lọc",
+      "emptyDescription": "Thử chọn khoảng giá hoặc loại phòng khác."
+    },
     "hero1Eyebrow": "ĐẶT PHÒNG",
     "hero1Title": "Chọn ngày,\nchọn phòng ưng ý",
     "hero2Eyebrow": "ƯU ĐÃI MỖI NGÀY",

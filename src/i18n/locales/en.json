@@ -212,12 +212,25 @@
     "searchButton_one": "Search · {{count}} night",
     "searchButton_other": "Search · {{count}} nights",
     "searchFailed": "Couldn't search for rooms, please try again.",
-    "resultsCount": "{{count}} room types available",
-    "resultsTitle": "Results",
     "emptyInitialTitle": "Ready for a getaway?",
     "emptyInitialDescription": "Available rooms will show up here after you tap Search.",
     "emptyResultsTitle": "No matching rooms",
     "emptyResultsDescription": "Try different dates or fewer guests.",
+    "filter": {
+      "title": "Filters",
+      "reset": "Reset",
+      "priceRange": "Price per night",
+      "roomType": "Room type",
+      "price": {
+        "all": "All",
+        "under1m": "Under 1M",
+        "1to2m": "1M – 2M",
+        "2to4m": "2M – 4M",
+        "over4m": "4M and up"
+      },
+      "emptyTitle": "No rooms match your filters",
+      "emptyDescription": "Try a different price range or room type."
+    },
     "hero1Eyebrow": "BOOK A ROOM",
     "hero1Title": "Pick your dates,\nfind the perfect room",
     "hero2Eyebrow": "DAILY DEALS",

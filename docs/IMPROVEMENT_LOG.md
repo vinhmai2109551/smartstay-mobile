@@ -1256,8 +1256,7 @@ reflects the repo's real state instead of hiding the pending formatting debt.
 
 - Chạy các lệnh `eas env:create` ở mục A2 để khai báo biến môi trường cho 3
   build profile (development/preview/production).
-- **(D4) Xoá nút "[DEV] Test Error Boundary" trong `(tabs)/profile.tsx`** (và
-  state/`if` throw đi kèm) trước khi nộp bài — tìm theo comment "DEV-ONLY".
+- ~~**(D4) Xoá nút "[DEV] Test Error Boundary" trong `(tabs)/profile.tsx`**~~ — đã xoá (2026-11-14).
 - Rebuild dev client (`npx expo run:android`/`run:ios`) nếu muốn test tính
   năng "Lưu mã QR" (`expo-media-library`) — không chạy được trên Expo Go.
 - **(E2) Chạy `npm run format` khi sẵn sàng** — gõ "format" trong chat để mình
