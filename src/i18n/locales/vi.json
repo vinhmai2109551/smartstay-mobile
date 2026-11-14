@@ -632,11 +632,7 @@
     "sendFailed": "Không gửi được tin nhắn, vui lòng thử lại.",
     "imageType": "Chỉ nhận ảnh định dạng JPG, PNG hoặc WEBP.",
     "imageTooLarge": "Ảnh vượt quá dung lượng cho phép (tối đa 5MB).",
-    "prompts": [
-      "Tôi muốn hỏi về hoàn tiền",
-      "Tôi muốn đổi ngày nhận phòng",
-      "Tôi cần yêu cầu thêm dịch vụ"
-    ],
+    "prompts": ["Tôi muốn hỏi về hoàn tiền", "Tôi muốn đổi ngày nhận phòng", "Tôi cần yêu cầu thêm dịch vụ"],
     "typing": "Lễ tân đang nhập tin nhắn."
   }
 }

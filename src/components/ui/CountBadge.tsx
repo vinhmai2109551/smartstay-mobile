@@ -14,7 +14,8 @@ export function CountBadge({ count, style }: { count: number; style?: StyleProp<
     <Animated.View
       entering={ZoomIn.springify()}
       exiting={ZoomOut}
-      style={[styles.badge, { backgroundColor: theme.danger, borderColor: theme.backgroundElement }, style]}>
+      style={[styles.badge, { backgroundColor: theme.danger, borderColor: theme.backgroundElement }, style]}
+    >
       <View>
         <ThemedText style={styles.text}>{count > 99 ? '99+' : count}</ThemedText>
       </View>

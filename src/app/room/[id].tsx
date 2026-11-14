@@ -1,42 +1,34 @@
-import { Ionicons } from "@expo/vector-icons";
-import dayjs from "dayjs";
-import { Image } from "expo-image";
-import { router, useLocalSearchParams, Stack } from "expo-router";
-import { useCallback, useState } from "react";
-import { useTranslation } from "react-i18next";
-import {
-  FlatList,
-  Modal,
-  ScrollView,
-  StyleSheet,
-  useWindowDimensions,
-  View,
-  Pressable,
-} from "react-native";
-import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Ionicons } from '@expo/vector-icons';
+import dayjs from 'dayjs';
+import { Image } from 'expo-image';
+import { router, useLocalSearchParams, Stack } from 'expo-router';
+import { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { FlatList, Modal, ScrollView, StyleSheet, useWindowDimensions, View, Pressable } from 'react-native';
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { reviewsApi } from "@/api/reviews";
-import { roomTypesApi } from "@/api/roomTypes";
-import { RatingStars } from "@/components/RatingStars";
-import { ReviewCard } from "@/components/ReviewCard";
-import { ThemedText } from "@/components/themed-text";
-import { ThemedView } from "@/components/themed-view";
-import { BottomBar } from "@/components/ui/BottomBar";
-import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
-import { ErrorView } from "@/components/ui/ErrorView";
-import { Skeleton } from "@/components/ui/Skeleton";
-import { amenityIcon } from "@/constants/amenityIcons";
-import { DemoRoomImageByName } from "@/constants/demoImages";
-import { FontFamily, MaxContentWidth, Radius, Space } from "@/constants/theme";
-import { useApi } from "@/hooks/useApi";
-import { useTheme } from "@/hooks/use-theme";
-import { formatVND } from "@/utils/currency";
-import { formatDate, nightsBetween, toIsoDate } from "@/utils/date";
-import * as Haptics from "expo-haptics";
-import { favoritesApi } from "@/api/favorites";
-import { toast } from "@/store/toastStore";
+import { reviewsApi } from '@/api/reviews';
+import { roomTypesApi } from '@/api/roomTypes';
+import { RatingStars } from '@/components/RatingStars';
+import { ReviewCard } from '@/components/ReviewCard';
+import { ThemedText } from '@/components/themed-text';
+import { ThemedView } from '@/components/themed-view';
+import { BottomBar } from '@/components/ui/BottomBar';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import { ErrorView } from '@/components/ui/ErrorView';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { amenityIcon } from '@/constants/amenityIcons';
+import { DemoRoomImageByName } from '@/constants/demoImages';
+import { FontFamily, MaxContentWidth, Radius, Space } from '@/constants/theme';
+import { useApi } from '@/hooks/useApi';
+import { useTheme } from '@/hooks/use-theme';
+import { formatVND } from '@/utils/currency';
+import { formatDate, nightsBetween, toIsoDate } from '@/utils/date';
+import * as Haptics from 'expo-haptics';
+import { favoritesApi } from '@/api/favorites';
+import { toast } from '@/store/toastStore';
 
 const GUTTER = Space.lg;
 
@@ -51,25 +43,15 @@ export default function RoomTypeDetailScreen() {
     checkOut?: string;
     guests?: string;
   }>();
-  const fetchRoomType = useCallback(
-    () => roomTypesApi.detail(params.id),
-    [params.id],
-  );
+  const fetchRoomType = useCallback(() => roomTypesApi.detail(params.id), [params.id]);
   const { data: roomType, loading, error, refetch } = useApi(fetchRoomType);
 
-  const fetchReviews = useCallback(
-    () => reviewsApi.byRoomType(params.id),
-    [params.id],
-  );
+  const fetchReviews = useCallback(() => reviewsApi.byRoomType(params.id), [params.id]);
   const reviews = useApi(fetchReviews);
   const fetchFavorites = useCallback(() => favoritesApi.mine(), []);
   const favorites = useApi(fetchFavorites);
-  const [favoriteOverride, setFavoriteOverride] = useState<boolean | null>(
-    null,
-  );
-  const isFavorite =
-    favoriteOverride ??
-    !!favorites.data?.some((f) => f.roomTypeId === params.id);
+  const [favoriteOverride, setFavoriteOverride] = useState<boolean | null>(null);
+  const isFavorite = favoriteOverride ?? !!favorites.data?.some((f) => f.roomTypeId === params.id);
   const toggleFavorite = async () => {
     const next = !isFavorite;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -78,7 +60,7 @@ export default function RoomTypeDetailScreen() {
       await (next ? favoritesApi.add : favoritesApi.remove)(params.id);
     } catch {
       setFavoriteOverride(!next);
-      toast.error(t("room.favoriteFailed"));
+      toast.error(t('room.favoriteFailed'));
     }
   };
 
@@ -100,14 +82,11 @@ export default function RoomTypeDetailScreen() {
       </ScrollView>
     );
   }
-  if (error || !roomType)
-    return (
-      <ErrorView message={error ?? t("room.notFound")} onRetry={refetch} />
-    );
+  if (error || !roomType) return <ErrorView message={error ?? t('room.notFound')} onRetry={refetch} />;
 
-  const checkIn = params.checkIn ?? toIsoDate(dayjs().add(1, "day").toDate());
-  const checkOut = params.checkOut ?? toIsoDate(dayjs().add(2, "day").toDate());
-  const guests = params.guests ?? "2";
+  const checkIn = params.checkIn ?? toIsoDate(dayjs().add(1, 'day').toDate());
+  const checkOut = params.checkOut ?? toIsoDate(dayjs().add(2, 'day').toDate());
+  const guests = params.guests ?? '2';
   const nights = nightsBetween(checkIn, checkOut);
 
   const fallbackImage = DemoRoomImageByName[roomType.name];
@@ -119,8 +98,7 @@ export default function RoomTypeDetailScreen() {
 
   const reviewList = reviews.data ?? [];
   const averageRating = reviewList.length
-    ? reviewList.reduce((sum, review) => sum + review.rating, 0) /
-      reviewList.length
+    ? reviewList.reduce((sum, review) => sum + review.rating, 0) / reviewList.length
     : undefined;
 
   return (
@@ -133,10 +111,7 @@ export default function RoomTypeDetailScreen() {
         >
           <Animated.View
             entering={FadeIn.duration(250)}
-            style={[
-              styles.galleryWrap,
-              { width: galleryWidth, height: galleryHeight },
-            ]}
+            style={[styles.galleryWrap, { width: galleryWidth, height: galleryHeight }]}
           >
             {galleryImages.length ? (
               <FlatList
@@ -145,19 +120,15 @@ export default function RoomTypeDetailScreen() {
                 horizontal
                 pagingEnabled
                 showsHorizontalScrollIndicator={false}
-                onMomentumScrollEnd={(e) =>
-                  setPage(
-                    Math.round(e.nativeEvent.contentOffset.x / galleryWidth),
-                  )
-                }
+                onMomentumScrollEnd={(e) => setPage(Math.round(e.nativeEvent.contentOffset.x / galleryWidth))}
                 renderItem={({ item, index }) => (
                   <Pressable onPress={() => setViewerIndex(index)}>
                     <Image
-                      source={typeof item === "string" ? { uri: item } : item}
+                      source={typeof item === 'string' ? { uri: item } : item}
                       style={{ width: galleryWidth, height: galleryHeight }}
                       contentFit="cover"
                       transition={200}
-                      accessibilityLabel={t("room.imageAlt", {
+                      accessibilityLabel={t('room.imageAlt', {
                         name: roomType.name,
                       })}
                     />
@@ -165,17 +136,8 @@ export default function RoomTypeDetailScreen() {
                 )}
               />
             ) : (
-              <View
-                style={[
-                  styles.galleryPlaceholder,
-                  { backgroundColor: theme.backgroundSelected },
-                ]}
-              >
-                <Ionicons
-                  name="image-outline"
-                  size={40}
-                  color={theme.textSecondary}
-                />
+              <View style={[styles.galleryPlaceholder, { backgroundColor: theme.backgroundSelected }]}>
+                <Ionicons name="image-outline" size={40} color={theme.textSecondary} />
               </View>
             )}
             {galleryImages.length > 1 ? (
@@ -183,11 +145,7 @@ export default function RoomTypeDetailScreen() {
                 {galleryImages.map((_, index) => (
                   <View
                     key={index}
-                    style={[
-                      styles.dot,
-                      index === page ? styles.dotActive : null,
-                      { backgroundColor: "#FFFFFF" },
-                    ]}
+                    style={[styles.dot, index === page ? styles.dotActive : null, { backgroundColor: '#FFFFFF' }]}
                   />
                 ))}
               </View>
@@ -196,32 +154,23 @@ export default function RoomTypeDetailScreen() {
 
           <Animated.View
             entering={FadeInDown.duration(240).delay(60)}
-            style={[
-              styles.sheet,
-              { backgroundColor: theme.background, width: galleryWidth },
-            ]}
+            style={[styles.sheet, { backgroundColor: theme.background, width: galleryWidth }]}
           >
             <View style={styles.titleBlock}>
               <ThemedText type="title">{roomType.name}</ThemedText>
               <View style={styles.metaRow}>
                 <View style={styles.meta}>
-                  <Ionicons
-                    name="people-outline"
-                    size={16}
-                    color={theme.textSecondary}
-                  />
+                  <Ionicons name="people-outline" size={16} color={theme.textSecondary} />
                   <ThemedText type="small" themeColor="textSecondary">
-                    {t("room.maxGuests", { count: roomType.capacity })}
+                    {t('room.maxGuests', { count: roomType.capacity })}
                   </ThemedText>
                 </View>
                 {averageRating !== undefined ? (
                   <View style={styles.meta}>
                     <Ionicons name="star" size={15} color={theme.accent} />
-                    <ThemedText type="smallBold">
-                      {averageRating.toFixed(1)}
-                    </ThemedText>
+                    <ThemedText type="smallBold">{averageRating.toFixed(1)}</ThemedText>
                     <ThemedText type="small" themeColor="textSecondary">
-                      {t("room.reviewCount", { count: reviewList.length })}
+                      {t('room.reviewCount', { count: reviewList.length })}
                     </ThemedText>
                   </View>
                 ) : null}
@@ -231,25 +180,21 @@ export default function RoomTypeDetailScreen() {
             <Card style={styles.stayCard}>
               <View style={styles.stayItem}>
                 <ThemedText type="caption" themeColor="textSecondary">
-                  {t("room.checkIn")}
+                  {t('room.checkIn')}
                 </ThemedText>
                 <ThemedText type="bodyBold">{formatDate(checkIn)}</ThemedText>
               </View>
-              <View
-                style={[styles.stayDivider, { backgroundColor: theme.border }]}
-              />
+              <View style={[styles.stayDivider, { backgroundColor: theme.border }]} />
               <View style={styles.stayItem}>
                 <ThemedText type="caption" themeColor="textSecondary">
-                  {t("room.checkOut")}
+                  {t('room.checkOut')}
                 </ThemedText>
                 <ThemedText type="bodyBold">{formatDate(checkOut)}</ThemedText>
               </View>
-              <View
-                style={[styles.stayDivider, { backgroundColor: theme.border }]}
-              />
+              <View style={[styles.stayDivider, { backgroundColor: theme.border }]} />
               <View style={styles.stayItem}>
                 <ThemedText type="caption" themeColor="textSecondary">
-                  {t("room.guests")}
+                  {t('room.guests')}
                 </ThemedText>
                 <ThemedText type="bodyBold">{guests}</ThemedText>
               </View>
@@ -257,7 +202,7 @@ export default function RoomTypeDetailScreen() {
 
             {roomType.description ? (
               <View style={styles.section}>
-                <ThemedText type="heading">{t("room.about")}</ThemedText>
+                <ThemedText type="heading">{t('room.about')}</ThemedText>
                 <ThemedText type="body" themeColor="textSecondary">
                   {roomType.description}
                 </ThemedText>
@@ -266,21 +211,12 @@ export default function RoomTypeDetailScreen() {
 
             {roomType.amenities?.length ? (
               <View style={styles.section}>
-                <ThemedText type="heading">{t("room.amenities")}</ThemedText>
+                <ThemedText type="heading">{t('room.amenities')}</ThemedText>
                 <View style={styles.amenityGrid}>
                   {roomType.amenities.map((amenity, index) => (
                     <View key={index} style={styles.amenity}>
-                      <View
-                        style={[
-                          styles.amenityIcon,
-                          { backgroundColor: theme.primarySoft },
-                        ]}
-                      >
-                        <Ionicons
-                          name={amenityIcon(amenity)}
-                          size={18}
-                          color={theme.primary}
-                        />
+                      <View style={[styles.amenityIcon, { backgroundColor: theme.primarySoft }]}>
+                        <Ionicons name={amenityIcon(amenity)} size={18} color={theme.primary} />
                       </View>
                       <ThemedText type="small" style={styles.amenityText}>
                         {amenity}
@@ -293,20 +229,16 @@ export default function RoomTypeDetailScreen() {
 
             <View style={styles.section}>
               <View style={styles.reviewTitleRow}>
-                <ThemedText type="heading">{t("room.reviewsTitle")}</ThemedText>
-                {averageRating !== undefined ? (
-                  <RatingStars rating={averageRating} size={14} />
-                ) : null}
+                <ThemedText type="heading">{t('room.reviewsTitle')}</ThemedText>
+                {averageRating !== undefined ? <RatingStars rating={averageRating} size={14} /> : null}
               </View>
               {reviews.loading ? (
                 <Skeleton height={90} radius={Radius.md} />
               ) : reviewList.length > 0 ? (
-                reviewList.map((review) => (
-                  <ReviewCard key={review.reviewId} review={review} />
-                ))
+                reviewList.map((review) => <ReviewCard key={review.reviewId} review={review} />)
               ) : (
                 <ThemedText type="small" themeColor="textSecondary">
-                  {t("room.noReviews")}
+                  {t('room.noReviews')}
                 </ThemedText>
               )}
             </View>
@@ -316,26 +248,24 @@ export default function RoomTypeDetailScreen() {
         <BottomBar>
           <View style={styles.priceBlock}>
             <View style={styles.priceRow}>
-              <ThemedText style={[styles.price, { color: theme.primary }]}>
-                {formatVND(roomType.basePrice)}
-              </ThemedText>
+              <ThemedText style={[styles.price, { color: theme.primary }]}>{formatVND(roomType.basePrice)}</ThemedText>
               <ThemedText type="small" themeColor="textSecondary">
-                {t("room.perNight")}
+                {t('room.perNight')}
               </ThemedText>
             </View>
             <ThemedText type="caption" themeColor="textSecondary">
-              {t("room.nightsAndTotal", {
+              {t('room.nightsAndTotal', {
                 nights,
                 total: formatVND(roomType.basePrice * nights),
               })}
             </ThemedText>
           </View>
           <Button
-            label={t("room.bookButton")}
+            label={t('room.bookButton')}
             fullWidth={false}
             onPress={() =>
               router.push({
-                pathname: "/booking/new",
+                pathname: '/booking/new',
                 params: {
                   roomTypeId: roomType.roomTypeId,
                   checkIn,
@@ -347,11 +277,7 @@ export default function RoomTypeDetailScreen() {
           />
         </BottomBar>
       </ThemedView>
-      <Modal
-        visible={viewerIndex !== null}
-        animationType="fade"
-        onRequestClose={() => setViewerIndex(null)}
-      >
+      <Modal visible={viewerIndex !== null} animationType="fade" onRequestClose={() => setViewerIndex(null)}>
         <View style={styles.viewer}>
           <FlatList
             data={galleryImages}
@@ -366,9 +292,7 @@ export default function RoomTypeDetailScreen() {
               index,
             })}
             onMomentumScrollEnd={(e) => {
-              const index = Math.round(
-                e.nativeEvent.contentOffset.x / windowWidth,
-              );
+              const index = Math.round(e.nativeEvent.contentOffset.x / windowWidth);
               // Late scroll events can fire after closing — never reopen the viewer.
               setViewerIndex((prev) => (prev === null ? null : index));
             }}
@@ -382,26 +306,23 @@ export default function RoomTypeDetailScreen() {
                 showsVerticalScrollIndicator={false}
               >
                 <Image
-                  source={typeof item === "string" ? { uri: item } : item}
+                  source={typeof item === 'string' ? { uri: item } : item}
                   style={{ width: windowWidth, height: windowHeight }}
                   contentFit="contain"
-                  accessibilityLabel={t("room.imageAlt", {
+                  accessibilityLabel={t('room.imageAlt', {
                     name: roomType.name,
                   })}
                 />
               </ScrollView>
             )}
           />
-          <View
-            style={[styles.viewerBar, { top: insets.top + Space.sm }]}
-            pointerEvents="box-none"
-          >
+          <View style={[styles.viewerBar, { top: insets.top + Space.sm }]} pointerEvents="box-none">
             <ThemedText type="smallBold" style={styles.viewerCounter}>
               {(viewerIndex ?? 0) + 1}/{galleryImages.length}
             </ThemedText>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel={t("common.close")}
+              accessibilityLabel={t('common.close')}
               onPress={() => setViewerIndex(null)}
               hitSlop={12}
             >
@@ -415,16 +336,14 @@ export default function RoomTypeDetailScreen() {
           headerRight: () => (
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel={t(
-                isFavorite ? "room.removeFromFavorites" : "room.addToFavorites",
-              )}
+              accessibilityLabel={t(isFavorite ? 'room.removeFromFavorites' : 'room.addToFavorites')}
               accessibilityState={{ selected: isFavorite }}
               onPress={toggleFavorite}
               disabled={favorites.loading}
               hitSlop={10}
             >
               <Ionicons
-                name={isFavorite ? "heart" : "heart-outline"}
+                name={isFavorite ? 'heart' : 'heart-outline'}
                 size={24}
                 color={isFavorite ? theme.danger : theme.text}
               />
@@ -438,57 +357,57 @@ export default function RoomTypeDetailScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  scroll: { alignItems: "center", paddingBottom: Space["2xl"] },
+  scroll: { alignItems: 'center', paddingBottom: Space['2xl'] },
   skeletonBody: { padding: GUTTER, gap: Space.lg },
-  galleryWrap: { overflow: "hidden" },
+  galleryWrap: { overflow: 'hidden' },
   galleryPlaceholder: {
     flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   dots: {
-    position: "absolute",
-    bottom: Space["2xl"] + Space.sm,
-    alignSelf: "center",
-    flexDirection: "row",
+    position: 'absolute',
+    bottom: Space['2xl'] + Space.sm,
+    alignSelf: 'center',
+    flexDirection: 'row',
     gap: 6,
   },
-  viewer: { flex: 1, backgroundColor: "#000000" },
+  viewer: { flex: 1, backgroundColor: '#000000' },
   viewerBar: {
-    position: "absolute",
+    position: 'absolute',
     left: GUTTER,
     right: GUTTER,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
-  viewerCounter: { color: "#FFFFFF" },
+  viewerCounter: { color: '#FFFFFF' },
   dot: { width: 6, height: 6, borderRadius: 3, opacity: 0.55 },
   dotActive: { width: 18, opacity: 1 },
   sheet: {
-    marginTop: -Space["2xl"],
+    marginTop: -Space['2xl'],
     borderTopLeftRadius: Radius.xl,
     borderTopRightRadius: Radius.xl,
     paddingHorizontal: GUTTER,
-    paddingTop: Space["2xl"],
-    gap: Space["2xl"],
+    paddingTop: Space['2xl'],
+    gap: Space['2xl'],
   },
   titleBlock: { gap: Space.sm },
-  metaRow: { flexDirection: "row", flexWrap: "wrap", gap: Space.lg },
-  meta: { flexDirection: "row", alignItems: "center", gap: Space.xs },
+  metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Space.lg },
+  meta: { flexDirection: 'row', alignItems: 'center', gap: Space.xs },
   stayCard: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingVertical: Space.md,
   },
-  stayItem: { flex: 1, alignItems: "center", gap: 2 },
-  stayDivider: { width: StyleSheet.hairlineWidth, alignSelf: "stretch" },
+  stayItem: { flex: 1, alignItems: 'center', gap: 2 },
+  stayDivider: { width: StyleSheet.hairlineWidth, alignSelf: 'stretch' },
   section: { gap: Space.md },
-  amenityGrid: { flexDirection: "row", flexWrap: "wrap", rowGap: Space.md },
+  amenityGrid: { flexDirection: 'row', flexWrap: 'wrap', rowGap: Space.md },
   amenity: {
-    width: "50%",
-    flexDirection: "row",
-    alignItems: "center",
+    width: '50%',
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: Space.sm,
     paddingRight: Space.sm,
   },
@@ -496,17 +415,17 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: Radius.sm,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   amenityText: { flex: 1 },
   reviewTitleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     gap: Space.sm,
   },
   priceBlock: { flex: 1 },
-  priceRow: { flexDirection: "row", alignItems: "baseline", gap: Space.xs },
+  priceRow: { flexDirection: 'row', alignItems: 'baseline', gap: Space.xs },
   price: { fontFamily: FontFamily.bold, fontSize: 20, lineHeight: 26 },
 });

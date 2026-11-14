@@ -98,9 +98,20 @@ export default function SearchScreen() {
 
         <View style={[styles.divider, { backgroundColor: theme.border }]} />
 
-        <Stepper label={t('search.guests')} hint={t('search.guestsHint')} value={guests} onChange={setGuests} max={20} />
+        <Stepper
+          label={t('search.guests')}
+          hint={t('search.guestsHint')}
+          value={guests}
+          onChange={setGuests}
+          max={20}
+        />
 
-        <Button label={t('search.searchButton', { count: nights })} icon="search" onPress={handleSearch} loading={loading} />
+        <Button
+          label={t('search.searchButton', { count: nights })}
+          icon="search"
+          onPress={handleSearch}
+          loading={loading}
+        />
       </Card>
 
       {results !== null && !loading ? (
@@ -145,7 +156,8 @@ export default function SearchScreen() {
           renderItem={({ item, index }) => (
             <Animated.View
               entering={FadeInDown.duration(450).delay(Math.min(index, 5) * 80)}
-              style={styles.cardWrapper}>
+              style={styles.cardWrapper}
+            >
               <RoomTypeCard
                 roomType={item}
                 onPress={() =>

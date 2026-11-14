@@ -87,13 +87,10 @@ export function TextField({
             borderWidth: focused || error ? 1.5 : 1,
             backgroundColor: theme.backgroundElement,
           },
-        ]}>
+        ]}
+      >
         {leftIcon && inlineLabel ? (
-          <View
-            style={[
-              styles.iconBadge,
-              { backgroundColor: focused ? theme.primarySoft : theme.backgroundSelected },
-            ]}>
+          <View style={[styles.iconBadge, { backgroundColor: focused ? theme.primarySoft : theme.backgroundSelected }]}>
             <Ionicons name={leftIcon} size={20} color={error ? theme.danger : focused ? theme.primary : theme.text} />
           </View>
         ) : leftIcon ? (
@@ -124,7 +121,8 @@ export function TextField({
             accessibilityLabel={revealed ? t('common.hidePassword') : t('common.showPassword')}
             onPress={() => setRevealed((v) => !v)}
             hitSlop={8}
-            style={styles.trailing}>
+            style={styles.trailing}
+          >
             <Ionicons
               name={revealed ? 'eye-off-outline' : 'eye-outline'}
               size={22}

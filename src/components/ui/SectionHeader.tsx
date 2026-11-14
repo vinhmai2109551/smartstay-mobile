@@ -35,7 +35,8 @@ export function SectionHeader({ title, subtitle, actionLabel, onAction }: Sectio
           accessibilityRole="button"
           onPress={onAction}
           hitSlop={8}
-          style={({ pressed }) => [styles.action, { opacity: pressed ? 0.6 : 1 }]}>
+          style={({ pressed }) => [styles.action, { opacity: pressed ? 0.6 : 1 }]}
+        >
           <ThemedText type="smallBold" themeColor="primary">
             {resolvedActionLabel}
           </ThemedText>

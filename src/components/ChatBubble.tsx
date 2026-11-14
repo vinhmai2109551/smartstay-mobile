@@ -1,21 +1,21 @@
-import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { Pressable, StyleSheet, useWindowDimensions, View } from "react-native";
-import { ChatBookingForm } from "@/components/ChatBookingForm";
-import { ThemedText } from "@/components/themed-text";
-import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
-import { FontFamily, MaxContentWidth, Radius, Space } from "@/constants/theme";
-import { useTheme, useShadows } from "@/hooks/use-theme";
-import { ChatMessage, PendingBooking } from "@/types/chat";
-import { formatVND } from "@/utils/currency";
-import { formatDate } from "@/utils/date";
-import { ChatBookingCreatedCard } from "./ChatBookingCreatedCard";
-import { ChatPromotionList } from "./ChatPromotionList";
-import { ChatRoomCard } from "./ChatRoomCard";
-import { FormattedMessage } from "./FormattedMessage";
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { ChatBookingForm } from '@/components/ChatBookingForm';
+import { ThemedText } from '@/components/themed-text';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import { FontFamily, MaxContentWidth, Radius, Space } from '@/constants/theme';
+import { useTheme, useShadows } from '@/hooks/use-theme';
+import { ChatMessage, PendingBooking } from '@/types/chat';
+import { formatVND } from '@/utils/currency';
+import { formatDate } from '@/utils/date';
+import { ChatBookingCreatedCard } from './ChatBookingCreatedCard';
+import { ChatPromotionList } from './ChatPromotionList';
+import { ChatRoomCard } from './ChatRoomCard';
+import { FormattedMessage } from './FormattedMessage';
 
 // Rooms shown before "Show n more" when a reply still lists many.
 const COLLAPSED_ROOMS = 4;
@@ -50,7 +50,7 @@ export function ChatBubble({
   const { t } = useTranslation();
   const theme = useTheme();
   const { width } = useWindowDimensions();
-  const isUser = message.role === "USER";
+  const isUser = message.role === 'USER';
   const [showAllRooms, setShowAllRooms] = useState(false);
   const rooms = message.rooms ?? [];
   const visibleRooms = showAllRooms ? rooms : rooms.slice(0, COLLAPSED_ROOMS);
@@ -61,23 +61,12 @@ export function ChatBubble({
   const showForm = !!showBookingForm && !!message.bookingFormRequest;
   const showProposalCard = !!showProposal && !!message.pendingBooking;
   const promotions = message.promotions ?? [];
-  const wide =
-    showForm ||
-    showProposalCard ||
-    !!message.booking ||
-    promotions.length > 0 ||
-    rooms.length > 0;
+  const wide = showForm || showProposalCard || !!message.booking || promotions.length > 0 || rooms.length > 0;
   const formWidth = Math.min(width, MaxContentWidth) - Space.lg * 2;
   const shadows = useShadows();
 
   return (
-    <View
-      style={[
-        styles.container,
-        isUser ? styles.alignEnd : styles.alignStart,
-        wide && styles.containerWide,
-      ]}
-    >
+    <View style={[styles.container, isUser ? styles.alignEnd : styles.alignStart, wide && styles.containerWide]}>
       <View
         style={[
           styles.bubble,
@@ -95,19 +84,13 @@ export function ChatBubble({
         ]}
       >
         {!isUser ? (
-          <ThemedText
-            type="caption"
-            style={[styles.assistantLabel, { color: theme.primary }]}
-          >
-            {t("chat.assistantLabel")}
+          <ThemedText type="caption" style={[styles.assistantLabel, { color: theme.primary }]}>
+            {t('chat.assistantLabel')}
           </ThemedText>
         ) : null}
 
         {isUser ? (
-          <ThemedText
-            type="body"
-            style={[styles.userText, { color: theme.primaryText }]}
-          >
+          <ThemedText type="body" style={[styles.userText, { color: theme.primaryText }]}>
             {message.content}
           </ThemedText>
         ) : (
@@ -143,7 +126,7 @@ export function ChatBubble({
               ]}
             >
               <ThemedText type="smallBold" themeColor="primary">
-                {t("chat.showMoreRooms", { count: hiddenRooms })}
+                {t('chat.showMoreRooms', { count: hiddenRooms })}
               </ThemedText>
               <Ionicons name="chevron-down" size={16} color={theme.primary} />
             </Pressable>
@@ -169,88 +152,59 @@ export function ChatBubble({
         >
           <View style={styles.cardHeader}>
             <ThemedText type="smallBold" style={{ color: theme.primary }}>
-              {t("chat.confirmBookingCard")}
+              {t('chat.confirmBookingCard')}
             </ThemedText>
           </View>
           {/* Same rows as the web's PendingBookingCard (AiChatWidgets.jsx). */}
-          <ThemedText
-            type="small"
-            numberOfLines={1}
-            adjustsFontSizeToFit
-            minimumFontScale={0.8}
-          >
+          <ThemedText type="small" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
             <ThemedText type="small" themeColor="textSecondary">
-              {t("chat.proposalRoomType")}{" "}
+              {t('chat.proposalRoomType')}{' '}
             </ThemedText>
-            <ThemedText type="smallBold">
-              {message.pendingBooking.roomTypeName}
-            </ThemedText>
+            <ThemedText type="smallBold">{message.pendingBooking.roomTypeName}</ThemedText>
           </ThemedText>
-          <ThemedText
-            type="small"
-            numberOfLines={1}
-            adjustsFontSizeToFit
-            minimumFontScale={0.8}
-          >
+          <ThemedText type="small" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
             <ThemedText type="small" themeColor="textSecondary">
-              {t("chat.proposalCheckIn")}{" "}
+              {t('chat.proposalCheckIn')}{' '}
             </ThemedText>
             {formatDate(message.pendingBooking.checkIn)}
-            {"  →  "}
+            {'  →  '}
             <ThemedText type="small" themeColor="textSecondary">
-              {t("chat.proposalCheckOut")}{" "}
+              {t('chat.proposalCheckOut')}{' '}
             </ThemedText>
-            {formatDate(message.pendingBooking.checkOut)}{" "}
+            {formatDate(message.pendingBooking.checkOut)}{' '}
             <ThemedText type="small" themeColor="textSecondary">
-              {t("chat.proposalNights", {
+              {t('chat.proposalNights', {
                 nights: message.pendingBooking.nights,
               })}
             </ThemedText>
           </ThemedText>
           {message.pendingBooking.guestInfo?.fullName ? (
-            <ThemedText
-              type="small"
-              numberOfLines={1}
-              adjustsFontSizeToFit
-              minimumFontScale={0.8}
-            >
+            <ThemedText type="small" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
               <ThemedText type="small" themeColor="textSecondary">
-                {t("chat.proposalGuest")}{" "}
+                {t('chat.proposalGuest')}{' '}
               </ThemedText>
-              {message.pendingBooking.guestInfo.fullName} ·{" "}
-              {message.pendingBooking.guestInfo.phone}
+              {message.pendingBooking.guestInfo.fullName} · {message.pendingBooking.guestInfo.phone}
             </ThemedText>
           ) : null}
           {message.pendingBooking.discountAmount > 0 ? (
             <ThemedText type="small" style={{ color: theme.success }}>
-              {t("chat.proposalDiscount", {
+              {t('chat.proposalDiscount', {
                 amount: formatVND(message.pendingBooking.discountAmount),
               })}
             </ThemedText>
           ) : null}
           {message.pendingBooking.paymentMethod ? (
-            <ThemedText
-              type="small"
-              numberOfLines={1}
-              adjustsFontSizeToFit
-              minimumFontScale={0.8}
-            >
+            <ThemedText type="small" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
               <ThemedText type="small" themeColor="textSecondary">
-                {t("chat.proposalPayment")}{" "}
+                {t('chat.proposalPayment')}{' '}
               </ThemedText>
-              {t(
-                message.pendingBooking.paymentMethod === "PAYOS"
-                  ? "chat.payTransferFull"
-                  : "chat.payCashFull",
-              )}
+              {t(message.pendingBooking.paymentMethod === 'PAYOS' ? 'chat.payTransferFull' : 'chat.payCashFull')}
             </ThemedText>
           ) : null}
-          <View
-            style={[styles.divider, { backgroundColor: theme.primaryBorder }]}
-          />
+          <View style={[styles.divider, { backgroundColor: theme.primaryBorder }]} />
           <View style={styles.totalRow}>
             <ThemedText type="small" themeColor="textSecondary">
-              {t("booking.total")}
+              {t('booking.total')}
             </ThemedText>
             <ThemedText style={[styles.total, { color: theme.primary }]}>
               {formatVND(message.pendingBooking.totalAmount)}
@@ -259,25 +213,21 @@ export function ChatBubble({
           <View style={styles.actions}>
             <View style={styles.flex}>
               <Button
-                label={t("chat.confirmBookingCard")}
+                label={t('chat.confirmBookingCard')}
                 size="sm"
                 icon="checkmark"
                 loading={confirming}
                 disabled={busy && !confirming}
-                onPress={() =>
-                  onConfirmBooking?.(message.pendingBooking!.proposalId)
-                }
+                onPress={() => onConfirmBooking?.(message.pendingBooking!.proposalId)}
               />
             </View>
             <View style={styles.flex}>
               <Button
-                label={t("common.cancel")}
+                label={t('common.cancel')}
                 variant="outline"
                 size="sm"
                 disabled={busy}
-                onPress={() =>
-                  onCancelProposal?.(message.pendingBooking!.proposalId)
-                }
+                onPress={() => onCancelProposal?.(message.pendingBooking!.proposalId)}
               />
             </View>
           </View>
@@ -296,22 +246,18 @@ export function ChatBubble({
       ) : null}
 
       {message.booking ? (
-        <ChatBookingCreatedCard
-          booking={message.booking}
-          proposal={proposal ?? null}
-          width={formWidth}
-        />
+        <ChatBookingCreatedCard booking={message.booking} proposal={proposal ?? null} width={formWidth} />
       ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { gap: Space.sm, maxWidth: "86%" },
-  containerWide: { maxWidth: "100%" },
-  bubbleNarrow: { maxWidth: "86%" },
-  alignEnd: { alignSelf: "flex-end", alignItems: "flex-end" },
-  alignStart: { alignSelf: "flex-start", alignItems: "flex-start" },
+  container: { gap: Space.sm, maxWidth: '86%' },
+  containerWide: { maxWidth: '100%' },
+  bubbleNarrow: { maxWidth: '86%' },
+  alignEnd: { alignSelf: 'flex-end', alignItems: 'flex-end' },
+  alignStart: { alignSelf: 'flex-start', alignItems: 'flex-start' },
   bubble: {
     borderRadius: Radius.lg,
     paddingHorizontal: Space.lg,
@@ -323,12 +269,12 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
   },
   flex: { flex: 1 },
-  actions: { flexDirection: "row", gap: Space.sm },
+  actions: { flexDirection: 'row', gap: Space.sm },
   moreRooms: {
-    width: "100%",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     gap: Space.xs,
     minHeight: 44,
     borderRadius: Radius.lg,
@@ -337,7 +283,7 @@ const styles = StyleSheet.create({
   card: { gap: Space.sm },
   // Slightly tighter padding than a plain Card, so one-line rows fit on narrow phones.
   wideCard: { padding: Space.md },
-  cardHeader: { flexDirection: "row", alignItems: "center", gap: Space.sm },
+  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: Space.sm },
   // cardIcon: {
   //   width: 28,
   //   height: 28,
@@ -347,24 +293,24 @@ const styles = StyleSheet.create({
   // },
   divider: { height: StyleSheet.hairlineWidth, marginVertical: Space.xs },
   totalRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   total: { fontFamily: FontFamily.bold, fontSize: 17, lineHeight: 24 },
   bookingHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     gap: Space.sm,
   },
   link: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: Space.xs,
     minHeight: 28,
   },
-  roomGrid: { flexDirection: "row", flexWrap: "wrap", gap: Space.sm },
+  roomGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Space.sm },
   userText: { fontSize: 15, lineHeight: 22 },
   assistantLabel: {
     fontFamily: FontFamily.bold,

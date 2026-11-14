@@ -52,9 +52,13 @@ export default function TabsLayout() {
           // Lets the raised AI button poke out above the bar.
           overflow: 'visible',
         },
-      }}>
+      }}
+    >
       <Tabs.Screen name="index" options={{ title: t('tabs.home'), tabBarIcon: tabIcon('home', 'home-outline') }} />
-      <Tabs.Screen name="search" options={{ title: t('tabs.search'), tabBarIcon: tabIcon('search', 'search-outline') }} />
+      <Tabs.Screen
+        name="search"
+        options={{ title: t('tabs.search'), tabBarIcon: tabIcon('search', 'search-outline') }}
+      />
       <Tabs.Screen
         name="chat"
         // Raised centre button — the single entry point to the AI concierge.
@@ -64,7 +68,10 @@ export default function TabsLayout() {
         name="bookings"
         options={{ title: t('tabs.bookings'), tabBarIcon: tabIcon('receipt', 'receipt-outline') }}
       />
-      <Tabs.Screen name="profile" options={{ title: t('tabs.profile'), tabBarIcon: tabIcon('person', 'person-outline') }} />
+      <Tabs.Screen
+        name="profile"
+        options={{ title: t('tabs.profile'), tabBarIcon: tabIcon('person', 'person-outline') }}
+      />
     </Tabs>
   );
 }

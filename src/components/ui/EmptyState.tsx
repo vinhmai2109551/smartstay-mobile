@@ -32,9 +32,7 @@ export function EmptyState({ icon, title, description, actionLabel, onAction }: 
           </ThemedText>
         ) : null}
       </View>
-      {actionLabel && onAction ? (
-        <Button label={actionLabel} size="sm" fullWidth={false} onPress={onAction} />
-      ) : null}
+      {actionLabel && onAction ? <Button label={actionLabel} size="sm" fullWidth={false} onPress={onAction} /> : null}
     </View>
   );
 }

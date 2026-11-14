@@ -631,11 +631,7 @@
     "sendFailed": "Couldn't send the message, please try again.",
     "imageType": "Only JPG, PNG or WEBP images are accepted.",
     "imageTooLarge": "The image is too large (max 5MB).",
-    "prompts": [
-      "I have a question about a refund",
-      "I'd like to change my check-in date",
-      "I need an extra service"
-    ],
+    "prompts": ["I have a question about a refund", "I'd like to change my check-in date", "I need an extra service"],
     "typing": "Reception is typing."
   }
 }

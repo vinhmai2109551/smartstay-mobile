@@ -52,12 +52,9 @@ export function Stepper({ label, value, min = 1, max = 10, onChange, hint, dense
                   opacity: disabled ? 0.45 : 1,
                 },
               ]
-        }>
-        <Ionicons
-          name={kind}
-          size={dense ? 16 : 20}
-          color={dense || disabled ? theme.textSecondary : theme.primary}
-        />
+        }
+      >
+        <Ionicons name={kind} size={dense ? 16 : 20} color={dense || disabled ? theme.textSecondary : theme.primary} />
       </Pressable>
     );
   };

@@ -34,7 +34,15 @@ type HeroCarouselProps = {
 const ZOOM_TO = 1.12;
 
 /** One slide with a slow "Ken Burns" zoom while it is on screen. */
-function KenBurnsImage({ source, duration, still }: { source: ImageSource | number; duration: number; still: boolean }) {
+function KenBurnsImage({
+  source,
+  duration,
+  still,
+}: {
+  source: ImageSource | number;
+  duration: number;
+  still: boolean;
+}) {
   const scale = useSharedValue(1);
 
   useEffect(() => {
@@ -84,7 +92,8 @@ export function HeroCarousel({
         key={index}
         entering={reduceMotion ? undefined : FadeIn.duration(900)}
         exiting={reduceMotion ? undefined : FadeOut.duration(900)}
-        style={StyleSheet.absoluteFill}>
+        style={StyleSheet.absoluteFill}
+      >
         <KenBurnsImage source={slide.image} duration={interval} still={reduceMotion} />
       </Animated.View>
 
@@ -99,7 +108,8 @@ export function HeroCarousel({
         <Animated.View
           key={`caption-${index}`}
           entering={reduceMotion ? undefined : FadeIn.duration(700).delay(250)}
-          style={styles.captionText}>
+          style={styles.captionText}
+        >
           {slide.eyebrow ? (
             <ThemedText type="caption" style={styles.eyebrow}>
               {slide.eyebrow}
@@ -119,7 +129,8 @@ export function HeroCarousel({
                 accessibilityLabel={`Ảnh ${i + 1} trên ${count}`}
                 accessibilityState={{ selected: i === index }}
                 onPress={() => setIndex(i)}
-                hitSlop={{ top: 12, bottom: 12, left: 4, right: 4 }}>
+                hitSlop={{ top: 12, bottom: 12, left: 4, right: 4 }}
+              >
                 <View style={[styles.dot, i === index && styles.dotActive]} />
               </Pressable>
             ))}

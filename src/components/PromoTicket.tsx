@@ -39,7 +39,8 @@ export function PromoTicket({ promotion }: PromoTicketProps) {
       accessibilityLabel={t('promo.copyAccessibility', { discount: discountLabel, code: promotion.code })}
       accessibilityHint={t('promo.copyHint')}
       onPress={handleCopy}
-      style={({ pressed }) => [styles.ticket, { backgroundColor: theme.primary, opacity: pressed ? 0.92 : 1 }]}>
+      style={({ pressed }) => [styles.ticket, { backgroundColor: theme.primary, opacity: pressed ? 0.92 : 1 }]}
+    >
       <View style={styles.left}>
         <View style={[styles.iconCircle, { backgroundColor: 'rgba(255,255,255,0.16)' }]}>
           <Ionicons name="pricetags" size={20} color={theme.primaryText} />

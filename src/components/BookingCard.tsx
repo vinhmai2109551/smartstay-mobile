@@ -53,7 +53,8 @@ export function BookingCard({ booking, onPress, reviewRating, onReview, refund }
         styles.card,
         shadows.card,
         { backgroundColor: theme.backgroundElement, opacity: pressed ? 0.94 : 1 },
-      ]}>
+      ]}
+    >
       <View style={styles.top}>
         <View style={[styles.thumb, { backgroundColor: theme.backgroundSelected }]}>
           {/* Image is decorative — the Pressable's own accessibilityLabel already describes this card. */}
@@ -116,7 +117,8 @@ export function BookingCard({ booking, onPress, reviewRating, onReview, refund }
           style={({ pressed }) => [
             styles.reviewButton,
             { borderColor: theme.primary, backgroundColor: pressed ? theme.primarySoft : 'transparent' },
-          ]}>
+          ]}
+        >
           <Ionicons name="star-outline" size={16} color={theme.primary} />
           <ThemedText type="smallBold" themeColor="primary">
             {t('booking.reviewAction')}
@@ -132,7 +134,8 @@ function RefundBadge({ refund }: { refund: MyRefundRequest }) {
   const theme = useTheme();
   const state = getRefundDisplayState(refund);
   if (!state) return null;
-  const color = state === 'completed' ? theme.success : state === 'rejected' || state === 'overdue' ? theme.danger : theme.warning;
+  const color =
+    state === 'completed' ? theme.success : state === 'rejected' || state === 'overdue' ? theme.danger : theme.warning;
 
   return (
     <View style={styles.refundBadge}>

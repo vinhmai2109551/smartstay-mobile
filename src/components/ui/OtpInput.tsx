@@ -24,10 +24,7 @@ export function OtpInput({ value, onChange, length = 6, error }: OtpInputProps) 
   const [focused, setFocused] = useState(false);
 
   return (
-    <Pressable
-      accessibilityRole="none"
-      onPress={() => inputRef.current?.focus()}
-      style={styles.row}>
+    <Pressable accessibilityRole="none" onPress={() => inputRef.current?.focus()} style={styles.row}>
       {Array.from({ length }).map((_, index) => {
         const char = value[index] ?? '';
         const active = focused && index === Math.min(value.length, length - 1);
@@ -42,7 +39,8 @@ export function OtpInput({ value, onChange, length = 6, error }: OtpInputProps) 
                 borderWidth: active || error ? 2 : 1,
                 backgroundColor: theme.backgroundElement,
               },
-            ]}>
+            ]}
+          >
             <ThemedText style={styles.char}>{char}</ThemedText>
           </View>
         );

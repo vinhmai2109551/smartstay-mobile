@@ -1,13 +1,8 @@
-import * as Haptics from "expo-haptics";
-import { Sparkles } from "lucide-react-native";
-import { useEffect } from "react";
-import { useTranslation } from "react-i18next";
-import {
-  Pressable,
-  StyleSheet,
-  View,
-  type GestureResponderEvent,
-} from "react-native";
+import * as Haptics from 'expo-haptics';
+import { Sparkles } from 'lucide-react-native';
+import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Pressable, StyleSheet, View, type GestureResponderEvent } from 'react-native';
 import Animated, {
   cancelAnimation,
   Easing,
@@ -17,12 +12,12 @@ import Animated, {
   withSequence,
   withSpring,
   withTiming,
-} from "react-native-reanimated";
+} from 'react-native-reanimated';
 
-import { ThemedText } from "@/components/themed-text";
-import { FontFamily } from "@/constants/theme";
-import { useTheme } from "@/hooks/use-theme";
-import { SmartStayAiIcon } from "./SmartStayAiIcon";
+import { ThemedText } from '@/components/themed-text';
+import { FontFamily } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
+import { SmartStayAiIcon } from './SmartStayAiIcon';
 
 const SIZE = 48;
 // How far the circle rises above the tab bar's top edge. Screens with content pinned to
@@ -30,14 +25,14 @@ const SIZE = 48;
 export const AI_TAB_LIFT = 14;
 // Same launcher as the web chatbot (AiChatbot.jsx): BotMessageSquare on a
 // blue-500 → violet-500 → blue-600 gradient, with an amber-400 sparkle badge.
-const AI_VIOLET = "#8B5CF6";
-const BADGE_AMBER = "#FBBF24";
-const BADGE_ICON = "#1E3A8A";
+const AI_VIOLET = '#8B5CF6';
+const BADGE_AMBER = '#FBBF24';
+const BADGE_ICON = '#1E3A8A';
 
 type Props = {
   onPress?: (event: GestureResponderEvent) => void;
   onLongPress?: ((event: GestureResponderEvent) => void) | null;
-  "aria-selected"?: boolean;
+  'aria-selected'?: boolean;
   testID?: string;
 };
 
@@ -49,7 +44,7 @@ type Props = {
 export function AiTabButton({ onPress, onLongPress, testID, ...rest }: Props) {
   const { t } = useTranslation();
   const theme = useTheme();
-  const focused = !!rest["aria-selected"];
+  const focused = !!rest['aria-selected'];
   const halo = useSharedValue(0);
   const pressScale = useSharedValue(1);
 
@@ -84,7 +79,7 @@ export function AiTabButton({ onPress, onLongPress, testID, ...rest }: Props) {
   return (
     <Pressable
       accessibilityRole="tab"
-      accessibilityLabel={t("tabs.chat")}
+      accessibilityLabel={t('tabs.chat')}
       accessibilityState={{ selected: focused }}
       testID={testID}
       onPress={(event) => {
@@ -101,9 +96,7 @@ export function AiTabButton({ onPress, onLongPress, testID, ...rest }: Props) {
       style={styles.container}
     >
       <View style={styles.circleSlot}>
-        <Animated.View
-          style={[styles.halo, { backgroundColor: theme.primary }, haloStyle]}
-        />
+        <Animated.View style={[styles.halo, { backgroundColor: theme.primary }, haloStyle]} />
         <Animated.View
           style={[
             styles.ring,
@@ -116,9 +109,7 @@ export function AiTabButton({ onPress, onLongPress, testID, ...rest }: Props) {
         >
           <SmartStayAiIcon size={SIZE} />
 
-          <View
-            style={[styles.badge, { borderColor: theme.backgroundElement }]}
-          >
+          <View style={[styles.badge, { borderColor: theme.backgroundElement }]}>
             <Sparkles size={10} color={BADGE_ICON} strokeWidth={2.5} />
           </View>
         </Animated.View>
@@ -133,7 +124,7 @@ export function AiTabButton({ onPress, onLongPress, testID, ...rest }: Props) {
           },
         ]}
       >
-        {t("tabs.chat")}
+        {t('tabs.chat')}
       </ThemedText>
     </Pressable>
   );
@@ -142,16 +133,16 @@ export function AiTabButton({ onPress, onLongPress, testID, ...rest }: Props) {
 const RING = 4;
 
 const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: "center", justifyContent: "flex-start" },
+  container: { flex: 1, alignItems: 'center', justifyContent: 'flex-start' },
   circleSlot: {
     width: SIZE + RING * 2,
     height: SIZE + RING * 2,
     marginTop: -AI_TAB_LIFT,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   halo: {
-    position: "absolute",
+    position: 'absolute',
     width: SIZE,
     height: SIZE,
     borderRadius: SIZE / 2,
@@ -161,8 +152,8 @@ const styles = StyleSheet.create({
     width: SIZE + RING * 2,
     height: SIZE + RING * 2,
     borderRadius: (SIZE + RING * 2) / 2,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.18,
     shadowRadius: 6,
@@ -172,19 +163,19 @@ const styles = StyleSheet.create({
     width: SIZE,
     height: SIZE,
     borderRadius: SIZE / 2,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   badge: {
-    position: "absolute",
+    position: 'absolute',
     top: 0,
     right: 0,
     width: 18,
     height: 18,
     borderRadius: 9,
     borderWidth: 2,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: BADGE_AMBER,
   },
   label: { fontSize: 11, lineHeight: 14 },

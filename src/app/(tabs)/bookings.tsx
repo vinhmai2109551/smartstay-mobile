@@ -29,7 +29,7 @@ export default function BookingsScreen() {
   const theme = useTheme();
   const { width } = useWindowDimensions();
   const contentWidth = Math.min(width, MaxContentWidth);
-  const fetchBookings = useCallback(() => bookingsApi.my({limit: 100}),[])
+  const fetchBookings = useCallback(() => bookingsApi.my({ limit: 100 }), []);
   const { data, loading, error, refetch, refreshing, refresh } = useApi(fetchBookings, {
     refetchOnFocus: true,
     toastOnRefreshError: true,
@@ -88,7 +88,12 @@ export default function BookingsScreen() {
           keyExtractor={(item) => item.bookingId}
           contentContainerStyle={[styles.list, { width: contentWidth }]}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} colors={[theme.primary]} />
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={theme.primary}
+              colors={[theme.primary]}
+            />
           }
           ListHeaderComponent={
             <View style={styles.header}>
@@ -102,7 +107,8 @@ export default function BookingsScreen() {
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.filters}
-                style={styles.filterScroll}>
+                style={styles.filterScroll}
+              >
                 {FILTERS.map((f) => (
                   <Chip key={f.key} label={f.label} selected={filter === f.key} onPress={() => setFilter(f.key)} />
                 ))}
@@ -140,9 +146,7 @@ export default function BookingsScreen() {
                 onPress={() => router.push(`/booking/${item.bookingId}`)}
                 reviewRating={ratingByBooking.get(item.bookingId) ?? null}
                 refund={refundByBooking.get(item.bookingId) ?? null}
-                onReview={() =>
-                  router.push({ pathname: '/booking/[id]', params: { id: item.bookingId, review: '1' } })
-                }
+                onReview={() => router.push({ pathname: '/booking/[id]', params: { id: item.bookingId, review: '1' } })}
               />
             </View>
           )}

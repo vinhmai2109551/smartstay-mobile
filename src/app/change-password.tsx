@@ -74,7 +74,8 @@ export default function ChangePasswordScreen() {
             accessibilityLabel={t('common.back')}
             onPress={() => router.back()}
             hitSlop={8}
-            style={({ pressed }) => [styles.backButton, { opacity: pressed ? 0.7 : 1 }]}>
+            style={({ pressed }) => [styles.backButton, { opacity: pressed ? 0.7 : 1 }]}
+          >
             <Ionicons name="chevron-back" size={22} color="#FFFFFF" />
           </Pressable>
           <ThemedText type="heading" style={styles.heroTitle}>
@@ -174,17 +175,14 @@ export default function ChangePasswordScreen() {
             router.replace('/(auth)/forgot-password');
           }}
           hitSlop={8}
-          style={styles.forgotLink}>
+          style={styles.forgotLink}
+        >
           <ThemedText type="smallBold" style={{ color: VikaBrandColors.gold }}>
             {t('profile.forgotCurrentPassword')}
           </ThemedText>
         </Pressable>
 
-        <Button
-          label={t('profile.updatePassword')}
-          onPress={handleSubmit(onSubmit)}
-          loading={isSubmitting}
-        />
+        <Button label={t('profile.updatePassword')} onPress={handleSubmit(onSubmit)} loading={isSubmitting} />
       </ScrollView>
     </ThemedView>
   );

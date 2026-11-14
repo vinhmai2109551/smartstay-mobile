@@ -46,7 +46,8 @@ export function NotificationToast() {
       key={toast.id}
       entering={toastEntering}
       exiting={toastExiting}
-      style={[styles.wrapper, { top: insets.top + Space.sm }]}>
+      style={[styles.wrapper, { top: insets.top + Space.sm }]}
+    >
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`${toast.title}. ${toast.body}`}
@@ -56,7 +57,8 @@ export function NotificationToast() {
           styles.card,
           shadows.floating,
           { backgroundColor: theme.backgroundElement, borderColor: theme.border, opacity: pressed ? 0.92 : 1 },
-        ]}>
+        ]}
+      >
         <View style={[styles.icon, { backgroundColor: `${color}1F` }]}>
           <Ionicons name={icon} size={20} color={color} />
         </View>
@@ -73,7 +75,8 @@ export function NotificationToast() {
           accessibilityLabel={t('common.close')}
           onPress={dismissToast}
           hitSlop={12}
-          style={styles.close}>
+          style={styles.close}
+        >
           <Ionicons name="close" size={18} color={theme.textSecondary} />
         </Pressable>
       </Pressable>

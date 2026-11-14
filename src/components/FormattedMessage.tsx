@@ -1,20 +1,17 @@
-import { Linking, StyleSheet, Text, View } from "react-native";
+import { Linking, StyleSheet, Text, View } from 'react-native';
 
-import { ThemedText } from "@/components/themed-text";
-import { FontFamily } from "@/constants/theme";
-import { useTheme } from "@/hooks/use-theme";
+import { ThemedText } from '@/components/themed-text';
+import { FontFamily } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 
 // [chữ](https://...) hoặc URL trần https://... — chỉ nhận http(s) để không mở được
 // link javascript: hay tel: lạ, giống LINK_PATTERN bên web (AiChatWidgets.jsx).
-const LINK_PATTERN =
-  /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|(https?:\/\/[^\s)]+)/g;
+const LINK_PATTERN = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|(https?:\/\/[^\s)]+)/g;
 const BULLET = /^[-*]\s+(.*)/;
 const NUMBERED = /^\d+[.)]\s+(.*)/;
 const HEADING = /^#{1,6}\s+(.*)/;
 
-type Block =
-  | { kind: "paragraph"; text: string }
-  | { kind: "list"; items: string[] };
+type Block = { kind: 'paragraph'; text: string } | { kind: 'list'; items: string[] };
 
 /**
  * Trả lời của AI dùng markdown tối giản (**in đậm**, gạch đầu dòng, danh sách số, link)
@@ -28,7 +25,7 @@ export function FormattedMessage({ text }: { text: string }) {
   // màu của dòng chứa nó.
   const renderBold = (value: string, keyPrefix: string) =>
     value.split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
-      part.startsWith("**") && part.endsWith("**") && part.length > 4 ? (
+      part.startsWith('**') && part.endsWith('**') && part.length > 4 ? (
         <Text key={`${keyPrefix}${i}`} style={styles.bold}>
           {part.slice(2, -2)}
         </Text>
@@ -61,24 +58,24 @@ export function FormattedMessage({ text }: { text: string }) {
       lastIndex = index + match[0].length;
     }
     if (lastIndex < value.length) {
-      nodes.push(...renderBold(value.slice(lastIndex), "end-"));
+      nodes.push(...renderBold(value.slice(lastIndex), 'end-'));
     }
     return nodes;
   };
 
   // Gom các dòng thành đoạn văn và danh sách (các dòng "- " / "1. " liền nhau thành 1 danh sách).
   const blocks: Block[] = [];
-  for (const line of (text ?? "").split("\n")) {
+  for (const line of (text ?? '').split('\n')) {
     const trimmed = line.trim();
     const item = trimmed.match(BULLET)?.[1] ?? trimmed.match(NUMBERED)?.[1];
     if (item !== undefined) {
       const last = blocks[blocks.length - 1];
-      if (last?.kind === "list") last.items.push(item);
-      else blocks.push({ kind: "list", items: [item] });
-    } else if (trimmed !== "") {
+      if (last?.kind === 'list') last.items.push(item);
+      else blocks.push({ kind: 'list', items: [item] });
+    } else if (trimmed !== '') {
       // Prompt đã dặn model không dùng tiêu đề, nhưng vẫn bỏ "#" phòng khi lọt vào.
       blocks.push({
-        kind: "paragraph",
+        kind: 'paragraph',
         text: trimmed.match(HEADING)?.[1] ?? trimmed,
       });
     }
@@ -87,7 +84,7 @@ export function FormattedMessage({ text }: { text: string }) {
   return (
     <View style={styles.container}>
       {blocks.map((block, i) =>
-        block.kind === "paragraph" ? (
+        block.kind === 'paragraph' ? (
           <ThemedText key={i} type="body" style={styles.text}>
             {renderInline(block.text)}
           </ThemedText>
@@ -114,9 +111,9 @@ const styles = StyleSheet.create({
   container: { gap: 6 },
   text: { fontSize: 15, lineHeight: 22 },
   bold: { fontFamily: FontFamily.bold },
-  link: { fontFamily: FontFamily.semiBold, textDecorationLine: "underline" },
+  link: { fontFamily: FontFamily.semiBold, textDecorationLine: 'underline' },
   list: { gap: 2 },
-  listItem: { flexDirection: "row" },
+  listItem: { flexDirection: 'row' },
   bullet: { width: 16 },
   flex: { flex: 1 },
 });

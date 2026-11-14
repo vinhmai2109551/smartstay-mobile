@@ -22,7 +22,12 @@ export function AuthBackground() {
   const decor = isDark ? 'rgba(147,197,253,0.55)' : 'rgba(37,99,235,0.45)';
 
   return (
-    <View style={StyleSheet.absoluteFill} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+    <View
+      style={StyleSheet.absoluteFill}
+      pointerEvents="none"
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+    >
       <LinearGradient colors={wash as [string, string]} style={StyleSheet.absoluteFill} />
 
       <Svg width={width} height={height} style={StyleSheet.absoluteFill}>

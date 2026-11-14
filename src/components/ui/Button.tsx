@@ -92,7 +92,8 @@ export function Button({
         },
         animatedStyle,
       ]}
-      {...rest}>
+      {...rest}
+    >
       {loading ? (
         <ActivityIndicator color={colors.text} />
       ) : (

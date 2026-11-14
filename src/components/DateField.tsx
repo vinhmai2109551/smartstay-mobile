@@ -48,7 +48,8 @@ export function DateField({ label, value, onChange, minimumDate, dense = false }
             backgroundColor: theme.backgroundElement,
             opacity: pressed ? 0.85 : 1,
           },
-        ]}>
+        ]}
+      >
         <Ionicons name="calendar-outline" size={dense ? 16 : 20} color={show ? theme.primary : theme.textSecondary} />
         {dense ? (
           <ThemedText type="small" style={styles.text}>
@@ -76,7 +77,8 @@ export function DateField({ label, value, onChange, minimumDate, dense = false }
             style={[
               styles.sheet,
               { backgroundColor: theme.backgroundElement, paddingBottom: Math.max(insets.bottom, Space.lg) },
-            ]}>
+            ]}
+          >
             <View style={[styles.handle, { backgroundColor: theme.border }]} />
             <View style={styles.sheetHeader}>
               <ThemedText type="heading">{label}</ThemedText>

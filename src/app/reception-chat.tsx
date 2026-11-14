@@ -1,8 +1,8 @@
-import { Ionicons } from "@expo/vector-icons";
-import dayjs from "dayjs";
-import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useRef, useState } from "react";
-import { useTranslation } from "react-i18next";
+import { Ionicons } from '@expo/vector-icons';
+import dayjs from 'dayjs';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
   FlatList,
@@ -12,36 +12,30 @@ import {
   StyleSheet,
   TextInput,
   View,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Image } from "expo-image";
-import * as ImagePicker from "expo-image-picker";
-import { receptionChatApi } from "@/api/chat";
-import { ReceptionBubble } from "@/components/ReceptionBubble";
-import { ThemedText } from "@/components/themed-text";
-import { ThemedView } from "@/components/themed-view";
-import { Chip } from "@/components/ui/Chip";
-import { EmptyState } from "@/components/ui/EmptyState";
-import { ErrorView } from "@/components/ui/ErrorView";
-import { LoadingView } from "@/components/ui/LoadingView";
-import {
-  FontFamily,
-  MaxContentWidth,
-  MinTouch,
-  Radius,
-  Space,
-} from "@/constants/theme";
-import { useNetworkStatus } from "@/hooks/useNetworkStatus";
-import { useTheme } from "@/hooks/use-theme";
-import { useAuthStore } from "@/store/authStore";
-import { useSocketStore } from "@/store/socketStore";
-import { toast } from "@/store/toastStore";
-import { ReceptionMessage } from "@/types/chat";
-import { formatDate } from "@/utils/date";
-import { TFunction } from "i18next";
-import { getApiErrorMessage } from "@/api/client";
-import { TypingIndicator } from "@/components/TypingIndicator";
-import { useReceptionChatStore } from "@/store/receptionChatStore";
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Image } from 'expo-image';
+import * as ImagePicker from 'expo-image-picker';
+import { receptionChatApi } from '@/api/chat';
+import { ReceptionBubble } from '@/components/ReceptionBubble';
+import { ThemedText } from '@/components/themed-text';
+import { ThemedView } from '@/components/themed-view';
+import { Chip } from '@/components/ui/Chip';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { ErrorView } from '@/components/ui/ErrorView';
+import { LoadingView } from '@/components/ui/LoadingView';
+import { FontFamily, MaxContentWidth, MinTouch, Radius, Space } from '@/constants/theme';
+import { useNetworkStatus } from '@/hooks/useNetworkStatus';
+import { useTheme } from '@/hooks/use-theme';
+import { useAuthStore } from '@/store/authStore';
+import { useSocketStore } from '@/store/socketStore';
+import { toast } from '@/store/toastStore';
+import { ReceptionMessage } from '@/types/chat';
+import { formatDate } from '@/utils/date';
+import { TFunction } from 'i18next';
+import { getApiErrorMessage } from '@/api/client';
+import { TypingIndicator } from '@/components/TypingIndicator';
+import { useReceptionChatStore } from '@/store/receptionChatStore';
 
 // Consecutive messages from one sender within this window are drawn as one group.
 const GROUP_WINDOW_MS = 3 * 60 * 1000;
@@ -49,19 +43,13 @@ const STOP_TYPING_AFTER_MS = 3000;
 const HIDE_TYPING_AFTER_MS = 5000;
 
 function sameGroup(a?: ReceptionMessage, b?: ReceptionMessage) {
-  return (
-    !!a &&
-    !!b &&
-    a.senderId === b.senderId &&
-    Math.abs(dayjs(a.createdAt).diff(b.createdAt)) < GROUP_WINDOW_MS
-  );
+  return !!a && !!b && a.senderId === b.senderId && Math.abs(dayjs(a.createdAt).diff(b.createdAt)) < GROUP_WINDOW_MS;
 }
 
 function dayLabel(value: string, t: TFunction) {
   const day = dayjs(value);
-  if (day.isSame(dayjs(), "day")) return t("receptionChat.today");
-  if (day.isSame(dayjs().subtract(1, "day"), "day"))
-    return t("receptionChat.yesterday");
+  if (day.isSame(dayjs(), 'day')) return t('receptionChat.today');
+  if (day.isSame(dayjs().subtract(1, 'day'), 'day')) return t('receptionChat.yesterday');
   return formatDate(value);
 }
 
@@ -81,10 +69,8 @@ export default function ReceptionChatScreen() {
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
   const [attempt, setAttempt] = useState(0); // bumped by "Retry"
-  const [input, setInput] = useState(prefill ?? "");
-  const [pending, setPending] = useState<ImagePicker.ImagePickerAsset | null>(
-    null,
-  );
+  const [input, setInput] = useState(prefill ?? '');
+  const [pending, setPending] = useState<ImagePicker.ImagePickerAsset | null>(null);
   const [uploading, setUploading] = useState(false);
   const [staffTyping, setStaffTyping] = useState(false);
   const typingSentRef = useRef(false);
@@ -114,7 +100,7 @@ export default function ReceptionChatScreen() {
   // meanwhile, so rejoin and refetch on every connect.
   useEffect(() => {
     if (!socket || !conversationId) return;
-    const join = () => socket.emit("chat:join", { conversationId });
+    const join = () => socket.emit('chat:join', { conversationId });
     const onConnect = () => {
       join();
       receptionChatApi
@@ -126,48 +112,36 @@ export default function ReceptionChatScreen() {
       if (message.conversationId !== conversationId) return;
       if (message.senderId !== userId) setStaffTyping(false);
       // The server echoes our own messages back; a refetch can also overlap.
-      setMessages((prev) =>
-        prev.some((m) => m.messageId === message.messageId)
-          ? prev
-          : [...prev, message],
-      );
+      setMessages((prev) => (prev.some((m) => m.messageId === message.messageId) ? prev : [...prev, message]));
     };
 
-    const onError = (error: { message?: string }) =>
-      toast.error(error?.message ?? t("receptionChat.sendFailed"));
+    const onError = (error: { message?: string }) => toast.error(error?.message ?? t('receptionChat.sendFailed'));
 
-    const onTyping = (p: {
-      conversationId: string;
-      userId: string;
-      isTyping: boolean;
-    }) => {
+    const onTyping = (p: { conversationId: string; userId: string; isTyping: boolean }) => {
       // The guest's own other devices (e.g. web) are in the room too.
       if (p.conversationId !== conversationId || p.userId === userId) return;
       clearTimeout(hideTypingTimer.current);
       setStaffTyping(p.isTyping);
       if (p.isTyping) {
-        hideTypingTimer.current = setTimeout(
-          () => setStaffTyping(false),
-          HIDE_TYPING_AFTER_MS,
-        );
+        hideTypingTimer.current = setTimeout(() => setStaffTyping(false), HIDE_TYPING_AFTER_MS);
       }
     };
 
     if (socket.connected) join();
-    socket.on("connect", onConnect);
-    socket.on("chat:message", onMessage);
-    socket.on("exception", onError);
-    socket.on("chat:typing", onTyping);
+    socket.on('connect', onConnect);
+    socket.on('chat:message', onMessage);
+    socket.on('exception', onError);
+    socket.on('chat:typing', onTyping);
     return () => {
-      socket.off("connect", onConnect);
-      socket.off("chat:message", onMessage);
-      socket.off("exception", onError);
-      socket.off("chat:typing", onTyping);
+      socket.off('connect', onConnect);
+      socket.off('chat:message', onMessage);
+      socket.off('exception', onError);
+      socket.off('chat:typing', onTyping);
       clearTimeout(hideTypingTimer.current);
       clearTimeout(stopTypingTimer.current);
       if (typingSentRef.current) {
         typingSentRef.current = false;
-        socket.emit("chat:typing", { conversationId, isTyping: false });
+        socket.emit('chat:typing', { conversationId, isTyping: false });
       }
     };
   }, [socket, conversationId, t, userId]);
@@ -179,7 +153,7 @@ export default function ReceptionChatScreen() {
 
   const emitTyping = (isTyping: boolean) => {
     typingSentRef.current = isTyping;
-    socket?.emit("chat:typing", { conversationId, isTyping });
+    socket?.emit('chat:typing', { conversationId, isTyping });
   };
 
   const onChangeInput = (text: string) => {
@@ -187,17 +161,14 @@ export default function ReceptionChatScreen() {
     if (!conversationId || !socket?.connected) return;
     if (!typingSentRef.current) emitTyping(true);
     clearTimeout(stopTypingTimer.current);
-    stopTypingTimer.current = setTimeout(
-      () => emitTyping(false),
-      STOP_TYPING_AFTER_MS,
-    );
+    stopTypingTimer.current = setTimeout(() => emitTyping(false), STOP_TYPING_AFTER_MS);
   };
 
   const send = async (text: string) => {
     const content = text.trim();
     if ((!content && !pending) || !conversationId || uploading) return;
     if (!socket?.connected) {
-      toast.error(t("receptionChat.sendFailed"));
+      toast.error(t('receptionChat.sendFailed'));
       return;
     }
     let attachment = {};
@@ -206,12 +177,12 @@ export default function ReceptionChatScreen() {
       try {
         const { url, type } = await receptionChatApi.uploadAttachment({
           uri: pending.uri,
-          name: pending.fileName ?? "photo.jpg",
-          type: pending.mimeType ?? "image/jpeg",
+          name: pending.fileName ?? 'photo.jpg',
+          type: pending.mimeType ?? 'image/jpeg',
         });
         attachment = { attachmentUrl: url, attachmentType: type };
       } catch (error) {
-        toast.error(getApiErrorMessage(error, t("receptionChat.sendFailed")));
+        toast.error(getApiErrorMessage(error, t('receptionChat.sendFailed')));
         return;
       } finally {
         setUploading(false);
@@ -220,42 +191,36 @@ export default function ReceptionChatScreen() {
     clearTimeout(stopTypingTimer.current);
     if (typingSentRef.current) emitTyping(false);
     // No optimistic append — the server broadcasts our message back to the room.
-    socket.emit("chat:message", { conversationId, content, ...attachment });
-    setInput("");
+    socket.emit('chat:message', { conversationId, content, ...attachment });
+    setInput('');
     setPending(null);
   };
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
+      mediaTypes: ['images'],
       quality: 0.8,
       // Dùng cho Iphone
-      preferredAssetRepresentationMode:
-        ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Compatible,
+      preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Compatible,
     });
     if (result.canceled) return;
     const asset = result.assets[0];
-    if (
-      !["image/jpeg", "image/png", "image/webp"].includes(
-        asset.mimeType ?? "image/jpeg",
-      )
-    ) {
-      toast.error(t("receptionChat.imageType"));
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(asset.mimeType ?? 'image/jpeg')) {
+      toast.error(t('receptionChat.imageType'));
       return;
     }
     if ((asset.fileSize ?? 0) > 5 * 1024 * 1024) {
-      toast.error(t("receptionChat.imageTooLarge"));
+      toast.error(t('receptionChat.imageTooLarge'));
       return;
     }
     setPending(asset);
   };
 
-  const canSend =
-    (!!input.trim() || !!pending) && isOnline && !uploading && !!conversationId;
+  const canSend = (!!input.trim() || !!pending) && isOnline && !uploading && !!conversationId;
   const header = (
     <View style={[styles.header, { borderBottomColor: theme.border }]}>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={t("common.back")}
+        accessibilityLabel={t('common.back')}
         onPress={() => router.back()}
         hitSlop={10}
       >
@@ -265,13 +230,11 @@ export default function ReceptionChatScreen() {
         <Ionicons name="headset-outline" size={20} color={theme.primary} />
       </View>
       <View style={styles.flex}>
-        <ThemedText type="bodyBold">{t("receptionChat.title")}</ThemedText>
+        <ThemedText type="bodyBold">{t('receptionChat.title')}</ThemedText>
         <View style={styles.statusRow}>
-          <View
-            style={[styles.statusDot, { backgroundColor: theme.success }]}
-          />
+          <View style={[styles.statusDot, { backgroundColor: theme.success }]} />
           <ThemedText type="caption" themeColor="textSecondary">
-            {t("receptionChat.online")}
+            {t('receptionChat.online')}
           </ThemedText>
         </View>
       </View>
@@ -280,13 +243,13 @@ export default function ReceptionChatScreen() {
 
   return (
     <ThemedView style={styles.flex}>
-      <SafeAreaView style={styles.flex} edges={["top", "bottom"]}>
+      <SafeAreaView style={styles.flex} edges={['top', 'bottom']}>
         {header}
         {loading ? (
           <LoadingView />
         ) : loadFailed ? (
           <ErrorView
-            message={t("receptionChat.loadFailed")}
+            message={t('receptionChat.loadFailed')}
             onRetry={() => {
               setLoadFailed(false);
               setLoading(true);
@@ -294,38 +257,28 @@ export default function ReceptionChatScreen() {
             }}
           />
         ) : (
-          <KeyboardAvoidingView
-            style={styles.flex}
-            behavior={Platform.OS === "ios" ? "padding" : undefined}
-          >
+          <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
             <FlatList
               ref={listRef}
               data={messages}
               keyExtractor={(m) => m.messageId}
               contentContainerStyle={styles.list}
               keyboardShouldPersistTaps="handled"
-              onContentSizeChange={() =>
-                listRef.current?.scrollToEnd({ animated: true })
-              }
+              onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
               ListEmptyComponent={
                 <View>
                   <EmptyState
                     icon="headset-outline"
-                    title={t("receptionChat.emptyTitle")}
-                    description={t("receptionChat.emptyDescription")}
+                    title={t('receptionChat.emptyTitle')}
+                    description={t('receptionChat.emptyDescription')}
                   />
                   <View style={styles.prompts}>
                     {(
-                      t("receptionChat.prompts", {
+                      t('receptionChat.prompts', {
                         returnObjects: true,
                       }) as string[]
                     ).map((prompt) => (
-                      <Chip
-                        key={prompt}
-                        label={prompt}
-                        onPress={() => send(prompt)}
-                        disabled={!isOnline}
-                      />
+                      <Chip key={prompt} label={prompt} onPress={() => send(prompt)} disabled={!isOnline} />
                     ))}
                   </View>
                 </View>
@@ -333,29 +286,23 @@ export default function ReceptionChatScreen() {
               ListFooterComponent={
                 staffTyping ? (
                   <View style={styles.typing}>
-                    <TypingIndicator label={t("receptionChat.typing")} />
+                    <TypingIndicator label={t('receptionChat.typing')} />
                   </View>
                 ) : undefined
               }
               renderItem={({ item, index }) => {
                 const prev = messages[index - 1];
                 const next = messages[index + 1];
-                const newDay =
-                  !prev || !dayjs(prev.createdAt).isSame(item.createdAt, "day");
+                const newDay = !prev || !dayjs(prev.createdAt).isSame(item.createdAt, 'day');
                 const grouped = !newDay && sameGroup(prev, item);
                 return (
                   <View
                     style={{
-                      marginTop:
-                        index === 0 ? 0 : grouped ? Space.xs : Space.md,
+                      marginTop: index === 0 ? 0 : grouped ? Space.xs : Space.md,
                     }}
                   >
                     {newDay ? (
-                      <ThemedText
-                        type="caption"
-                        themeColor="textSecondary"
-                        style={styles.day}
-                      >
+                      <ThemedText type="caption" themeColor="textSecondary" style={styles.day}>
                         {dayLabel(item.createdAt, t)}
                       </ThemedText>
                     ) : null}
@@ -380,11 +327,7 @@ export default function ReceptionChatScreen() {
                 ]}
               >
                 <View>
-                  <Image
-                    source={{ uri: pending.uri }}
-                    style={styles.previewImage}
-                    contentFit="cover"
-                  />
+                  <Image source={{ uri: pending.uri }} style={styles.previewImage} contentFit="cover" />
                   {uploading ? (
                     <View style={styles.previewOverlay}>
                       <ActivityIndicator color="#FFFFFF" />
@@ -392,14 +335,11 @@ export default function ReceptionChatScreen() {
                   ) : null}
                   <Pressable
                     accessibilityRole="button"
-                    accessibilityLabel={t("receptionChat.removeImage")}
+                    accessibilityLabel={t('receptionChat.removeImage')}
                     onPress={() => setPending(null)}
                     disabled={uploading}
                     hitSlop={8}
-                    style={[
-                      styles.previewRemove,
-                      { backgroundColor: theme.text },
-                    ]}
+                    style={[styles.previewRemove, { backgroundColor: theme.text }]}
                   >
                     <Ionicons name="close" size={14} color={theme.background} />
                   </Pressable>
@@ -418,17 +358,13 @@ export default function ReceptionChatScreen() {
             >
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={t("receptionChat.attach")}
+                accessibilityLabel={t('receptionChat.attach')}
                 onPress={pickImage}
                 disabled={uploading}
                 hitSlop={6}
                 style={styles.attachButton}
               >
-                <Ionicons
-                  name="image-outline"
-                  size={24}
-                  color={theme.textSecondary}
-                />
+                <Ionicons name="image-outline" size={24} color={theme.textSecondary} />
               </Pressable>
 
               <View
@@ -443,7 +379,7 @@ export default function ReceptionChatScreen() {
                 <TextInput
                   value={input}
                   onChangeText={onChangeInput}
-                  placeholder={t("receptionChat.placeholder")}
+                  placeholder={t('receptionChat.placeholder')}
                   placeholderTextColor={theme.textSecondary}
                   multiline
                   style={[styles.input, { color: theme.text }]}
@@ -451,7 +387,7 @@ export default function ReceptionChatScreen() {
               </View>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={t("receptionChat.send")}
+                accessibilityLabel={t('receptionChat.send')}
                 onPress={() => send(input)}
                 disabled={!canSend}
                 style={[
@@ -479,8 +415,8 @@ export default function ReceptionChatScreen() {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: Space.md,
     paddingHorizontal: Space.lg,
     paddingVertical: Space.md,
@@ -490,28 +426,28 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  statusRow: { flexDirection: "row", alignItems: "center", gap: Space.xs + 2 },
+  statusRow: { flexDirection: 'row', alignItems: 'center', gap: Space.xs + 2 },
   statusDot: { width: 7, height: 7, borderRadius: 4 },
   list: {
     flexGrow: 1,
-    width: "100%",
+    width: '100%',
     maxWidth: MaxContentWidth,
-    alignSelf: "center",
+    alignSelf: 'center',
     padding: Space.lg,
   },
-  day: { textAlign: "center", marginVertical: Space.sm },
+  day: { textAlign: 'center', marginVertical: Space.sm },
   prompts: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "center",
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
     gap: Space.sm,
   },
   inputBar: {
-    flexDirection: "row",
-    alignItems: "flex-end",
+    flexDirection: 'row',
+    alignItems: 'flex-end',
     gap: Space.sm,
     paddingHorizontal: Space.md,
     paddingVertical: Space.sm,
@@ -524,7 +460,7 @@ const styles = StyleSheet.create({
     borderRadius: Radius.xl,
     borderWidth: StyleSheet.hairlineWidth,
     paddingHorizontal: Space.lg,
-    justifyContent: "center",
+    justifyContent: 'center',
   },
   input: {
     fontFamily: FontFamily.regular,
@@ -537,17 +473,17 @@ const styles = StyleSheet.create({
     width: MinTouch + 4,
     height: MinTouch + 4,
     borderRadius: Radius.full,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   attachButton: {
     width: MinTouch,
     height: MinTouch + 4,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   preview: {
-    flexDirection: "row",
+    flexDirection: 'row',
     paddingHorizontal: Space.md,
     paddingTop: Space.md,
     borderTopWidth: StyleSheet.hairlineWidth,
@@ -556,19 +492,19 @@ const styles = StyleSheet.create({
   previewOverlay: {
     ...StyleSheet.absoluteFill,
     borderRadius: Radius.sm,
-    backgroundColor: "rgba(0,0,0,0.4)",
-    alignItems: "center",
-    justifyContent: "center",
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   previewRemove: {
-    position: "absolute",
+    position: 'absolute',
     top: -6,
     right: -6,
     width: 20,
     height: 20,
     borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  typing: { marginTop: Space.md, alignSelf: "flex-start" },
+  typing: { marginTop: Space.md, alignSelf: 'flex-start' },
 });

@@ -22,7 +22,8 @@ export function BottomBar({ style, children, ...rest }: ViewProps) {
         },
         style,
       ]}
-      {...rest}>
+      {...rest}
+    >
       {children}
     </View>
   );

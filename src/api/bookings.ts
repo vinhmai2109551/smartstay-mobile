@@ -13,8 +13,7 @@ export const bookingsApi = {
   // Backend returns the created Booking directly (201), not wrapped.
   create: (dto: CreateBookingDto) => apiClient.post<Booking>('/bookings', dto).then((r) => r.data),
 
-  my: (params?: MyBookingsParams) =>
-    apiClient.get<Paginated<Booking>>('/bookings/my', { params }).then((r) => r.data),
+  my: (params?: MyBookingsParams) => apiClient.get<Paginated<Booking>>('/bookings/my', { params }).then((r) => r.data),
 
   detail: (id: string) => apiClient.get<Booking>(`/bookings/${id}`).then((r) => r.data),
 
@@ -27,4 +26,4 @@ export const bookingsApi = {
 
   cancellationPreview: (id: string) =>
     apiClient.get<CancellationPreview>(`/bookings/${id}/cancellation-preview`).then((r) => r.data),
-}
+};

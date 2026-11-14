@@ -129,7 +129,8 @@ export default function LoginScreen() {
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
           automaticallyAdjustKeyboardInsets
-          showsVerticalScrollIndicator={false}>
+          showsVerticalScrollIndicator={false}
+        >
           <View style={styles.brand}>
             <Animated.View entering={ZoomIn.springify().damping(15)}>
               <VikaEmblem size={emblemSize} />
@@ -148,7 +149,8 @@ export default function LoginScreen() {
 
           <Animated.View
             entering={FadeInDown.duration(550).delay(250)}
-            style={[styles.card, shadows.floating, { backgroundColor: theme.backgroundElement }]}>
+            style={[styles.card, shadows.floating, { backgroundColor: theme.backgroundElement }]}
+          >
             <Controller
               control={control}
               name="email"

@@ -50,7 +50,12 @@ describe('buildMessagesFromHistory', () => {
   it('keeps a pending booking proposal across turns until a booking is created', () => {
     const proposal = { proposalId: 'p1' };
     const history = [
-      row({ messageId: 't1', role: 'TOOL', toolName: 'propose_booking', toolResult: { success: true, data: proposal } }),
+      row({
+        messageId: 't1',
+        role: 'TOOL',
+        toolName: 'propose_booking',
+        toolResult: { success: true, data: proposal },
+      }),
       row({ messageId: 'm1', role: 'MODEL', content: 'xác nhận đặt phòng?' }),
       row({ messageId: 'u1', role: 'USER', content: 'đồng ý' }),
       row({ messageId: 'm2', role: 'MODEL', content: 'đang xử lý...' }),
@@ -67,7 +72,12 @@ describe('buildMessagesFromHistory', () => {
     const proposal = { proposalId: 'p1' };
     const booking = { bookingId: 'b1' };
     const history = [
-      row({ messageId: 't1', role: 'TOOL', toolName: 'propose_booking', toolResult: { success: true, data: proposal } }),
+      row({
+        messageId: 't1',
+        role: 'TOOL',
+        toolName: 'propose_booking',
+        toolResult: { success: true, data: proposal },
+      }),
       row({ messageId: 'm1', role: 'MODEL', content: 'xác nhận đặt phòng?' }),
       row({ messageId: 't2', role: 'TOOL', toolName: 'create_booking', toolResult: { success: true, data: booking } }),
       row({ messageId: 'm2', role: 'MODEL', content: 'đã tạo đơn' }),

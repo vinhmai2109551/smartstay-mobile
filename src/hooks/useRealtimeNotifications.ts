@@ -1,18 +1,18 @@
-import NetInfo from "@react-native-community/netinfo";
-import { useEffect } from "react";
-import { AppState } from "react-native";
-import { io } from "socket.io-client";
+import NetInfo from '@react-native-community/netinfo';
+import { useEffect } from 'react';
+import { AppState } from 'react-native';
+import { io } from 'socket.io-client';
 
-import { API_URL } from "@/config/env";
-import { useAuthStore } from "@/store/authStore";
-import { useNotificationStore } from "@/store/notificationStore";
-import { AppNotification } from "@/types/notification";
-import { useSocketStore } from "@/store/socketStore";
-import { useReceptionChatStore } from "@/store/receptionChatStore";
-import { ReceptionMessage } from "@/types/chat";
+import { API_URL } from '@/config/env';
+import { useAuthStore } from '@/store/authStore';
+import { useNotificationStore } from '@/store/notificationStore';
+import { AppNotification } from '@/types/notification';
+import { useSocketStore } from '@/store/socketStore';
+import { useReceptionChatStore } from '@/store/receptionChatStore';
+import { ReceptionMessage } from '@/types/chat';
 
 // The socket.io server lives at the API host root, not under /api/v1.
-const SOCKET_URL = API_URL.replace(/\/api\/v\d+\/?$/, "");
+const SOCKET_URL = API_URL.replace(/\/api\/v\d+\/?$/, '');
 
 /**
  * While signed in: loads the notification feed and keeps a socket open so staff
@@ -22,14 +22,13 @@ const SOCKET_URL = API_URL.replace(/\/api\/v\d+\/?$/, "");
 export function useRealtimeNotifications(enabled: boolean) {
   useEffect(() => {
     if (!enabled) return;
-    const { fetch, receive, bumpBookings, bumpFavorites, reset } =
-      useNotificationStore.getState();
+    const { fetch, receive, bumpBookings, bumpFavorites, reset } = useNotificationStore.getState();
 
     fetch();
 
     const socket = io(SOCKET_URL, {
       // React Native has no long-polling-friendly XHR cookies; websocket only is also faster.
-      transports: ["websocket"],
+      transports: ['websocket'],
       // Read at every (re)connect so a refreshed access token is picked up.
       auth: (cb) => cb({ token: useAuthStore.getState().accessToken }),
     });
@@ -37,39 +36,32 @@ export function useRealtimeNotifications(enabled: boolean) {
 
     // Anything pushed while disconnected (backgrounded app, flaky network) is only
     // in the database, so reload the feed on every reconnect.
-    socket.on("connect", () => {
+    socket.on('connect', () => {
       if (socket.recovered) return;
       fetch();
     });
-    socket.on("notification:new", (notification: AppNotification) =>
-      receive(notification),
-    );
-    socket.on("booking:updated", () => bumpBookings());
-    socket.on("favorite:updated", () => bumpFavorites());
+    socket.on('notification:new', (notification: AppNotification) => receive(notification));
+    socket.on('booking:updated', () => bumpBookings());
+    socket.on('favorite:updated', () => bumpFavorites());
 
     // Server rooms are lost on reconnect: rejoin the reception chat so staff replies
     // reach the home badge, then recount what arrived while offline.
-    socket.on("connect", () => {
+    socket.on('connect', () => {
       const { conversationId, sync } = useReceptionChatStore.getState();
       if (!conversationId) return;
-      socket.emit("chat:join", { conversationId });
+      socket.emit('chat:join', { conversationId });
       sync().catch(() => {});
     });
-    socket.on("chat:message", (message: ReceptionMessage) =>
-      useReceptionChatStore.getState().receive(message),
-    );
-    socket.on(
-      "chat:typing",
-      (p: { conversationId: string; userId: string; isTyping: boolean }) => {
-        if (p.isTyping && p.userId === useAuthStore.getState().user?.userId) {
-          useReceptionChatStore.getState().readElsewhere(p.conversationId);
-        }
-      },
-    );
+    socket.on('chat:message', (message: ReceptionMessage) => useReceptionChatStore.getState().receive(message));
+    socket.on('chat:typing', (p: { conversationId: string; userId: string; isTyping: boolean }) => {
+      if (p.isTyping && p.userId === useAuthStore.getState().user?.userId) {
+        useReceptionChatStore.getState().readElsewhere(p.conversationId);
+      }
+    });
 
     // iOS suspends sockets in the background; reconnect and resync on return.
-    const appState = AppState.addEventListener("change", (state) => {
-      if (state !== "active") return;
+    const appState = AppState.addEventListener('change', (state) => {
+      if (state !== 'active') return;
       if (socket.connected) fetch();
       else socket.connect();
     });

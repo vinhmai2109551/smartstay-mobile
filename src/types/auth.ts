@@ -16,8 +16,8 @@ export type User = {
 };
 
 // Refresh token is not returned in JSON — it is set as an httpOnly cookie by
-// the backend (see doc/API.md 0.2), so the client only ever handles the
-// access token directly.
+// the backend (AuthController.withRefreshCookie), so the client only ever
+// handles the access token directly.
 export type LoginResponse = {
   accessToken: string;
   user: User;
