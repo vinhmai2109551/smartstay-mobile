@@ -25,7 +25,8 @@ export function Checkbox({ checked, onChange, ...rest }: CheckboxProps) {
           backgroundColor: checked ? theme.primary : theme.backgroundElement,
         },
       ]}
-      {...rest}>
+      {...rest}
+    >
       {checked ? <Ionicons name="checkmark" size={16} color={theme.primaryText} /> : null}
     </Pressable>
   );

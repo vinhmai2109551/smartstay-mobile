@@ -5,6 +5,7 @@ import { FlatList, RefreshControl, ScrollView, StyleSheet, useWindowDimensions, 
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { bookingsApi } from '@/api/bookings';
+import { refundsApi } from '@/api/refunds';
 import { reviewsApi } from '@/api/reviews';
 import { BookingCard } from '@/components/BookingCard';
 import { ThemedText } from '@/components/themed-text';
@@ -28,13 +29,12 @@ export default function BookingsScreen() {
   const theme = useTheme();
   const { width } = useWindowDimensions();
   const contentWidth = Math.min(width, MaxContentWidth);
-  const fetchBookings = useCallback(() => bookingsApi.my({limit: 100}),[])
+  const fetchBookings = useCallback(() => bookingsApi.my({ limit: 100 }), []);
   const { data, loading, error, refetch, refreshing, refresh } = useApi(fetchBookings, {
     refetchOnFocus: true,
     toastOnRefreshError: true,
   });
   const [filter, setFilter] = useState<FilterKey>('ALL');
-  useBookingUpdates(refresh);
   // Which bookings already have a review. Decorative — if it fails the cards simply
   // offer "Write a review", and the detail screen re-checks before showing the form.
   const fetchMyReviews = useCallback(() => reviewsApi.mine(), []);
@@ -43,9 +43,22 @@ export default function BookingsScreen() {
     () => new Map((myReviews.data ?? []).map((review) => [review.bookingId, review.rating])),
     [myReviews.data],
   );
+  // Refund status badge on cancelled-and-paid bookings — decorative, same as reviews: a
+  // failed fetch just hides the badge, never blocks the bookings list itself.
+  const fetchMyRefunds = useCallback(() => refundsApi.mine(), []);
+  const myRefunds = useApi(fetchMyRefunds, { refetchOnFocus: true });
+  const refundByBooking = useMemo(
+    () => new Map((myRefunds.data ?? []).map((refund) => [refund.bookingId, refund])),
+    [myRefunds.data],
+  );
+  useBookingUpdates(() => {
+    refresh();
+    myRefunds.refresh();
+  });
   const onRefresh = () => {
     refresh();
     myReviews.refresh();
+    myRefunds.refresh();
   };
 
   const FILTERS: { key: FilterKey; label: string; statuses?: BookingStatus[] }[] = useMemo(
@@ -75,7 +88,12 @@ export default function BookingsScreen() {
           keyExtractor={(item) => item.bookingId}
           contentContainerStyle={[styles.list, { width: contentWidth }]}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} colors={[theme.primary]} />
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={theme.primary}
+              colors={[theme.primary]}
+            />
           }
           ListHeaderComponent={
             <View style={styles.header}>
@@ -89,7 +107,8 @@ export default function BookingsScreen() {
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.filters}
-                style={styles.filterScroll}>
+                style={styles.filterScroll}
+              >
                 {FILTERS.map((f) => (
                   <Chip key={f.key} label={f.label} selected={filter === f.key} onPress={() => setFilter(f.key)} />
                 ))}
@@ -126,9 +145,8 @@ export default function BookingsScreen() {
                 booking={item}
                 onPress={() => router.push(`/booking/${item.bookingId}`)}
                 reviewRating={ratingByBooking.get(item.bookingId) ?? null}
-                onReview={() =>
-                  router.push({ pathname: '/booking/[id]', params: { id: item.bookingId, review: '1' } })
-                }
+                refund={refundByBooking.get(item.bookingId) ?? null}
+                onReview={() => router.push({ pathname: '/booking/[id]', params: { id: item.bookingId, review: '1' } })}
               />
             </View>
           )}

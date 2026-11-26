@@ -91,9 +91,7 @@ export default function NewBookingScreen() {
 
   const servicesTotal = useMemo(() => {
     if (!services.data) return 0;
-    return services.data
-      .filter((s) => selectedServiceIds.includes(s.serviceId))
-      .reduce((sum, s) => sum + s.price, 0);
+    return services.data.filter((s) => selectedServiceIds.includes(s.serviceId)).reduce((sum, s) => sum + s.price, 0);
   }, [services.data, selectedServiceIds]);
 
   const roomTotal = (roomType.data?.basePrice ?? 0) * nights;
@@ -186,7 +184,12 @@ export default function NewBookingScreen() {
 
   const image = roomImageSource(roomType.data);
   const paymentOptions: { key: 'CASH' | 'PAYOS'; icon: IconName; title: string; description: string }[] = [
-    { key: 'CASH', icon: 'cash-outline', title: t('booking.paymentCash'), description: t('booking.paymentCashDescription') },
+    {
+      key: 'CASH',
+      icon: 'cash-outline',
+      title: t('booking.paymentCash'),
+      description: t('booking.paymentCashDescription'),
+    },
     {
       key: 'PAYOS',
       icon: 'qr-code-outline',
@@ -201,7 +204,8 @@ export default function NewBookingScreen() {
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
         automaticallyAdjustKeyboardInsets
-        showsVerticalScrollIndicator={false}>
+        showsVerticalScrollIndicator={false}
+      >
         <Animated.View entering={FadeIn.duration(220)} style={styles.contentInner}>
           <Card style={styles.summary}>
             <View style={[styles.thumb, { backgroundColor: theme.backgroundSelected }]}>
@@ -284,7 +288,8 @@ export default function NewBookingScreen() {
                         backgroundColor: selected ? theme.primarySoft : theme.backgroundElement,
                         opacity: pressed ? 0.85 : 1,
                       },
-                    ]}>
+                    ]}
+                  >
                     <View style={styles.optionText}>
                       <ThemedText type="smallBold">{service.name}</ThemedText>
                       <ThemedText type="caption" themeColor="textSecondary">
@@ -298,7 +303,8 @@ export default function NewBookingScreen() {
                           borderColor: selected ? theme.primary : theme.textSecondary,
                           backgroundColor: selected ? theme.primary : 'transparent',
                         },
-                      ]}>
+                      ]}
+                    >
                       {selected ? <Ionicons name="checkmark" size={16} color={theme.primaryText} /> : null}
                     </View>
                   </Pressable>
@@ -335,7 +341,11 @@ export default function NewBookingScreen() {
                   size={16}
                   color={discountAmount > 0 ? theme.success : theme.danger}
                 />
-                <ThemedText type="small" themeColor={discountAmount > 0 ? 'success' : 'danger'} style={styles.flexShrink}>
+                <ThemedText
+                  type="small"
+                  themeColor={discountAmount > 0 ? 'success' : 'danger'}
+                  style={styles.flexShrink}
+                >
                   {promoMessage}
                 </ThemedText>
               </View>
@@ -359,7 +369,8 @@ export default function NewBookingScreen() {
                       backgroundColor: selected ? theme.primarySoft : theme.backgroundElement,
                       opacity: pressed ? 0.85 : 1,
                     },
-                  ]}>
+                  ]}
+                >
                   <View style={[styles.optionIcon, { backgroundColor: theme.backgroundElement }]}>
                     <Ionicons name={option.icon} size={20} color={theme.primary} />
                   </View>
@@ -412,7 +423,6 @@ export default function NewBookingScreen() {
               {t('booking.estimatedTotalNote')}
             </ThemedText>
           </Card>
-
         </Animated.View>
       </ScrollView>
 

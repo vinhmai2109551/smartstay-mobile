@@ -101,7 +101,8 @@ export default function VerifyOtpScreen() {
         style={({ pressed }) => [
           styles.backButton,
           { borderColor: theme.border, backgroundColor: theme.backgroundElement, opacity: pressed ? 0.7 : 1 },
-        ]}>
+        ]}
+      >
         <Ionicons name="chevron-back" size={22} color={theme.text} />
       </Pressable>
 
@@ -127,7 +128,12 @@ export default function VerifyOtpScreen() {
         </View>
       ) : null}
 
-      <Button label={t('auth.verifyOtp.verifyButton')} onPress={handleVerify} loading={submitting} disabled={otp.length !== 6} />
+      <Button
+        label={t('auth.verifyOtp.verifyButton')}
+        onPress={handleVerify}
+        loading={submitting}
+        disabled={otp.length !== 6}
+      />
 
       <View style={styles.resendRow}>
         <ThemedText type="small" themeColor="textSecondary">
@@ -137,7 +143,8 @@ export default function VerifyOtpScreen() {
           accessibilityRole="button"
           onPress={handleResend}
           disabled={resendCooldown > 0 || resending}
-          hitSlop={10}>
+          hitSlop={10}
+        >
           <ThemedText type="smallBold" themeColor={resendCooldown > 0 ? 'textSecondary' : 'primary'}>
             {resendCooldown > 0
               ? t('auth.verifyOtp.resendIn', { seconds: resendCooldown })

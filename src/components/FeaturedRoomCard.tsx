@@ -29,7 +29,8 @@ export function FeaturedRoomCard({ roomType, width, onPress }: FeaturedRoomCardP
       accessibilityRole="button"
       accessibilityLabel={`${roomType.name}, từ ${formatVND(roomType.basePrice)} mỗi đêm`}
       onPress={onPress}
-      style={({ pressed }) => [styles.card, shadows.card, { width, opacity: pressed ? 0.94 : 1 }]}>
+      style={({ pressed }) => [styles.card, shadows.card, { width, opacity: pressed ? 0.94 : 1 }]}
+    >
       <View style={[styles.inner, { backgroundColor: theme.backgroundSelected }]}>
         {image ? (
           <Image

@@ -65,7 +65,8 @@ export function StarRatingInput({ value, onChange, size = 36, gap = 10, accessib
         lastValueRef.current = value;
         handleTouch(event);
       }}
-      onResponderMove={handleTouch}>
+      onResponderMove={handleTouch}
+    >
       {Array.from({ length: STAR_COUNT }, (_, i) => {
         const star = i + 1;
         const name = value >= star ? 'star' : value >= star - 0.5 ? 'star-half' : 'star-outline';

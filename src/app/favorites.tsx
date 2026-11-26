@@ -1,29 +1,26 @@
-import { favoritesApi } from "@/api/favorites";
-import { RoomTypeCard } from "@/components/RoomTypeCard";
-import { ThemedView } from "@/components/themed-view";
-import { EmptyState } from "@/components/ui/EmptyState";
-import { ErrorView } from "@/components/ui/ErrorView";
-import { Skeleton } from "@/components/ui/Skeleton";
-import { MaxContentWidth, Radius, Space } from "@/constants/theme";
-import { useTheme } from "@/hooks/use-theme";
-import { useApi } from "@/hooks/useApi";
-import { useFavoriteUpdates } from "@/hooks/useFavoriteUpdates";
-import { router } from "expo-router";
-import { useCallback } from "react";
-import { useTranslation } from "react-i18next";
-import { FlatList, RefreshControl, StyleSheet, View } from "react-native";
+import { favoritesApi } from '@/api/favorites';
+import { RoomTypeCard } from '@/components/RoomTypeCard';
+import { ThemedView } from '@/components/themed-view';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { ErrorView } from '@/components/ui/ErrorView';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { MaxContentWidth, Radius, Space } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
+import { useApi } from '@/hooks/useApi';
+import { useFavoriteUpdates } from '@/hooks/useFavoriteUpdates';
+import { router } from 'expo-router';
+import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
+import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
 
 export default function FavoritesScreen() {
   const { t } = useTranslation();
   const theme = useTheme();
   const fetchFavorites = useCallback(() => favoritesApi.mine(), []);
 
-  const { data, loading, error, refetch, refreshing, refresh } = useApi(
-    fetchFavorites,
-    {
-      refetchOnFocus: true,
-    },
-  );
+  const { data, loading, error, refetch, refreshing, refresh } = useApi(fetchFavorites, {
+    refetchOnFocus: true,
+  });
 
   // Favorited/unfavorited from another device (web, or another session) — reload
   // so this list stays in sync instead of only catching up on next screen focus.
@@ -62,9 +59,9 @@ export default function FavoritesScreen() {
           loading ? undefined : (
             <EmptyState
               icon="heart-outline"
-              title={t("favorites.empty")}
-              actionLabel={t("favorites.explore")}
-              onAction={() => router.navigate("/(tabs)/search")}
+              title={t('favorites.empty')}
+              actionLabel={t('favorites.explore')}
+              onAction={() => router.navigate('/(tabs)/search')}
             />
           )
         }
@@ -73,7 +70,7 @@ export default function FavoritesScreen() {
             roomType={item}
             onPress={() =>
               router.push({
-                pathname: "/room/[id]",
+                pathname: '/room/[id]',
                 params: { id: item.roomTypeId },
               })
             }
@@ -87,9 +84,9 @@ export default function FavoritesScreen() {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   list: {
-    width: "100%",
+    width: '100%',
     maxWidth: MaxContentWidth,
-    alignSelf: "center",
+    alignSelf: 'center',
     padding: Space.lg,
     gap: Space.lg,
   },

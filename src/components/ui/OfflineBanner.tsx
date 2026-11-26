@@ -45,7 +45,8 @@ export function OfflineBanner() {
       style={[
         styles.banner,
         { paddingTop: insets.top + Space.xs, backgroundColor: isOnline ? theme.success : theme.danger },
-      ]}>
+      ]}
+    >
       <ThemedText type="caption" style={styles.text}>
         {isOnline ? t('common.reconnected') : t('common.offline')}
       </ThemedText>

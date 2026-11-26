@@ -57,7 +57,8 @@ export default function EditProfileScreen() {
             accessibilityLabel={t('common.back')}
             onPress={() => router.back()}
             hitSlop={8}
-            style={({ pressed }) => [styles.backButton, { opacity: pressed ? 0.7 : 1 }]}>
+            style={({ pressed }) => [styles.backButton, { opacity: pressed ? 0.7 : 1 }]}
+          >
             <Ionicons name="chevron-back" size={22} color="#FFFFFF" />
           </Pressable>
           <ThemedText type="heading" style={styles.heroTitle}>

@@ -37,7 +37,8 @@ export function Screen({
                 showsVerticalScrollIndicator: false,
                 ...rest,
               }
-            : {})}>
+            : {})}
+        >
           {children}
         </Container>
       </SafeAreaView>

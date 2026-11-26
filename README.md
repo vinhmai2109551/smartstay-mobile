@@ -23,22 +23,22 @@ quản lý phòng/ca trực...) **không** nằm trong phạm vi app này.
 
 ## Tính năng
 
-| Khu vực (`src/app`) | Tính năng |
-|---|---|
-| `(auth)/login`, `register`, `verify-otp` | Đăng ký 2 bước (OTP), đăng nhập bằng mật khẩu (qua Cloudflare Turnstile trong WebView) hoặc Google (`expo-auth-session`) |
-| `(auth)/forgot-password`, `verify-reset-otp`, `reset-password` | Quên mật khẩu: gửi OTP qua email → xác minh OTP → đặt mật khẩu mới |
-| `(tabs)/index`, `room/[id]` | Trang chủ, chi tiết loại phòng |
-| `(tabs)/search` | Tìm phòng theo ngày/bộ lọc |
-| `booking/new` | Form tạo đơn đặt phòng (dịch vụ thêm, mã khuyến mãi, chọn phương thức thanh toán) |
-| `(tabs)/bookings`, `booking/[id]` | Danh sách đơn của tôi, chi tiết đơn, huỷ đơn, viết đánh giá sau khi trả phòng |
-| `booking/[id]`, `components/ChatBookingCreatedCard` | Vé check-in dạng QR — chỉ hiện khi đơn đã được khách sạn xác nhận **và** thanh toán xong (PAYOS) hoặc trả bằng tiền mặt; tự cập nhật khi có thông báo realtime, không cần tải lại màn |
-| `checkout/[bookingId]` | Thanh toán PayOS: QR chuyển khoản, mở app ngân hàng (VietQR deeplink), theo dõi trạng thái tự động (poll + sync khi app quay lại foreground) |
-| `(tabs)/chat`, `components/ChatBubble*` | Trợ lý AI Chat-to-Book — tìm phòng, hỏi khuyến mãi/chính sách, đặt phòng qua hội thoại; lưu lại lịch sử hội thoại |
-| `notifications.tsx` | Thông báo realtime (socket.io): đặt phòng, thanh toán, xác nhận, phản hồi đánh giá; đánh dấu đã đọc |
-| `account.tsx`, `edit-profile.tsx` | Xem/sửa thông tin cá nhân |
-| `change-password.tsx` | Đổi mật khẩu (màn riêng, có link "Quên mật khẩu hiện tại?") |
-| `(tabs)/profile` | Đổi theme (Sáng/Tối/Theo hệ thống), đổi ngôn ngữ (vi/en), đăng xuất |
-| Toàn app | "Lưu mã QR" — lưu phiếu thanh toán PayOS vào thư viện ảnh máy (`expo-media-library` + `react-native-view-shot`) — **cần dev client, không chạy được trên Expo Go** (xem phần "Chạy app" bên dưới) |
+| Khu vực (`src/app`)                                            | Tính năng                                                                                                                                                                                         |
+| -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `(auth)/login`, `register`, `verify-otp`                       | Đăng ký 2 bước (OTP), đăng nhập bằng mật khẩu (qua Cloudflare Turnstile trong WebView) hoặc Google (`expo-auth-session`)                                                                          |
+| `(auth)/forgot-password`, `verify-reset-otp`, `reset-password` | Quên mật khẩu: gửi OTP qua email → xác minh OTP → đặt mật khẩu mới                                                                                                                                |
+| `(tabs)/index`, `room/[id]`                                    | Trang chủ, chi tiết loại phòng                                                                                                                                                                    |
+| `(tabs)/search`                                                | Tìm phòng theo ngày/bộ lọc                                                                                                                                                                        |
+| `booking/new`                                                  | Form tạo đơn đặt phòng (dịch vụ thêm, mã khuyến mãi, chọn phương thức thanh toán)                                                                                                                 |
+| `(tabs)/bookings`, `booking/[id]`                              | Danh sách đơn của tôi, chi tiết đơn, huỷ đơn, viết đánh giá sau khi trả phòng                                                                                                                     |
+| `booking/[id]`, `components/ChatBookingCreatedCard`            | Vé check-in dạng QR — chỉ hiện khi đơn đã được khách sạn xác nhận **và** thanh toán xong (PAYOS) hoặc trả bằng tiền mặt; tự cập nhật khi có thông báo realtime, không cần tải lại màn             |
+| `checkout/[bookingId]`                                         | Thanh toán PayOS: QR chuyển khoản, mở app ngân hàng (VietQR deeplink), theo dõi trạng thái tự động (poll + sync khi app quay lại foreground)                                                      |
+| `(tabs)/chat`, `components/ChatBubble*`                        | Trợ lý AI Chat-to-Book — tìm phòng, hỏi khuyến mãi/chính sách, đặt phòng qua hội thoại; lưu lại lịch sử hội thoại                                                                                 |
+| `notifications.tsx`                                            | Thông báo realtime (socket.io): đặt phòng, thanh toán, xác nhận, phản hồi đánh giá; đánh dấu đã đọc                                                                                               |
+| `account.tsx`, `edit-profile.tsx`                              | Xem/sửa thông tin cá nhân                                                                                                                                                                         |
+| `change-password.tsx`                                          | Đổi mật khẩu (màn riêng, có link "Quên mật khẩu hiện tại?")                                                                                                                                       |
+| `(tabs)/profile`                                               | Đổi theme (Sáng/Tối/Theo hệ thống), đổi ngôn ngữ (vi/en), đăng xuất                                                                                                                               |
+| Toàn app                                                       | "Lưu mã QR" — lưu phiếu thanh toán PayOS vào thư viện ảnh máy (`expo-media-library` + `react-native-view-shot`) — **cần dev client, không chạy được trên Expo Go** (xem phần "Chạy app" bên dưới) |
 
 ## Cấu trúc thư mục chính
 
@@ -110,15 +110,15 @@ eas build --platform android --profile preview
 
 ## Scripts
 
-| Script | Mục đích |
-|---|---|
-| `npm run start` | Chạy Metro bundler (`expo start`) |
-| `npm run start:go` | Chạy ở chế độ Expo Go qua LAN, xoá cache (`--go --lan -c`) |
-| `npm run android` / `npm run ios` | Build & chạy dev client native (`expo run:android` / `run:ios`) |
-| `npm run web` | Chạy bản web (`expo start --web`) |
-| `npm run lint` | `expo lint` (ESLint) |
-| `npm run eas:build:android:preview` / `:prod` | Build Android qua EAS |
-| `npm run eas:build:ios:preview` / `:prod` | Build iOS qua EAS |
+| Script                                        | Mục đích                                                        |
+| --------------------------------------------- | --------------------------------------------------------------- |
+| `npm run start`                               | Chạy Metro bundler (`expo start`)                               |
+| `npm run start:go`                            | Chạy ở chế độ Expo Go qua LAN, xoá cache (`--go --lan -c`)      |
+| `npm run android` / `npm run ios`             | Build & chạy dev client native (`expo run:android` / `run:ios`) |
+| `npm run web`                                 | Chạy bản web (`expo start --web`)                               |
+| `npm run lint`                                | `expo lint` (ESLint)                                            |
+| `npm run eas:build:android:preview` / `:prod` | Build Android qua EAS                                           |
+| `npm run eas:build:ios:preview` / `:prod`     | Build iOS qua EAS                                               |
 
 ## Giới hạn đã biết
 

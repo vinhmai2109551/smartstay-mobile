@@ -23,9 +23,7 @@ jest.mock('expo-secure-store', () => {
 // Not used directly anywhere in src/ yet, but mocked defensively per task E1 — nothing
 // imports device locale info during these tests, so a static vi-VN default is enough.
 jest.mock('expo-localization', () => ({
-  getLocales: () => [
-    { languageTag: 'vi-VN', languageCode: 'vi', regionCode: 'VN', currencyCode: 'VND' },
-  ],
+  getLocales: () => [{ languageTag: 'vi-VN', languageCode: 'vi', regionCode: 'VN', currencyCode: 'VND' }],
   getCalendars: () => [{ calendar: 'gregory', timeZone: 'Asia/Ho_Chi_Minh' }],
   locale: 'vi-VN',
 }));
