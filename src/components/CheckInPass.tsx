@@ -77,7 +77,8 @@ export function CheckInPass({ bookingId, details = [], variant = 'card' }: Check
           accessibilityLabel={t('checkInPass.qrLabel', { code })}
           accessibilityHint={t('checkInPass.expandHint')}
           onPress={open}
-          style={({ pressed }) => [styles.qrFrame, { borderColor: theme.border, opacity: pressed ? 0.85 : 1 }]}>
+          style={({ pressed }) => [styles.qrFrame, { borderColor: theme.border, opacity: pressed ? 0.85 : 1 }]}
+        >
           <QRCode value={payload} size={inline ? 148 : 176} color={QR_DARK} backgroundColor={QR_LIGHT} ecl="M" />
           <View style={[styles.expandBadge, { backgroundColor: theme.primary }]}>
             <Ionicons name="expand" size={14} color={theme.primaryText} />
@@ -109,10 +110,8 @@ export function CheckInPass({ bookingId, details = [], variant = 'card' }: Check
             accessibilityLabel={t('checkInPass.copyCode')}
             onPress={copyCode}
             hitSlop={8}
-            style={({ pressed }) => [
-              styles.copy,
-              { backgroundColor: theme.primarySoft, opacity: pressed ? 0.7 : 1 },
-            ]}>
+            style={({ pressed }) => [styles.copy, { backgroundColor: theme.primarySoft, opacity: pressed ? 0.7 : 1 }]}
+          >
             <Ionicons name="copy-outline" size={16} color={theme.primary} />
             <ThemedText type="smallBold" themeColor="primary">
               {t('checkInPass.copy')}
@@ -124,16 +123,15 @@ export function CheckInPass({ bookingId, details = [], variant = 'card' }: Check
       <Modal visible={expanded} animationType="fade" onRequestClose={() => setExpanded(false)}>
         {/* Always white, so the QR has maximum contrast even in dark mode. */}
         <View
-          style={[
-            styles.fullScreen,
-            { paddingTop: insets.top + Space.md, paddingBottom: insets.bottom + Space.lg },
-          ]}>
+          style={[styles.fullScreen, { paddingTop: insets.top + Space.md, paddingBottom: insets.bottom + Space.lg }]}
+        >
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={t('common.close')}
             onPress={() => setExpanded(false)}
             hitSlop={12}
-            style={({ pressed }) => [styles.close, { opacity: pressed ? 0.6 : 1 }]}>
+            style={({ pressed }) => [styles.close, { opacity: pressed ? 0.6 : 1 }]}
+          >
             <Ionicons name="close" size={24} color={QR_DARK} />
           </Pressable>
 

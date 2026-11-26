@@ -88,5 +88,8 @@
     "eas:build:ios:preview": "eas build --platform ios --profile preview",
     "eas:build:ios:prod": "eas build --platform ios --profile production"
   },
-  "private": true
+  "private": true,
+  "engines": {
+    "node": "^22.13.0 || ^24.3.0 || >=26.0.0"
+  }
 }

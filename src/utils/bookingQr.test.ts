@@ -26,7 +26,10 @@ const cases: Case[] = [
 ];
 
 describe('canShowCheckInPass', () => {
-  test.each(cases)('status=%s paymentMethod=%s paymentStatus=%s -> %s', (status, paymentMethod, paymentStatus, expected) => {
-    expect(canShowCheckInPass({ status, paymentMethod, paymentStatus })).toBe(expected);
-  });
+  test.each(cases)(
+    'status=%s paymentMethod=%s paymentStatus=%s -> %s',
+    (status, paymentMethod, paymentStatus, expected) => {
+      expect(canShowCheckInPass({ status, paymentMethod, paymentStatus })).toBe(expected);
+    },
+  );
 });

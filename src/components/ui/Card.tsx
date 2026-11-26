@@ -31,7 +31,8 @@ export function Card({ style, padded = true, elevation = 'card', onPress, childr
       accessibilityRole="button"
       onPress={onPress}
       style={({ pressed }) => [cardStyle, pressed && styles.pressed]}
-      {...rest}>
+      {...rest}
+    >
       {children}
     </Pressable>
   );

@@ -12,14 +12,14 @@ export function phoneSchema(invalidMessage: string) {
     .refine((value) => VN_PHONE_PATTERN.test(value), invalidMessage);
 }
 
-/** register & reset-password: backend requires at least 6 characters (doc/API.md 1.1, 10.3). */
+/** register & reset-password: backend requires at least 6 characters (RegisterDTO, ResetPasswordDto). */
 export function passwordSchema(minLengthMessage: string) {
   return z.string().min(6, minLengthMessage);
 }
 
 /**
  * change-password: backend requires at least 8 characters, with both a letter and a
- * digit (doc/API.md 6.x) — stricter than, and distinct from, passwordSchema() above.
+ * digit (ChangePasswordDto) — stricter than, and distinct from, passwordSchema() above.
  */
 export function strongPasswordSchema(message: string) {
   return z

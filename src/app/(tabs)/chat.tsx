@@ -1,7 +1,7 @@
-import { Ionicons } from "@expo/vector-icons";
-import * as Crypto from "expo-crypto";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useTranslation } from "react-i18next";
+import { Ionicons } from '@expo/vector-icons';
+import * as Crypto from 'expo-crypto';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   FlatList,
   ActivityIndicator,
@@ -12,37 +12,31 @@ import {
   StyleSheet,
   TextInput,
   View,
-} from "react-native";
-import { isAxiosError } from "axios";
-import { SafeAreaView } from "react-native-safe-area-context";
+} from 'react-native';
+import { isAxiosError } from 'axios';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { aiChatApi } from "@/api/chat";
-import { AI_TAB_LIFT } from "@/components/AiTabButton";
-import { ChatBubble } from "@/components/ChatBubble";
-import { ThemedText } from "@/components/themed-text";
-import { ThemedView } from "@/components/themed-view";
-import { TypingIndicator } from "@/components/TypingIndicator";
-import { Chip } from "@/components/ui/Chip";
-import {
-  FontFamily,
-  MaxContentWidth,
-  MinTouch,
-  Radius,
-  Space,
-} from "@/constants/theme";
-import { useNetworkStatus } from "@/hooks/useNetworkStatus";
-import { useTheme } from "@/hooks/use-theme";
-import { ChatMessage } from "@/types/chat";
-import { toast } from "@/store/toastStore";
-import { useAuthStore } from "@/store/authStore";
+import { aiChatApi } from '@/api/chat';
+import { AI_TAB_LIFT } from '@/components/AiTabButton';
+import { ChatBubble } from '@/components/ChatBubble';
+import { ThemedText } from '@/components/themed-text';
+import { ThemedView } from '@/components/themed-view';
+import { TypingIndicator } from '@/components/TypingIndicator';
+import { Chip } from '@/components/ui/Chip';
+import { FontFamily, MaxContentWidth, MinTouch, Radius, Space } from '@/constants/theme';
+import { useNetworkStatus } from '@/hooks/useNetworkStatus';
+import { useTheme } from '@/hooks/use-theme';
+import { ChatMessage } from '@/types/chat';
+import { toast } from '@/store/toastStore';
+import { useAuthStore } from '@/store/authStore';
 import {
   buildMessagesFromHistory,
   clearStoredConversationId,
   readStoredConversationId,
   storeConversationId,
-} from "@/utils/aiChatHistory";
-import { TFunction } from "i18next";
-import { SmartStayAiIcon } from "@/components/SmartStayAiIcon";
+} from '@/utils/aiChatHistory';
+import { TFunction } from 'i18next';
+import { SmartStayAiIcon } from '@/components/SmartStayAiIcon';
 
 // The latest booking proposal shown before `index` — what an AI-created booking was made from.
 function findProposalBefore(messages: ChatMessage[], index: number) {
@@ -53,43 +47,32 @@ function findProposalBefore(messages: ChatMessage[], index: number) {
   return null;
 }
 
-const AI_DAILY_QUOTA_EXCEEDED = "AI_DAILY_QUOTA_EXCEEDED";
+const AI_DAILY_QUOTA_EXCEEDED = 'AI_DAILY_QUOTA_EXCEEDED';
 
 function getSendErrorMessage(error: unknown, t: TFunction) {
   if (isAxiosError(error) && error.response?.status === 429) {
-    const data = error.response.data as
-      | { code?: string; message?: string }
-      | undefined;
-    return data?.code === AI_DAILY_QUOTA_EXCEEDED && data.message
-      ? data.message
-      : t("chat.tooFast");
+    const data = error.response.data as { code?: string; message?: string } | undefined;
+    return data?.code === AI_DAILY_QUOTA_EXCEEDED && data.message ? data.message : t('chat.tooFast');
   }
-  return t("chat.sendFailed");
+  return t('chat.sendFailed');
 }
 
 export default function ChatScreen() {
   const { t } = useTranslation();
   const theme = useTheme();
   const welcomeMessage = useMemo<ChatMessage>(
-    () => ({ id: "welcome", role: "MODEL", content: t("chat.welcomeMessage") }),
+    () => ({ id: 'welcome', role: 'MODEL', content: t('chat.welcomeMessage') }),
     [t],
   );
   const quickPrompts = useMemo(
-    () => [
-      t("chat.quickPrompt1"),
-      t("chat.quickPrompt2"),
-      t("chat.quickPrompt3"),
-      t("chat.quickPrompt4"),
-    ],
+    () => [t('chat.quickPrompt1'), t('chat.quickPrompt2'), t('chat.quickPrompt3'), t('chat.quickPrompt4')],
     [t],
   );
   const conversationIdRef = useRef<string | undefined>(undefined);
   const [messages, setMessages] = useState<ChatMessage[]>([welcomeMessage]);
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
-  const [confirmingProposalId, setConfirmingProposalId] = useState<
-    string | null
-  >(null);
+  const [confirmingProposalId, setConfirmingProposalId] = useState<string | null>(null);
   const listRef = useRef<FlatList>(null);
   const userId = useAuthStore((s) => s.user?.userId);
   const [loadingHistory, setLoadingHistory] = useState(false);
@@ -109,9 +92,7 @@ export default function ChatScreen() {
         if (!active) return;
         conversationIdRef.current = storedId;
         setMessages([welcomeMessage, ...buildMessagesFromHistory(history)]);
-        requestAnimationFrame(() =>
-          listRef.current?.scrollToEnd({ animated: false }),
-        );
+        requestAnimationFrame(() => listRef.current?.scrollToEnd({ animated: false }));
       } catch {
         // Gone or not this user's any more — start fresh.
         clearStoredConversationId(userId);
@@ -132,20 +113,18 @@ export default function ChatScreen() {
     if (userId) clearStoredConversationId(userId);
     setMessages([welcomeMessage]);
     setDismissedFormAt(null);
-    setInput("");
+    setInput('');
   };
 
   // The raised AI tab button pokes above the tab bar, right where the input sits — keep
   // clear of it, except while the keyboard covers the tab bar anyway.
   const [keyboardOpen, setKeyboardOpen] = useState(false);
   useEffect(() => {
-    const show = Keyboard.addListener(
-      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
-      () => setKeyboardOpen(true),
+    const show = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow', () =>
+      setKeyboardOpen(true),
     );
-    const hide = Keyboard.addListener(
-      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
-      () => setKeyboardOpen(false),
+    const hide = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide', () =>
+      setKeyboardOpen(false),
     );
     return () => {
       show.remove();
@@ -153,15 +132,9 @@ export default function ChatScreen() {
     };
   }, []);
 
-  const scrollToEnd = () =>
-    requestAnimationFrame(() =>
-      listRef.current?.scrollToEnd({ animated: true }),
-    );
+  const scrollToEnd = () => requestAnimationFrame(() => listRef.current?.scrollToEnd({ animated: true }));
 
-  const send = async (
-    text: string,
-    extra: { confirmProposalId?: string; cancelProposalId?: string } = {},
-  ) => {
+  const send = async (text: string, extra: { confirmProposalId?: string; cancelProposalId?: string } = {}) => {
     setSending(true);
     try {
       const response = await aiChatApi.sendMessage({
@@ -175,7 +148,7 @@ export default function ChatScreen() {
         ...prev,
         {
           id: Crypto.randomUUID(),
-          role: "MODEL",
+          role: 'MODEL',
           content: response.reply,
           rooms: response.rooms,
           promotions: response.promotions,
@@ -185,15 +158,13 @@ export default function ChatScreen() {
         },
       ]);
     } catch (error) {
-      const timedOut =
-        isAxiosError(error) &&
-        (error.code === "ECONNABORTED" || error.code === "ETIMEDOUT");
+      const timedOut = isAxiosError(error) && (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT');
       const conversationId = conversationIdRef.current;
       if (timedOut && conversationId) {
         try {
           const history = await aiChatApi.conversationHistory(conversationId);
           const rebuilt = buildMessagesFromHistory(history);
-          if (rebuilt.at(-1)?.role === "MODEL") {
+          if (rebuilt.at(-1)?.role === 'MODEL') {
             setMessages([welcomeMessage, ...rebuilt]);
             setDismissedFormAt(null);
             return; // finally vẫn chạy: tắt sending và cuộn xuống cuối
@@ -203,10 +174,7 @@ export default function ChatScreen() {
         }
       }
       // The stored conversation was deleted or isn't this user's — let the next message start a new one.
-      if (
-        isAxiosError(error) &&
-        (error.response?.status === 403 || error.response?.status === 404)
-      ) {
+      if (isAxiosError(error) && (error.response?.status === 403 || error.response?.status === 404)) {
         conversationIdRef.current = undefined;
         if (userId) clearStoredConversationId(userId);
       }
@@ -214,7 +182,7 @@ export default function ChatScreen() {
         ...prev,
         {
           id: Crypto.randomUUID(),
-          role: "MODEL",
+          role: 'MODEL',
           content: getSendErrorMessage(error, t),
         },
       ]);
@@ -229,14 +197,11 @@ export default function ChatScreen() {
     const text = raw.trim();
     if (!text || sending) return;
     if (!isOnline) {
-      toast.error(t("chat.offlineBlocked"));
+      toast.error(t('chat.offlineBlocked'));
       return;
     }
-    setMessages((prev) => [
-      ...prev,
-      { id: Crypto.randomUUID(), role: "USER", content: text },
-    ]);
-    setInput("");
+    setMessages((prev) => [...prev, { id: Crypto.randomUUID(), role: 'USER', content: text }]);
+    setInput('');
     scrollToEnd();
     send(text);
   };
@@ -244,15 +209,12 @@ export default function ChatScreen() {
   const handleCancelProposal = (proposalId: string) => {
     if (sending) return;
     if (!isOnline) {
-      toast.error(t("chat.offlineBlocked"));
+      toast.error(t('chat.offlineBlocked'));
       return;
     }
 
-    const cancelText = t("chat.cancelProposalMessage");
-    setMessages((prev) => [
-      ...prev,
-      { id: Crypto.randomUUID(), role: "USER", content: cancelText },
-    ]);
+    const cancelText = t('chat.cancelProposalMessage');
+    setMessages((prev) => [...prev, { id: Crypto.randomUUID(), role: 'USER', content: cancelText }]);
     scrollToEnd();
     send(cancelText, { cancelProposalId: proposalId });
   };
@@ -260,15 +222,12 @@ export default function ChatScreen() {
   const handleConfirmBooking = (proposalId: string) => {
     if (sending) return;
     if (!isOnline) {
-      toast.error(t("chat.offlineBlocked"));
+      toast.error(t('chat.offlineBlocked'));
       return;
     }
     setConfirmingProposalId(proposalId);
-    const confirmText = t("chat.confirmBookingMessage");
-    setMessages((prev) => [
-      ...prev,
-      { id: Crypto.randomUUID(), role: "USER", content: confirmText },
-    ]);
+    const confirmText = t('chat.confirmBookingMessage');
+    setMessages((prev) => [...prev, { id: Crypto.randomUUID(), role: 'USER', content: confirmText }]);
     scrollToEnd();
     send(confirmText, { confirmProposalId: proposalId });
   };
@@ -284,7 +243,7 @@ export default function ChatScreen() {
 
   const handleCancelBookingForm = (index: number) => {
     setDismissedFormAt(index);
-    sendText(t("chat.cancelBookingFormMessage"));
+    sendText(t('chat.cancelBookingFormMessage'));
   };
 
   const canSend = !sending && !!input.trim() && isOnline;
@@ -292,23 +251,21 @@ export default function ChatScreen() {
 
   return (
     <ThemedView style={styles.flex}>
-      <SafeAreaView style={styles.flex} edges={["top"]}>
+      <SafeAreaView style={styles.flex} edges={['top']}>
         <View style={[styles.header, { borderBottomColor: theme.border }]}>
           <SmartStayAiIcon size={40} />
           <View style={styles.headerText}>
-            <ThemedText type="bodyBold">{t("chat.headerTitle")}</ThemedText>
+            <ThemedText type="bodyBold">{t('chat.headerTitle')}</ThemedText>
             <View style={styles.statusRow}>
-              <View
-                style={[styles.statusDot, { backgroundColor: theme.success }]}
-              />
+              <View style={[styles.statusDot, { backgroundColor: theme.success }]} />
               <ThemedText type="caption" themeColor="textSecondary">
-                {sending ? t("chat.typing") : t("chat.readyToHelp")}
+                {sending ? t('chat.typing') : t('chat.readyToHelp')}
               </ThemedText>
             </View>
           </View>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={t("chat.newConversation")}
+            accessibilityLabel={t('chat.newConversation')}
             onPress={startNewConversation}
             disabled={sending || messages.length <= 1}
             hitSlop={10}
@@ -317,8 +274,7 @@ export default function ChatScreen() {
               {
                 backgroundColor: theme.backgroundElement,
                 borderColor: theme.border,
-                opacity:
-                  sending || messages.length <= 1 ? 0.4 : pressed ? 0.6 : 1,
+                opacity: sending || messages.length <= 1 ? 0.4 : pressed ? 0.6 : 1,
               },
             ]}
           >
@@ -328,10 +284,7 @@ export default function ChatScreen() {
 
         {/* No keyboardVerticalOffset: the view's layout y already includes the safe-area
             inset and header, since SafeAreaView sits at the top of the window. */}
-        <KeyboardAvoidingView
-          style={styles.flex}
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
-        >
+        <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <FlatList
             ref={listRef}
             data={messages}
@@ -341,26 +294,15 @@ export default function ChatScreen() {
             renderItem={({ item, index }) => (
               <ChatBubble
                 message={index === 0 ? welcomeMessage : item}
-                confirming={
-                  sending &&
-                  item.pendingBooking?.proposalId === confirmingProposalId
-                }
+                confirming={sending && item.pendingBooking?.proposalId === confirmingProposalId}
                 onConfirmBooking={handleConfirmBooking}
                 onCancelProposal={handleCancelProposal}
-                onSelectRoom={(roomName) =>
-                  sendText(`Tôi muốn đặt phòng ${roomName}`)
-                }
-                showBookingForm={
-                  index === messages.length - 1 && dismissedFormAt !== index
-                }
-                onSubmitBookingForm={(text) =>
-                  handleSubmitBookingForm(text, index)
-                }
+                onSelectRoom={(roomName) => sendText(`Tôi muốn đặt phòng ${roomName}`)}
+                showBookingForm={index === messages.length - 1 && dismissedFormAt !== index}
+                onSubmitBookingForm={(text) => handleSubmitBookingForm(text, index)}
                 onCancelBookingForm={() => handleCancelBookingForm(index)}
                 busy={sending}
-                proposal={
-                  item.booking ? findProposalBefore(messages, index) : null
-                }
+                proposal={item.booking ? findProposalBefore(messages, index) : null}
                 showProposal={index === messages.length - 1}
               />
             )}
@@ -377,20 +319,12 @@ export default function ChatScreen() {
                 </View>
               ) : showQuickPrompts ? (
                 <View style={styles.footer}>
-                  <ThemedText
-                    type="caption"
-                    themeColor="textSecondary"
-                    style={styles.quickLabel}
-                  >
-                    {t("chat.quickPromptsLabel")}
+                  <ThemedText type="caption" themeColor="textSecondary" style={styles.quickLabel}>
+                    {t('chat.quickPromptsLabel')}
                   </ThemedText>
                   <View style={styles.quickWrap}>
                     {quickPrompts.map((prompt) => (
-                      <Chip
-                        key={prompt}
-                        label={prompt}
-                        onPress={() => sendText(prompt)}
-                      />
+                      <Chip key={prompt} label={prompt} onPress={() => sendText(prompt)} />
                     ))}
                   </View>
                 </View>
@@ -419,9 +353,9 @@ export default function ChatScreen() {
             >
               <TextInput
                 style={[styles.input, { color: theme.text }]}
-                placeholder={t("chat.placeholder")}
+                placeholder={t('chat.placeholder')}
                 placeholderTextColor={theme.textSecondary}
-                accessibilityLabel={t("chat.messageAccessibility")}
+                accessibilityLabel={t('chat.messageAccessibility')}
                 value={input}
                 onChangeText={setInput}
                 onSubmitEditing={() => sendText(input)}
@@ -430,24 +364,18 @@ export default function ChatScreen() {
             </View>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel={t("chat.sendAccessibility")}
+              accessibilityLabel={t('chat.sendAccessibility')}
               onPress={() => sendText(input)}
               disabled={!canSend}
               style={({ pressed }) => [
                 styles.sendButton,
                 {
-                  backgroundColor: canSend
-                    ? theme.primary
-                    : theme.backgroundSelected,
+                  backgroundColor: canSend ? theme.primary : theme.backgroundSelected,
                   transform: [{ scale: pressed ? 0.94 : 1 }],
                 },
               ]}
             >
-              <Ionicons
-                name="arrow-up"
-                size={22}
-                color={canSend ? theme.primaryText : theme.textSecondary}
-              />
+              <Ionicons name="arrow-up" size={22} color={canSend ? theme.primaryText : theme.textSecondary} />
             </Pressable>
           </View>
         </KeyboardAvoidingView>
@@ -459,8 +387,8 @@ export default function ChatScreen() {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: Space.md,
     paddingHorizontal: Space.lg,
     paddingVertical: Space.md,
@@ -472,25 +400,25 @@ const styles = StyleSheet.create({
     height: MinTouch,
     borderRadius: MinTouch / 2,
     borderWidth: StyleSheet.hairlineWidth,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  statusRow: { flexDirection: "row", alignItems: "center", gap: Space.xs + 2 },
+  statusRow: { flexDirection: 'row', alignItems: 'center', gap: Space.xs + 2 },
   statusDot: { width: 7, height: 7, borderRadius: 4 },
   list: {
-    width: "100%",
+    width: '100%',
     maxWidth: MaxContentWidth,
-    alignSelf: "center",
+    alignSelf: 'center',
     padding: Space.lg,
     paddingBottom: Space.xl,
   },
   separator: { height: Space.lg },
   footer: { marginTop: Space.lg, gap: Space.sm },
   quickLabel: { marginLeft: Space.xs },
-  quickWrap: { flexDirection: "row", flexWrap: "wrap", gap: Space.sm },
+  quickWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: Space.sm },
   inputBar: {
-    flexDirection: "row",
-    alignItems: "flex-end",
+    flexDirection: 'row',
+    alignItems: 'flex-end',
     gap: Space.sm,
     paddingHorizontal: Space.md,
     paddingVertical: Space.sm,
@@ -503,7 +431,7 @@ const styles = StyleSheet.create({
     borderRadius: Radius.xl,
     borderWidth: StyleSheet.hairlineWidth,
     paddingHorizontal: Space.lg,
-    justifyContent: "center",
+    justifyContent: 'center',
   },
   input: {
     fontFamily: FontFamily.regular,
@@ -516,7 +444,7 @@ const styles = StyleSheet.create({
     width: MinTouch + 4,
     height: MinTouch + 4,
     borderRadius: Radius.full,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

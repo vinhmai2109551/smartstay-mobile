@@ -55,7 +55,17 @@ const toFormValues = (user: User | null): FormValues => ({
   address: user?.address ?? '',
 });
 
-function InfoRow({ icon, label, value, last }: { icon: IconName; label: string; value?: string | null; last?: boolean }) {
+function InfoRow({
+  icon,
+  label,
+  value,
+  last,
+}: {
+  icon: IconName;
+  label: string;
+  value?: string | null;
+  last?: boolean;
+}) {
   const { t } = useTranslation();
   const theme = useTheme();
   return (
@@ -63,7 +73,8 @@ function InfoRow({ icon, label, value, last }: { icon: IconName; label: string; 
       style={[
         styles.infoRow,
         !last && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.border },
-      ]}>
+      ]}
+    >
       <View style={[styles.infoIcon, { backgroundColor: theme.primarySoft }]}>
         <Ionicons name={icon} size={18} color={theme.primary} />
       </View>
@@ -173,7 +184,8 @@ export default function AccountScreen() {
                 accessibilityLabel={t('account.edit')}
                 onPress={startEditing}
                 hitSlop={10}
-                style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1, padding: Space.xs })}>
+                style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1, padding: Space.xs })}
+              >
                 <Ionicons name="create-outline" size={22} color={theme.primary} />
               </Pressable>
             ),
@@ -186,9 +198,15 @@ export default function AccountScreen() {
         automaticallyAdjustKeyboardInsets
         refreshControl={
           editing ? undefined : (
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} colors={[theme.primary]} />
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={theme.primary}
+              colors={[theme.primary]}
+            />
           )
-        }>
+        }
+      >
         <Animated.View entering={FadeIn.duration(300)} style={styles.hero}>
           <Avatar name={user?.fullName} size={84} />
           <ThemedText type="heading" style={styles.center}>
@@ -208,13 +226,12 @@ export default function AccountScreen() {
                 style={[
                   styles.badge,
                   { backgroundColor: `${user.status === 'Active' ? theme.success : theme.danger}1A` },
-                ]}>
+                ]}
+              >
                 <View
                   style={[styles.dot, { backgroundColor: user.status === 'Active' ? theme.success : theme.danger }]}
                 />
-                <ThemedText
-                  type="caption"
-                  style={{ color: user.status === 'Active' ? theme.success : theme.danger }}>
+                <ThemedText type="caption" style={{ color: user.status === 'Active' ? theme.success : theme.danger }}>
                   {t(`account.status.${user.status}`)}
                 </ThemedText>
               </View>

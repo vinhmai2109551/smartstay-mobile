@@ -1,8 +1,8 @@
-import { RoomType } from "@/types/room";
-import { apiClient } from "./client";
+import { RoomType } from '@/types/room';
+import { apiClient } from './client';
 
 export const favoritesApi = {
-  mine: () => apiClient.get<RoomType[]>("/favorites/me").then((r) => r.data),
+  mine: () => apiClient.get<RoomType[]>('/favorites/me').then((r) => r.data),
 
   add: (roomTypeId: string) =>
     apiClient

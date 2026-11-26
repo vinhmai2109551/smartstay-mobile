@@ -60,7 +60,8 @@ function ToastBanner({ toast }: { toast: ToastItem }) {
       entering={toastEntering}
       exiting={toastExiting}
       style={[styles.wrapper, { top: insets.top + Space.sm }]}
-      accessibilityLiveRegion="polite">
+      accessibilityLiveRegion="polite"
+    >
       <View
         accessible
         accessibilityRole="alert"
@@ -73,7 +74,8 @@ function ToastBanner({ toast }: { toast: ToastItem }) {
         onResponderMove={(event) => {
           if (event.nativeEvent.pageY - touchStartY.current < -SWIPE_DISMISS_DISTANCE) hide(toast.id);
         }}
-        style={[styles.card, shadows.floating, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
+        style={[styles.card, shadows.floating, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}
+      >
         <View style={[styles.accent, { backgroundColor: color }]} />
         <View style={[styles.icon, { backgroundColor: `${color}1F` }]}>
           <Ionicons name={icon} size={22} color={color} />
@@ -91,7 +93,8 @@ function ToastBanner({ toast }: { toast: ToastItem }) {
           accessibilityLabel={t('common.close')}
           onPress={() => hide(toast.id)}
           hitSlop={12}
-          style={styles.close}>
+          style={styles.close}
+        >
           <Ionicons name="close" size={18} color={theme.textSecondary} />
         </Pressable>
       </View>

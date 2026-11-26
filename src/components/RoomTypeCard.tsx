@@ -41,7 +41,8 @@ export function RoomTypeCard({ roomType, onPress, imageHeight = 200 }: RoomTypeC
         styles.card,
         shadows.card,
         { backgroundColor: theme.backgroundElement, opacity: pressed ? 0.94 : 1 },
-      ]}>
+      ]}
+    >
       <View style={[styles.imageWrap, { height: imageHeight }]}>
         {/* Image is decorative — the Pressable's own accessibilityLabel already describes this card. */}
         {image ? (

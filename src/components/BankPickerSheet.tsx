@@ -104,13 +104,15 @@ export function BankPickerSheet({ visible, onClose, banks, loading, recentAppId,
             shadows.floating,
             sheetAnimatedStyle,
             { backgroundColor: theme.backgroundElement, paddingBottom: Math.max(insets.bottom, Space.lg) },
-          ]}>
+          ]}
+        >
           <View
             onStartShouldSetResponder={() => true}
             onResponderGrant={handleDragStart}
             onResponderMove={handleDragMove}
             onResponderRelease={handleDragEnd}
-            style={styles.dragHandleArea}>
+            style={styles.dragHandleArea}
+          >
             <View style={[styles.handle, { backgroundColor: theme.border }]} />
             <ThemedText type="heading" style={styles.center}>
               {t('checkout.bankSheetTitle')}
@@ -153,7 +155,8 @@ export function BankPickerSheet({ visible, onClose, banks, loading, recentAppId,
                   style={({ pressed }) => [
                     styles.bankItem,
                     { width: itemWidth, backgroundColor: theme.backgroundSelected, opacity: pressed ? 0.85 : 1 },
-                  ]}>
+                  ]}
+                >
                   {item.autofill ? (
                     <View style={[styles.autofillBadge, { backgroundColor: theme.accentSoft }]}>
                       <ThemedText type="caption" themeColor="accentText">

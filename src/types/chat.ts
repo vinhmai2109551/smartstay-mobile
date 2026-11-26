@@ -1,6 +1,6 @@
-import { AvailableRoomType } from "./room";
-import { BookingStatus } from "./booking";
-import { Promotion } from "./promotion";
+import { AvailableRoomType } from './room';
+import { BookingStatus } from './booking';
+import { Promotion } from './promotion';
 
 export type PendingBooking = {
   proposalId: string;
@@ -12,7 +12,7 @@ export type PendingBooking = {
   guestInfo: { fullName: string; phone: string };
   extraServiceIds: string[];
   promotionCode: string | null;
-  paymentMethod: "CASH" | "PAYOS";
+  paymentMethod: 'CASH' | 'PAYOS';
   roomAmount: number;
   serviceAmount: number;
   discountAmount: number;
@@ -24,7 +24,7 @@ export type ConfirmedBooking = {
   bookingId: string;
   status: BookingStatus;
   totalAmount: number;
-  paymentMethod: "CASH" | "PAYOS";
+  paymentMethod: 'CASH' | 'PAYOS';
   qrCode?: string;
   checkoutUrl?: string;
   expiredAt?: number;
@@ -56,13 +56,13 @@ export type SendChatMessageResponse = {
   bookingFormRequest: BookingFormRequest | null;
 };
 
-export type ChatRole = "USER" | "MODEL";
+export type ChatRole = 'USER' | 'MODEL';
 
 // One stored row of GET /ai-agent/conversations/:id. TOOL rows carry the cards
 // (rooms, proposal, booking…) that were shown under the following MODEL reply.
 export type AiConversationMessage = {
   messageId: string;
-  role: "USER" | "MODEL" | "TOOL";
+  role: 'USER' | 'MODEL' | 'TOOL';
   content: string | null;
   createdAt: string;
   toolName?: string | null;
@@ -94,6 +94,6 @@ export type ReceptionMessage = {
   senderRole: string;
   content: string;
   attachmentUrl: string | null;
-  attachmentType: "IMAGE" | null;
+  attachmentType: 'IMAGE' | null;
   createdAt: string;
 };

@@ -6,7 +6,15 @@ import { router, useLocalSearchParams } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, useWindowDimensions, View, type ViewInstance } from 'react-native';
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  useWindowDimensions,
+  View,
+  type ViewInstance,
+} from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { captureRef } from 'react-native-view-shot';
 import Animated, { ZoomIn } from 'react-native-reanimated';
@@ -137,7 +145,10 @@ export default function CheckoutScreen() {
   if (phase === 'paid') {
     return (
       <ThemedView style={styles.success}>
-        <Animated.View entering={ZoomIn.springify().damping(14)} style={[styles.successCircle, { backgroundColor: theme.primarySoft }]}>
+        <Animated.View
+          entering={ZoomIn.springify().damping(14)}
+          style={[styles.successCircle, { backgroundColor: theme.primarySoft }]}
+        >
           <View style={[styles.successInner, { backgroundColor: theme.success }]}>
             <Ionicons name="checkmark" size={44} color="#FFFFFF" />
           </View>
@@ -290,7 +301,8 @@ export default function CheckoutScreen() {
                       accessibilityRole="button"
                       accessibilityLabel={t('checkout.copyLabel', { label: t('checkout.accountNumberLabel') })}
                       hitSlop={10}
-                      onPress={() => link.accountNumber && copyToClipboard(link.accountNumber)}>
+                      onPress={() => link.accountNumber && copyToClipboard(link.accountNumber)}
+                    >
                       <Ionicons name="copy-outline" size={18} color={theme.primary} />
                     </Pressable>
                   </View>
@@ -311,7 +323,8 @@ export default function CheckoutScreen() {
                       onPress={() => {
                         const value = amount ?? link.amount;
                         if (value != null) copyToClipboard(String(value));
-                      }}>
+                      }}
+                    >
                       <Ionicons name="copy-outline" size={18} color={theme.primary} />
                     </Pressable>
                   </View>
@@ -329,7 +342,8 @@ export default function CheckoutScreen() {
                       accessibilityRole="button"
                       accessibilityLabel={t('checkout.copyLabel', { label: t('checkout.transferContentLabel') })}
                       hitSlop={10}
-                      onPress={() => link.description && copyToClipboard(link.description)}>
+                      onPress={() => link.description && copyToClipboard(link.description)}
+                    >
                       <Ionicons name="copy-outline" size={18} color={theme.primary} />
                     </Pressable>
                   </View>

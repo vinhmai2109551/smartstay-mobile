@@ -16,10 +16,7 @@ import { toast } from '@/store/toastStore';
  * failure has no visible sign at all. Off by default for callers that treat a
  * refresh failure as fine to stay silent (e.g. a decorative rating lookup).
  */
-export function useApi<T>(
-  fetcher: () => Promise<T>,
-  { refetchOnFocus = false, toastOnRefreshError = false } = {},
-) {
+export function useApi<T>(fetcher: () => Promise<T>, { refetchOnFocus = false, toastOnRefreshError = false } = {}) {
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
