@@ -98,6 +98,10 @@ export default function LoginScreen() {
   });
 
   useEffect(() => {
+    if (response) toast.info(JSON.stringify(response).slice(0, 300));
+  }, [response]);
+
+  useEffect(() => {
     if (response?.type !== 'success') return;
 
     const idToken = response.authentication?.idToken ?? (response.params as Record<string, string>)?.id_token;
