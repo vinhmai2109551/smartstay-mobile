@@ -1,6 +1,5 @@
 {
   "expo": {
-    "owner": "vika2",
     "name": "Vika Hotel",
     "slug": "smartstay-mobile",
     "version": "1.0.0",
@@ -10,7 +9,8 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/images/icon.png",
-      "bundleIdentifier": "com.smartstay.app"
+      "bundleIdentifier": "com.smartstay.app",
+      "infoPlist": {}
     },
     "android": {
       "package": "com.smartstay.app",
@@ -20,7 +20,13 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.READ_MEDIA_VISUAL_USER_SELECTED",
+        "android.permission.READ_MEDIA_IMAGES"
+      ]
     },
     "web": {
       "output": "static",
@@ -60,10 +66,15 @@
       "reactCompiler": true
     },
     "extra": {
-      "router": {},
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
       "eas": {
-        "projectId": "43d54187-f313-4ea2-b24e-c7d37d536513"
+        "projectId": "9bac1038-ae3c-4f2f-9e3e-04547af35dfa"
       }
-    }
+    },
+    "owner": "vika-smartstay"
   }
 }
