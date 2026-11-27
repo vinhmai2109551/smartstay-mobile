@@ -1,4 +1,4 @@
-const DEFAULT_API_URL = 'http://localhost:3000/api/v1';
+const DEFAULT_API_URL = 'https://kltn-smartstay-naku.onrender.com/api/v1';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? DEFAULT_API_URL;
 const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? '';
@@ -7,7 +7,7 @@ const GOOGLE_ANDROID_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_I
 // Same public site key as the web frontend (VITE_TURNSTILE_SITE_KEY).
 const TURNSTILE_SITE_KEY = process.env.EXPO_PUBLIC_TURNSTILE_SITE_KEY ?? '';
 // Hostname Cloudflare reports for the WebView page; must be in the backend's TURNSTILE_ALLOWED_HOSTNAMES.
-const TURNSTILE_BASE_URL = process.env.EXPO_PUBLIC_TURNSTILE_BASE_URL ?? 'http://localhost';
+const TURNSTILE_BASE_URL = process.env.EXPO_PUBLIC_TURNSTILE_BASE_URL ?? 'https://kltn-smartstay.vercel.app';
 
 // A build is misconfigured when it's NOT a local dev run (__DEV__ false — e.g. an EAS
 // preview/production build) but EXPO_PUBLIC_API_URL still points at a dev-only host.
